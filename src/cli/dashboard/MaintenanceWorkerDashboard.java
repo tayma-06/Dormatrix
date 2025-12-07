@@ -1,4 +1,4 @@
 package cli.dashboard;
 
-public class MaintenanceDashboard {
+public class MaintenanceWorkerDashboard {
 }
