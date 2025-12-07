@@ -1,4 +1,4 @@
 package controllers.dashboard;
 
-public class HallOfficeDashboardContoller {
+public class HallOfficeDashboardController {
 }

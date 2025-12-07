@@ -1,4 +1,4 @@
 package controllers.dashboard;
 
-public class AdminDashboardContoller {
+public class AdminDashboardController {
 }
