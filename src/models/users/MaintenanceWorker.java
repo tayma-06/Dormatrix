@@ -7,6 +7,6 @@ public class MaintenanceWorker extends User{
 
     @Override
     public String toFileString() {
-        return " ";
+        return id + "|" + name + "|MAINTENANCE_WORKER|"  + "|" + passwordHash + "|" + phoneNumber;
     }
 }
