@@ -1,4 +1,4 @@
 package cli.dashboard;
 
-public class StoreInChargeDashboard {
+public class StoreDashboard {
 }

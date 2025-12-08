@@ -1,4 +1,4 @@
 package libraries.collections;
 
-public class CustomLinkedList {
+public class CustomIndexedList {
 }
