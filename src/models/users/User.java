@@ -5,16 +5,21 @@ public abstract class User {
     protected String name;
     protected String role;
     protected String passwordHash;
+    protected String phoneNumber;
 
-    public User(String id, String name, String role, String passwordHash) {
+
+    public User(String id, String name, String role, String passwordHash, String phoneNumber) {
         this.id = id;
         this.name = name;
         this.role = role;
         this.passwordHash = passwordHash;
+        this.phoneNumber = phoneNumber;
     }
 
     // --------- Getters & Setters ----------
-
+    public void setRole(String role) {
+        this.role = role;
+    }
     public void setId(String id) {
         this.id = id;
     }
