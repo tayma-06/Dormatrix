@@ -23,9 +23,9 @@ public class MainDashboardController {
               case "3":
                   new MaintenanceWorkerDashboard().show(username);
                   break;
-//            case "4":
-//                new StoreDashboard().show(username);
-//                break;
+              case "4":
+                  new StoreInChargeDashboard().show(username);
+                  break;
 //            case "5":
 //                new HallOfficeDashboard().show(username);
 //                break;
