@@ -29,9 +29,9 @@ public class MainDashboardController {
 //            case "5":
 //                new HallOfficeDashboard().show(username);
 //                break;
-//            case "6":
-//                new AdminDashboard().show(username);
-//                break;
+            case "6":
+                new AdminDashboard().show(username);
+                break;
             default:
                 System.out.println("Invalid choice. Please select a valid role.\n");
         }

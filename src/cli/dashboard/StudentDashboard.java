@@ -16,7 +16,7 @@ public class StudentDashboard implements Dashboard {
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                        STUDENT DASHBOARD                            |");
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println("| Welcome, " + username + "                                           |");
+            System.out.println("  Welcome, " + username + "                                            ");
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("| 1. View Room Info                                                   |");
             System.out.println("| 2. Facility Booking                                                 |");
