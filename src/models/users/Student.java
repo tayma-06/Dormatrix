@@ -6,13 +6,12 @@ public class Student extends User{
     private String roomNumber; // initially "UNASSIGNED"
     private String email;
 
-    public Student(String id, String name, String passwordHash,
-            String department, String email
-    )
-    {
-        super(id, name, "STUDENT", passwordHash);
+    public Student(String id, String name, String role, String passwordHash, String phoneNumber) {
+        super(id, name, role, passwordHash, phoneNumber);
+    }
+
+    public void setDepartment(String department) {
         this.department = department;
-        this.email= email;
     }
 
     // ----- Additional Getters & Setters -----
