@@ -13,9 +13,9 @@ public class StoreInChargeDashboard implements Dashboard{
     {
         while(true){
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println("|STORE-IN-CHARGE DASHBOARD                      |");
+            System.out.println("|                      STORE-IN-CHARGE DASHBOARD                      |");
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println("Welcome, "+username);
+            System.out.println("  Welcome, "+username);
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("| 1. Inventory List                                                   |");
             System.out.println("| 2. Purchase Record                                                  |");
