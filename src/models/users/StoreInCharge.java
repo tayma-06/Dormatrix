@@ -1,4 +1,12 @@
 package models.users;
 
-public class StoreInCharge {
+public class StoreInCharge extends User{
+    public StoreInCharge(String id, String name, String role, String passwordHash, String phoneNumber) {
+        super(id, name, role, passwordHash, phoneNumber);
+    }
+
+    @Override
+    public String toFileString() {
+        return "";
+    }
 }

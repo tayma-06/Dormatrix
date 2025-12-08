@@ -1,4 +1,12 @@
 package models.users;
 
-public class HallOfficer {
+public class HallOfficer extends User{
+    public HallOfficer(String id, String name, String role, String passwordHash, String phoneNumber) {
+        super(id, name, role, passwordHash, phoneNumber);
+    }
+
+    @Override
+    public String toFileString() {
+        return " ";
+    }
 }
