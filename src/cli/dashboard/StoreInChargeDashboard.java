@@ -1,27 +1,25 @@
 package cli.dashboard;
 
 import cli.components.DormatrixBanner;
-import controllers.dashboard.HallOfficeDashboardController;
+import controllers.dashboard.StoreInChargeDashboardController;
 import java.util.Scanner;
-public class HallOfficeDashboard implements Dashboard{
-    private final HallOfficeDashboardController controller = new HallOfficeDashboardController();
+public class StoreInChargeDashboard implements Dashboard{
+    private final StoreInChargeDashboardController controller = new StoreInChargeDashboardController();
     private final DormatrixBanner banner = new DormatrixBanner();
     private final Scanner sc = new Scanner(System.in);
 
     @Override
     public void show(String username)
     {
-       while (true)
-        {
+        while(true){
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println("|                        HALL OFFICE DASHBOARD                        |");
+            System.out.println("|                      STORE-IN-CHARGE DASHBOARD                      |");
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("  Welcome, "+username);
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println("| 1. Update Student Hall Room Info                                    |");
-            System.out.println("| 2. View Student Complaints                                          |");
-            System.out.println("| 3. View Worker Schedule                                             |");
-            System.out.println("| 4. Handle Attendant Task                                            |");
+            System.out.println("| 1. Inventory List                                                   |");
+            System.out.println("| 2. Purchase Record                                                  |");
+            System.out.println("| 3. Sale Summary                                                     |");
             System.out.println("| 0. Logout                                                           |");
             System.out.println("-----------------------------------------------------------------------");
 
@@ -34,7 +32,6 @@ public class HallOfficeDashboard implements Dashboard{
                 System.out.println("Logging out...");
                 break;
             }
-        } 
+        }
     }
-   
 }
