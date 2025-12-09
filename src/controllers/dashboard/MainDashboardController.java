@@ -4,9 +4,8 @@ import cli.dashboard.*;
 
 public class MainDashboardController {
 
-    public void handleRoleInput(String choice, String username, String password) {
-        // TODO: Authenticate user with AuthController (check username, password, role)
-        boolean authenticated = true; // For now, assume authenticated
+    public void handleRoleInput(int choice, String username, String password) {
+        boolean authenticated = true;
 
         if (!authenticated) {
             System.out.println("Invalid username or password!\n");
@@ -14,22 +13,23 @@ public class MainDashboardController {
         }
 
         switch (choice) {
-            case "1":
+            case 1:
                 new StudentDashboard().show(username);
                 break;
-//            case "2":
+//            case 2:
 //                new AttendantDashboard().show(username);
 //                break;
-            case "3":
-                new MaintenanceWorkerDashboard().show(username);
-                break;
-            case "4":
-                new StoreInChargeDashboard().show(username);
-                break;
-            case "5":
-                new HallOfficeDashboard().show(username);
-                break;
-            case "6":
+===
+//            case 3:
+//                new MaintenanceDashboard().show(username);
+//                break;
+//            case 4:
+//                new StoreDashboard().show(username);
+//                break;
+//            case 5:
+//                new HallOfficeDashboard().show(username);
+//                break;
+            case 6:
                 new AdminDashboard().show(username);
                 break;
             default:
