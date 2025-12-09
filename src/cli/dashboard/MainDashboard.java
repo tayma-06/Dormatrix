@@ -2,11 +2,9 @@ package cli.dashboard;
 
 import cli.components.DormatrixBanner;
 import controllers.dashboard.MainDashboardController;
-
 import java.util.Scanner;
 
-public class MainDashboard
-{
+public class MainDashboard {
     private final DormatrixBanner banner = new DormatrixBanner();
     private final Scanner sc = new Scanner(System.in);
     private final MainDashboardController controller = new MainDashboardController();
