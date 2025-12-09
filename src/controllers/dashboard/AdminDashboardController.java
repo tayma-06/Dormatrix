@@ -1,8 +1,12 @@
 package controllers.dashboard;
 
-public class AdminDashboardController {
+import cli.dashboard.MainDashboard;
 
-    public boolean handleInput(int choice, String username) {
+public class AdminDashboardController
+{
+    MainDashboard mainDashboard = new MainDashboard();
+    public void handleInput(int choice, String username)
+    {
         switch (choice) {
             case 1:
                 System.out.println("Creating a new account...");
@@ -13,11 +17,11 @@ public class AdminDashboardController {
             case 3:
                 System.out.println("Viewing accounts grouped by role...");
                 break;
-            case 4:
-                return false;
+            case 0:
+                mainDashboard.show();
+                break;
             default:
                 System.out.println("Invalid choice. Please try again...");
         }
-        return true;
     }
 }

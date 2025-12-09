@@ -1,8 +1,11 @@
 package controllers.dashboard;
 
-public class StudentDashboardController {
+import cli.dashboard.MainDashboard;
 
-    public boolean handleInput(int choice, String username) {
+public class StudentDashboardController {
+    MainDashboard mainDashboard = new MainDashboard();
+
+    public void handleInput(int choice, String username) {
         switch (choice) {
             case 1:
                 System.out.println("Displaying Room Info...\n");
@@ -26,10 +29,10 @@ public class StudentDashboardController {
                 System.out.println("Fetching Announcements...\n");
                 break;
             case 0:
-                return false;
+                mainDashboard.show();
+                break;
             default:
                 System.out.println("Invalid choice. Please try again.\n");
         }
-        return true;
     }
 }

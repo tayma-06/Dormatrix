@@ -1,10 +1,10 @@
 package cli.dashboard;
 
 import controllers.dashboard.AdminDashboardController;
-
 import java.util.Scanner;
 
 public class AdminDashboard implements Dashboard {
+
     private final AdminDashboardController controller = new AdminDashboardController();
     private final Scanner sc = new Scanner(System.in);
 
@@ -25,10 +25,12 @@ public class AdminDashboard implements Dashboard {
             System.out.print("Enter your choice: ");
             int choice = sc.nextInt();
 
-            if (!controller.handleInput(choice, username)) {
-                System.out.println("Logging out...");
-                break;
+            if (choice == 0) {
+                System.out.println("-----------------------------------------------------------------------");
+                System.out.println("| Logging Out....                                                     |");
+                System.out.println("-----------------------------------------------------------------------");
             }
+            controller.handleInput(choice, username);
         }
     }
 }

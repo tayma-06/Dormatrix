@@ -4,13 +4,16 @@ import controllers.dashboard.StudentDashboardController;
 
 import java.util.Scanner;
 
-public class StudentDashboard implements Dashboard {
+public class StudentDashboard implements Dashboard
+{
     private final StudentDashboardController controller = new StudentDashboardController();
     private final Scanner sc = new Scanner(System.in);
 
     @Override
-    public void show(String username) {
-        while (true) {
+    public void show(String username)
+    {
+        while (true)
+        {
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                        STUDENT DASHBOARD                            |");
             System.out.println("-----------------------------------------------------------------------");
@@ -29,10 +32,12 @@ public class StudentDashboard implements Dashboard {
             System.out.print("Enter your choice: ");
             int choice = sc.nextInt();
 
-            if (!controller.handleInput(choice, username)) {
-                System.out.println("Logging out...");
-                break;
+            if (choice == 0) {
+                System.out.println("-----------------------------------------------------------------------");
+                System.out.println("| Logging Out....                                                     |");
+                System.out.println("-----------------------------------------------------------------------");
             }
+            controller.handleInput(choice, username);
         }
     }
 }
