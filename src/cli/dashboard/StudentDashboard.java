@@ -1,13 +1,11 @@
 package cli.dashboard;
 
-import cli.components.DormatrixBanner;
 import controllers.dashboard.StudentDashboardController;
 
 import java.util.Scanner;
 
 public class StudentDashboard implements Dashboard {
     private final StudentDashboardController controller = new StudentDashboardController();
-    private final DormatrixBanner banner = new DormatrixBanner();
     private final Scanner sc = new Scanner(System.in);
 
     @Override
@@ -29,7 +27,7 @@ public class StudentDashboard implements Dashboard {
             System.out.println("-----------------------------------------------------------------------");
 
             System.out.print("Enter your choice: ");
-            String choice = sc.nextLine().trim();
+            int choice = sc.nextInt();
 
             if (!controller.handleInput(choice, username)) {
                 System.out.println("Logging out...");

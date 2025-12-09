@@ -30,15 +30,15 @@ public class MainDashboard {
             System.out.println("-----------------------------------------------------------------------");
 
             System.out.print("Enter your choice: ");
-            String choice = sc.nextLine().trim();
+            int choice = sc.nextInt();
 
-            if (choice.equals("0")) {
+            if (choice == 0) {
                 System.out.println("-----------------------------------------------------------------------");
                 System.out.println("| Exiting Dormatrix. Goodbye!                                         |");
                 System.out.println("-----------------------------------------------------------------------");
                 System.exit(0);
             }
-
+            sc.nextLine();
             System.out.print("Enter username: ");
             String username = sc.nextLine().trim();
             System.out.print("Enter password: ");
