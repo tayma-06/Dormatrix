@@ -5,7 +5,7 @@ import controllers.dashboard.MainDashboardController;
 
 import java.util.Scanner;
 
-public class MainDashboard {
+public class MainDashboard implements Dashboard{
     private final DormatrixBanner banner = new DormatrixBanner();
     private final Scanner sc = new Scanner(System.in);
     private final MainDashboardController controller = new MainDashboardController();
