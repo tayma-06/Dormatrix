@@ -1,9 +1,12 @@
 package controllers.dashboard;
 
+import cli.dashboard.MainDashboard;
+
 public class MaintenanceWorkerDashboardController {
+    MainDashboard mainDashboard = new MainDashboard();
 
     // Returns false is user chooses to logout
-    public boolean handleInput(int choice, String username)
+    public void handleInput(int choice, String username)
     {
         switch (choice)
         {
@@ -20,10 +23,10 @@ public class MaintenanceWorkerDashboardController {
                 //TODO: calls the student complaint class to show the updated status
                 break;
             case 0:
-                return false; // Logout
+                mainDashboard.show();
+                break;
             default:
                 System.out.println("Invalid choice. Please try again");
         }
-        return true;
     }
 }

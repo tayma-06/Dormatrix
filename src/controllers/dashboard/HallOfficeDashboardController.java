@@ -1,7 +1,10 @@
 package controllers.dashboard;
 
+import cli.dashboard.MainDashboard;
+
 public class HallOfficeDashboardController {
-    public boolean handleInput(int choice, String username){
+    MainDashboard mainDashboard = new MainDashboard();
+    public void handleInput(int choice, String username){
         switch (choice)
         {
             case 1:
@@ -21,11 +24,10 @@ public class HallOfficeDashboardController {
                 // TODO: lets the office employees handle the tasks of the attendants
                 break;
             case 0:
-                return false;
+                mainDashboard.show();
+                break;
             default:
                 System.out.println("Invalid choice. Please try again.");
-
         }
-        return true;
     }
 }

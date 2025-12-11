@@ -28,12 +28,12 @@ public class MaintenanceWorkerDashboard implements Dashboard{
             System.out.println("Enter your choice: ");
             int choice = sc.nextInt();
 
-            if(!controller.handleInput(choice, username))
-            {
-                System.out.println("Logging out...");
-                break;
+            if (choice == 0) {
+                System.out.println("-----------------------------------------------------------------------");
+                System.out.println("| Logging Out....                                                     |");
+                System.out.println("-----------------------------------------------------------------------");
             }
-             
+            controller.handleInput(choice, username);
         }
     }
 }

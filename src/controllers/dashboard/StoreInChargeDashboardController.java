@@ -1,8 +1,10 @@
 package controllers.dashboard;
 
+import cli.dashboard.MainDashboard;
+
 public class StoreInChargeDashboardController {
-    // Returns false if user logs out
-    public boolean handleInput(int choice, String username)
+    MainDashboard mainDashboard = new MainDashboard();
+    public void handleInput(int choice, String username)
     {
         switch(choice)
         {
@@ -19,11 +21,11 @@ public class StoreInChargeDashboardController {
                 // TODO: goes to sales summary class to generate and show sales summary
                 break;
             case 0:
-                return false;
+                mainDashboard.show();
+                break;
             default:
                 System.out.println("Invalid choice. Please try again.");
                 
         }
-        return true;
     }
 }
