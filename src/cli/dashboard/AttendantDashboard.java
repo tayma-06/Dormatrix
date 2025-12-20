@@ -9,17 +9,17 @@ public class AttendantDashboard implements Dashboard {
     private final Scanner sc = new Scanner(System.in);
 
 
+
     @Override
     public void show(String username) {
         while (true) {
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println("|                           ADMIN DASHBOARD                           |");
+            System.out.println("|                        ATTENDANT DASHBOARD                          |");
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("  Welcome, " + username + "                                             ");
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println("| 1. Create Account                                                   |");
-            System.out.println("| 2. Delete Account                                                   |");
-            System.out.println("| 3. View Accounts by Role                                            |");
+            System.out.println("| 1. Handle Student Complaints                                        |");
+            System.out.println("| 2. Handle Worker Schedule                                           |");
             System.out.println("| 0. Logout                                                           |");
             System.out.println("-----------------------------------------------------------------------");
 
@@ -33,6 +33,6 @@ public class AttendantDashboard implements Dashboard {
             }
             controller.handleInput(choice, username);
         }
-
     }
+
 }
