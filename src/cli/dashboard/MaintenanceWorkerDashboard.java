@@ -1,13 +1,11 @@
 package cli.dashboard;
 
-import cli.components.DormatrixBanner;
 import controllers.dashboard.MaintenanceWorkerDashboardController;
 import java.util.Scanner;
 
 public class MaintenanceWorkerDashboard implements Dashboard{
-    private final MaintenanceWorkerDashboardController controller= new MaintenanceWorkerDashboardController();
-    private final DormatrixBanner banner = new DormatrixBanner();
 
+    private final MaintenanceWorkerDashboardController controller= new MaintenanceWorkerDashboardController();
     private final Scanner sc = new Scanner(System.in);
 
     @Override

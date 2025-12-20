@@ -1,6 +1,5 @@
 package cli.dashboard;
 
-import controllers.dashboard.AdminDashboardController;
 import controllers.dashboard.AttendantDashboardController;
 import java.util.Scanner;
 
