@@ -4,6 +4,7 @@ import cli.dashboard.MainDashboard;
 
 public class HallOfficeDashboardController {
     MainDashboard mainDashboard = new MainDashboard();
+    
     public void handleInput(int choice, String username){
         switch (choice)
         {
