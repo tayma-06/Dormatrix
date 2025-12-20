@@ -1,11 +1,10 @@
 package cli.dashboard;
 
 import controllers.dashboard.StudentDashboardController;
-
 import java.util.Scanner;
 
-public class StudentDashboard implements Dashboard
-{
+public class StudentDashboard implements Dashboard{
+    
     private final StudentDashboardController controller = new StudentDashboardController();
     private final Scanner sc = new Scanner(System.in);
 

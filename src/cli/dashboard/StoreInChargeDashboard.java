@@ -1,11 +1,11 @@
 package cli.dashboard;
 
-import cli.components.DormatrixBanner;
 import controllers.dashboard.StoreInChargeDashboardController;
 import java.util.Scanner;
+
 public class StoreInChargeDashboard implements Dashboard{
+    
     private final StoreInChargeDashboardController controller = new StoreInChargeDashboardController();
-    private final DormatrixBanner banner = new DormatrixBanner();
     private final Scanner sc = new Scanner(System.in);
 
     @Override
