@@ -1,11 +1,11 @@
 package cli.dashboard;
 
-import cli.components.DormatrixBanner;
 import controllers.dashboard.HallOfficeDashboardController;
 import java.util.Scanner;
+
 public class HallOfficeDashboard implements Dashboard{
+    
     private final HallOfficeDashboardController controller = new HallOfficeDashboardController();
-    private final DormatrixBanner banner = new DormatrixBanner();
     private final Scanner sc = new Scanner(System.in);
 
     @Override
