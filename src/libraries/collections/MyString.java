@@ -166,8 +166,6 @@ public class MyString {
         MyString[] result = new MyString[delimiterCount+1];
         int start=0;
         int resultIndex=0;
-
-        // FIX: Loop through ALL characters, not just delimiterCount
         for(int i = 0; i <= chars.length; i++) {
             if(i == chars.length || chars[i] == delimiter) {
                 int length = i - start;
