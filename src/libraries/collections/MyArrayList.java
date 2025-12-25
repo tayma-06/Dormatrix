@@ -11,7 +11,6 @@ it was used in :
 
 // one duck follows after another in a perfectly indexed line
 
-import javax.annotation.processing.SupportedSourceVersion;
 
 public class MyArrayList<T> { //Now T has a magical way of checking my DUCK type dynamically...So why not use it?
     private static final int DEFAULT_CAPACITY = 10;
