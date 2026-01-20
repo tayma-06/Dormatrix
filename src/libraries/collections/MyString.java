@@ -1,276 +1,143 @@
 package libraries.collections;
 
 public class MyString {
-    private final String str;
-
+    private final char[] data;
+    private final int size;
     public MyString(String str) {
-        this.str = str != null ? str : "";
+        if (str == null) {
+            this.data = new char[0];
+            this.size = 0;
+        } else {
+            this.size = str.length();
+            this.data = new char[size];
+            for (int i = 0; i < size; i++) {
+                this.data[i] = str.charAt(i);
+            }
+        }
     }
-    
     public MyString(char[] chars) {
-        if (chars == null)
-            this.str = "";
-        else {
-            int length = 0;
-            while (length < chars.length && chars[length] != '\0') {
-                length++;
-            }
-            char[] newchars = new char[length];
-            for (int i = 0; i < length; i++) {
-                newchars[i] = chars[i];
-            }
-            this.str = new String(newchars);
+        if (chars == null) {
+            this.data = new char[0];
+            this.size = 0;
+        } else {
+            int len = 0;
+            while (len < chars.length && chars[len] != '\0') len++;
+            this.size = len;
+            this.data = new char[size];
+            for (int i = 0; i < size; i++) this.data[i] = chars[i];
         }
     }
-
-    public int length()
-    {
-        return toCharArrayInternal().length;
+    public int length() {
+        return size;
     }
-
+    public char charAt(int index) {
+        if (index < 0 || index >= size) throw new StringIndexOutOfBoundsException(index);
+        return data[index];
+    }
     public String getValue() {
-        return this.str;
+        return new String(data);
     }
-
     public char[] toCharArray() {
-        char[] chars = toCharArrayInternal();
-        char[] newchars = new char[chars.length];
-        for (int i = 0; i < chars.length; i++) {
-            newchars[i] = chars[i];
-        }
-        return newchars;
+        char[] copy = new char[size];
+        for (int i = 0; i < size; i++) copy[i] = data[i];
+        return copy;
     }
-
-    private char[] toCharArrayInternal()
-    {
-        int length = 0;
-        try
-        {
-            while(true)
-            {
-                str.charAt(length);
-                length++;
-            }
-        }
-        catch(StringIndexOutOfBoundsException e){
-
-        }
-        char[] newchars = new char[length];
-        for (int i = 0; i < length; i++) {
-            newchars[i] = str.charAt(i);
-        }
-        return newchars;
-    }
-
-    public char charAt(int index)
-    {
-        try {
-            char[] chars = toCharArrayInternal();
-            return chars[index];
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw new StringIndexOutOfBoundsException();
-        }
-    }
-
-    public boolean equals(MyString other)
-    {
-        if(this == other)
-        {
-            return true;
-        }
-        if(other == null)
-        {
-            return false;
-        }
-        char[] thisChars = toCharArrayInternal();
-        char[] otherChars = other.toCharArrayInternal();
-        if(thisChars.length != otherChars.length)
-        {
-            return false;
-        }
-        for (int i = 0; i < thisChars.length; i++)
-        {
-            if(thisChars[i] != otherChars[i])
-            {
-                return false;
-            }
+    public boolean equals(MyString other) {
+        if (this == other) return true;
+        if (other == null || size != other.size) return false;
+        for (int i = 0; i < size; i++) {
+            if (data[i] != other.data[i]) return false;
         }
         return true;
     }
-    public int compareTo(MyString other)
-    {
-        if(other == null)
-        {
-            return 1;
+    public int compareTo(MyString other) {
+        if (other == null) return 1;
+        int min = size < other.size ? size : other.size;
+        for (int i = 0; i < min; i++) {
+            if (data[i] != other.data[i]) return data[i] - other.data[i];
         }
-        char[] thisChars = toCharArrayInternal();
-        char[] otherChars = other.toCharArrayInternal();
-        int length1 = thisChars.length;
-        int length2 = otherChars.length;
-        int minLength = length1 < length2 ? length1 : length2;
-        for(int i = 0; i < minLength; i++)
-        {
-            if(thisChars[i] != otherChars[i])
-            {
-                return thisChars[i] - otherChars[i];
-            }
-        }
-        return length1 - length2;
+        return size - other.size;
     }
-    public MyString substring(int begin, int end)
-    {
-        char[] chars = toCharArrayInternal();
-        if(begin < 0)
-        {
-            begin = 0;
-        }
-        if(end > chars.length)
-        {
-            end = chars.length;
-        }
-        if(begin > end)
-        {
-            return new MyString("");
-        }
-        char[] newchars = new char[end - begin];
-        for(int i = begin; i < end; i++)
-        {
-            newchars[i - begin] = chars[i];
-        }
-        return new MyString(newchars);
+    public MyString substring(int begin, int end) {
+        if (begin < 0) begin = 0;
+        if (end > size) end = size;
+        if (begin >= end) return new MyString("");
+        char[] sub = new char[end - begin];
+        for (int i = begin; i < end; i++) sub[i - begin] = data[i];
+        return new MyString(sub);
     }
-    public int indexOf(char ch)
-    {
-        char[] chars = toCharArrayInternal();
-        for(int i = 0; i < chars.length; i++)
-        {
-            if(chars[i] == ch)
-            {
-                return i;
-            }
+    public int indexOf(char ch) {
+        for (int i = 0; i < size; i++) {
+            if (data[i] == ch) return i;
         }
         return -1;
     }
-    public MyString[] split(char delimiter)
-    {
-        char[] chars = toCharArrayInternal();
-        if(chars.length == 0) {
-            return new MyString[]{new MyString("")};
-        }
-        int delimiterCount = 0;
-        for(int i = 0; i < chars.length; i++) {
-            if(chars[i] == delimiter) {
-                delimiterCount++;
-            }
-        }
-        MyString[] result = new MyString[delimiterCount+1];
-        int start=0;
-        int resultIndex=0;
-        for(int i = 0; i <= chars.length; i++) {
-            if(i == chars.length || chars[i] == delimiter) {
-                int length = i - start;
-                char[] subChars = new char[length];
-                for(int j = 0; j < length; j++) {
-                    subChars[j] = chars[start+j];
-                }
-                result[resultIndex++] = new MyString(subChars);
-                start=i+1;
+    public MyString[] split(char delimiter) {
+        if (size == 0) return new MyString[]{new MyString("")};
+        int count = 1;
+        for (int i = 0; i < size; i++) if (data[i] == delimiter) count++;
+        MyString[] result = new MyString[count];
+        int start = 0, idx = 0;
+        for (int i = 0; i <= size; i++) {
+            if (i == size || data[i] == delimiter) {
+                result[idx++] = substring(start, i);
+                start = i + 1;
             }
         }
         return result;
     }
-    public MyString[] split()
-    {
+    public MyString[] split() {
         return split(' ');
     }
-    private boolean isWhitespace(char ch)
-    {
-        return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' || ch == '\f';
+    public boolean isEmpty() {
+        return size == 0;
     }
-    public boolean isEmpty()
-    {
-        return length() == 0;
+    public MyString concat(MyString other) {
+        if (other == null || other.size == 0) return this;
+        char[] res = new char[size + other.size];
+        for (int i = 0; i < size; i++) res[i] = data[i];
+        for (int i = 0; i < other.size; i++) res[size + i] = other.data[i];
+        return new MyString(res);
     }
-    public MyString concat(MyString other)
-    {
-        if(other == null)
-        {
-            return this;
+    public MyString toLowerCase() {
+        char[] res = new char[size];
+        boolean mod = false;
+        for (int i = 0; i < size; i++) {
+            res[i] = (data[i] >= 'A' && data[i] <= 'Z') ? (char)(data[i] + 32) : data[i];
+            if (res[i] != data[i]) mod = true;
         }
-        char[] thisChars = toCharArrayInternal();
-        char[] otherChars = other.toCharArrayInternal();
-        char[] newChars = new char[thisChars.length + otherChars.length];
-        for(int i = 0; i < thisChars.length; i++)
-        {
-            newChars[i] = thisChars[i];
-        }
-        for(int i = 0; i < otherChars.length; i++)
-        {
-            newChars[i + thisChars.length] = otherChars[i];
-        }
-        return new MyString(newChars);
+        return mod ? new MyString(res) : this;
     }
-    public MyString toLowerCase()
-    {
-        char[] chars = toCharArrayInternal();
-        char[] newChars = new char[chars.length];
-        boolean changed = false;
-        for(int i = 0; i < chars.length; i++)
-        {
-            char ch = chars[i];
-            if(ch >= 'A' && ch <= 'Z')
-            {
-                newChars[i] = (char)(ch + 32);
-                changed = true;
-            }
-            else
-            {
-                newChars[i] = ch;
-            }
+    public MyString toUpperCase() {
+        char[] res = new char[size];
+        boolean mod = false;
+        for (int i = 0; i < size; i++) {
+            res[i] = (data[i] >= 'a' && data[i] <= 'z') ? (char)(data[i] - 32) : data[i];
+            if (res[i] != data[i]) mod = true;
         }
-        return changed ? new MyString(newChars) : this;
+        return mod ? new MyString(res) : this;
     }
-    public MyString toUpperCase()
-    {
-        char[] chars = toCharArrayInternal();
-        char[] newChars = new char[chars.length];
-        boolean changed = false;
-        for(int i = 0; i < chars.length; i++)
-        {
-            char ch = chars[i];
-            if(ch >= 'a' && ch <= 'z')
-            {
-                newChars[i] = (char)(ch - 32);
-                changed = true;
-            }
-            else
-            {
-                newChars[i] = ch;
-            }
-        }
-        return changed ? new MyString(newChars) : this;
+    public MyString trim() {
+        int s = 0, e = size - 1;
+        while (s < size && data[s] <= ' ') s++;
+        while (e > s && data[e] <= ' ') e--;
+        return (s == 0 && e == size - 1) ? this : substring(s, e + 1);
     }
-    public MyString trim()
-    {
-        char[] chars = toCharArrayInternal();
-        if (chars.length == 0) {
-            return this;
+    public static MyString intToHex(int num) {
+        char[] hexDigits = {
+                '0', '1', '2', '3', '4', '5', '6', '7',
+                '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+        };
+        char[] buffer = new char[8];
+        for (int i = 7; i >= 0; i--) {
+            int nibble = num & 0xF;
+            buffer[i] = hexDigits[nibble];
+            num = num >>> 4;
         }
-        int start = 0;
-        while (start < chars.length && isWhitespace(chars[start])) {
-            start++;
-        }
-        int end = chars.length - 1;
-        while (end >= start && isWhitespace(chars[end])) {
-            end--;
-        }
-        if (start > end) {
-            return new MyString("");
-        }
-        return substring(start, end + 1);
+
+        return new MyString(buffer);
     }
-    public String toString()
-    {
-        return str;
+    public String toString() {
+        return new String(data);
     }
 }

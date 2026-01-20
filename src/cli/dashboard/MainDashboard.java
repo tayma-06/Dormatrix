@@ -2,6 +2,7 @@ package cli.dashboard;
 
 import cli.components.DormatrixBanner;
 import controllers.dashboard.MainDashboardController;
+import libraries.collections.MyString;
 import java.util.Scanner;
 
 public class MainDashboard {
@@ -9,15 +10,13 @@ public class MainDashboard {
     private final Scanner sc = new Scanner(System.in);
     private final MainDashboardController controller = new MainDashboardController();
 
-    public void show()
-    {
+    public void show() {
         banner.printBanner();
         System.out.println("-----------------------------------------------------------------------");
         System.out.println("|                   Welcome to IUT Female Dormitory                   |");
         System.out.println("-----------------------------------------------------------------------\n");
 
-        while (true)
-        {
+        while (true) {
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                           Select Role                               |");
             System.out.println("-----------------------------------------------------------------------");
@@ -33,19 +32,19 @@ public class MainDashboard {
             System.out.print("Enter your choice: ");
             int choice = sc.nextInt();
 
-            if (choice == 0)
-            {
+            if (choice == 0) {
                 System.out.println("-----------------------------------------------------------------------");
                 System.out.println("| Exiting Dormatrix. Goodbye!                                         |");
                 System.out.println("-----------------------------------------------------------------------");
                 System.exit(0);
             }
-            sc.nextLine();
-            System.out.print("Enter username: ");
-            String username = sc.nextLine().trim();
-            System.out.print("Enter password: ");
-            String password = sc.nextLine().trim();
 
+            sc.nextLine();
+
+            System.out.print("Enter username: ");
+            MyString username = new MyString(sc.nextLine().trim());
+            System.out.print("Enter password: ");
+            MyString password = new MyString(sc.nextLine().trim());
             controller.handleRoleInput(choice, username, password);
         }
     }

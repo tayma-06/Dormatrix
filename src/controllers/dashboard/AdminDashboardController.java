@@ -1,27 +1,66 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
+import cli.forms.*;
+import cli.views.*;
+import controllers.authentication.AccountManager;
+import java.util.Scanner;
 
-public class AdminDashboardController
-{
-    MainDashboard mainDashboard = new MainDashboard();
-    public void handleInput(int choice, String username)
-    {
+public class AdminDashboardController {
+    private final MainDashboard mainDashboard;
+    private final AccountManager accountManager;
+    private final Scanner scanner;
+    private final CreateAccount createAccountForm;
+    private final DeleteAccount deleteAccountForm;
+    private final ViewAccount viewAccountForm;
+    private final SearchUser searchUserForm;
+
+    public AdminDashboardController() {
+        this.mainDashboard = new MainDashboard();
+        this.accountManager = new AccountManager();
+        this.scanner = new Scanner(System.in);
+        this.createAccountForm = new CreateAccount(accountManager, scanner);
+        this.deleteAccountForm = new DeleteAccount(accountManager, scanner);
+        this.viewAccountForm = new ViewAccount(accountManager, scanner);
+        this.searchUserForm = new SearchUser(accountManager, scanner);
+    }
+
+    public void handleInput(int choice, String username) {
         switch (choice) {
             case 1:
-                System.out.println("Creating a new account...");
+                createAccountForm.show();
                 break;
             case 2:
-                System.out.println("Deleting an account...");
+                deleteAccountForm.show();
                 break;
             case 3:
-                System.out.println("Viewing accounts grouped by role...");
+                handleViewMenu();
                 break;
             case 0:
                 mainDashboard.show();
                 break;
             default:
                 System.out.println("Invalid choice. Please try again...");
+        }
+    }
+    private void handleViewMenu() {
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("VIEW & SEARCH ACCOUNTS");
+        System.out.println("=".repeat(50));
+        System.out.println("1. View Accounts (By Role or All)");
+        System.out.println("2. Search User by ID");
+        System.out.print("Enter choice: ");
+        int viewChoice = scanner.nextInt();
+        scanner.nextLine();
+        switch (viewChoice) {
+            case 1:
+                viewAccountForm.show();
+                break;
+            case 2:
+                searchUserForm.show();
+                break;
+            default:
+                System.out.println("Invalid choice!");
         }
     }
 }

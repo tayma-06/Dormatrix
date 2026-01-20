@@ -19,8 +19,13 @@ public class Student extends User{
 
     public void setRoomNumber(String roomNumber) { this.roomNumber = roomNumber; }
 
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     @Override
     public String toFileString() {
-        return id + "|" + name + "|STUDENT|" + department + "|" + passwordHash + "|" + phoneNumber + "|" + email;}
+        return id + "|" + name + "|STUDENT|" + department + "|" + passwordHash + "|" + phoneNumber + "|" + email;
+    }
 
 }
