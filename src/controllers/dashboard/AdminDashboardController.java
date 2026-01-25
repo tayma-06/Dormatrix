@@ -1,6 +1,5 @@
 package controllers.dashboard;
 
-import cli.dashboard.AdminDashboard;
 import cli.dashboard.MainDashboard;
 import cli.forms.*;
 import cli.views.*;

@@ -2,6 +2,7 @@ package controllers.dashboard;
 import cli.dashboard.*;
 import controllers.authentication.AuthController;
 import controllers.authentication.AccountManager;
+import models.users.User;
 import libraries.collections.MyString;
 public class MainDashboardController {
     private final AuthController authController = new AuthController();
@@ -21,9 +22,14 @@ public class MainDashboardController {
         System.out.println("\n-----------------------------------------------------------------------");
         System.out.println("| Login successful!                                                    |");
         System.out.println("-----------------------------------------------------------------------\n");
+        User loggedInUser = authController.getUserByUsername(username, role);
         Dashboard dashboard = getDashboardForRole(choice);
         if (dashboard != null) {
-            dashboard.show(username.getValue());
+            if (loggedInUser != null) {
+                dashboard.show(loggedInUser.getName());
+            } else {
+                dashboard.show(username.getValue());
+            }
         } else {
             System.out.println("Dashboard not available for this role.");
         }
