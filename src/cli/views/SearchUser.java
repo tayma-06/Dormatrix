@@ -11,7 +11,7 @@ public class SearchUser {
     }
     public void show() {
         System.out.println();
-        System.out.println("---SEARCH USER---"); // will clean the ui later
+        System.out.println("--------------SEARCH USER----------------");
         System.out.print("Enter User ID: ");
         MyString id = new MyString(scanner.nextLine().trim());
         String result = manager.findUserDetails(id);
