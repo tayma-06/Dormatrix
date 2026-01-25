@@ -1,9 +1,10 @@
 package controllers.dashboard;
-
 import cli.dashboard.MainDashboard;
 import cli.forms.*;
 import cli.views.*;
 import controllers.authentication.AccountManager;
+
+
 import java.util.Scanner;
 
 public class AdminDashboardController {
@@ -62,7 +63,7 @@ public class AdminDashboardController {
                 searchUserForm.show();
                 break;
             case 0:
-                mainDashboard.show();
+                return;
             default:
                 System.out.println("Invalid choice!");
         }

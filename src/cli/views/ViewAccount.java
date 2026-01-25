@@ -12,8 +12,7 @@ public class ViewAccount {
         this.scanner = scanner;
     }
     public void show() {
-        System.out.println("\n=== VIEW ACCOUNTS ===");
-        System.out.println("1-6: Specific Role, 7: View All");
+        System.out.println();
         System.out.println("-----------------------------------------------------------------------");
         System.out.println("|                          View Accounts                              |");
         System.out.println("-----------------------------------------------------------------------");
@@ -39,7 +38,9 @@ public class ViewAccount {
         MyString filename = manager.getFilename(role);
         File file = new File(filename.getValue());
         System.out.println();
-        System.out.println("------------- " + role.getValue() + " -------------");
+        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("                          "+ role.getValue() +"                        ");
+        System.out.println("-----------------------------------------------------------------------");
 //        if (!file.exists()) {
 //            System.out.println("(No records found)");
 //            return;
@@ -55,7 +56,7 @@ public class ViewAccount {
         } catch (IOException e) {
             System.out.println("Error reading file.");
         }
-        System.out.println("---------------------------------------------------");
+        System.out.println("-----------------------------------------------------------------------");
     }
     private void viewAll() {
         MyString[] roles = {
