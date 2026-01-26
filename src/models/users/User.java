@@ -27,6 +27,7 @@ public abstract class User {
     public String getName() { return name; }
     public String getRole() { return role; }
     public String getPasswordHash() { return passwordHash; }
+    public String getPhoneNumber() { return phoneNumber; }
 
     public void setName(String name) { this.name = name; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }

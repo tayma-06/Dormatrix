@@ -8,6 +8,6 @@ public class SystemAdmin extends User{
 
     @Override
     public String toFileString() {
-        return "";
+        return id + "|" + name + "|ADMIN|"  + "|" + passwordHash + "|" + phoneNumber;
     }
 }

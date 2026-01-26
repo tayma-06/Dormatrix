@@ -7,6 +7,6 @@ public class StoreInCharge extends User{
 
     @Override
     public String toFileString() {
-        return "";
+        return id + "|" + name + "|STORE_IN_CHARGE|"  + "|" + passwordHash + "|" + phoneNumber ;
     }
 }

@@ -4,8 +4,9 @@ public class HallAttendant extends User{
 
     private String email;
 
-    public HallAttendant(String id, String name, String role, String passwordHash, String phoneNumber) {
+    public HallAttendant(String id, String name, String role, String passwordHash, String phoneNumber, String email) {
         super(id, name, role, passwordHash, phoneNumber);
+        this.email = email;
     }
 
 
@@ -19,6 +20,6 @@ public class HallAttendant extends User{
 
     @Override
     public String toFileString() {
-        return "";
+        return id + "|" + name + "|HALL_ATTENDANT|"  + "|" + passwordHash + "|" + phoneNumber + "|" + email;
     }
 }

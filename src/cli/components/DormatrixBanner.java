@@ -1,6 +1,7 @@
 package cli.components;
 
-public class DormatrixBanner {
+public class DormatrixBanner
+{
     public void printBanner()
     {
         System.out.println(
