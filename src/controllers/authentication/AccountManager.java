@@ -9,7 +9,6 @@ public class AccountManager {
     public boolean userExists(MyString userId, MyString role) {
         MyString filename = getFilename(role);
         File file = new File(filename.getValue());
-        //if (!file.exists()) return false;
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -24,7 +23,7 @@ public class AccountManager {
     public boolean registerUser(User user, MyString role) {
         MyString filename = getFilename(role);
         File dir = new File(USER_DATA_PATH.getValue());
-        if (!dir.exists()) dir.mkdirs(); // comment out later
+        if (!dir.exists()) dir.mkdirs();
         try (FileWriter fw = new FileWriter(filename.getValue(), true)) {
             fw.write(user.toFileString() + "\n");
             return true;
@@ -35,7 +34,6 @@ public class AccountManager {
     public boolean deleteUser(MyString userId, MyString role) {
         MyString filename = getFilename(role);
         File file = new File(filename.getValue());
-        //if (!file.exists()) return false;
         try {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             StringBuilder content = new StringBuilder();
@@ -80,7 +78,7 @@ public class AccountManager {
                         return "Found: " + parts[1].getValue() + " (" + role.getValue() + ")";
                     }
                 }
-            } catch (IOException e) { }
+            } catch (IOException e) {}
         }
         return null;
     }

@@ -1,9 +1,10 @@
 package controllers.dashboard;
-
 import cli.dashboard.MainDashboard;
 import cli.forms.*;
 import cli.views.*;
 import controllers.authentication.AccountManager;
+
+
 import java.util.Scanner;
 
 public class AdminDashboardController {
@@ -44,11 +45,13 @@ public class AdminDashboardController {
         }
     }
     private void handleViewMenu() {
-        System.out.println("\n" + "=".repeat(50));
-        System.out.println("VIEW & SEARCH ACCOUNTS");
-        System.out.println("=".repeat(50));
-        System.out.println("1. View Accounts (By Role or All)");
-        System.out.println("2. Search User by ID");
+        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("|                      View and Search Accounts                       |");
+        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("| 1. View Accounts (By Role or All)                                   |");
+        System.out.println("| 2. Search User by ID                                                |");
+        System.out.println("| 0. Exit                                                             |");
+        System.out.println("-----------------------------------------------------------------------");
         System.out.print("Enter choice: ");
         int viewChoice = scanner.nextInt();
         scanner.nextLine();
@@ -59,6 +62,8 @@ public class AdminDashboardController {
             case 2:
                 searchUserForm.show();
                 break;
+            case 0:
+                return;
             default:
                 System.out.println("Invalid choice!");
         }

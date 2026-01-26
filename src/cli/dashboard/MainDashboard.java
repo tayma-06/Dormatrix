@@ -41,7 +41,7 @@ public class MainDashboard {
 
             sc.nextLine();
 
-            System.out.print("Enter username: ");
+            System.out.print("Enter userID: ");
             MyString username = new MyString(sc.nextLine().trim());
             System.out.print("Enter password: ");
             MyString password = new MyString(sc.nextLine().trim());
