@@ -18,20 +18,24 @@ public class Student extends User{
     public String getRoomNumber() { return roomNumber; }
 
     public void setRoomNumber(String roomNumber) { this.roomNumber = roomNumber; }
-
     public void setEmail(String email) {
         this.email = email;
     }
 
+    // creates a public info suitable for complaint storage
+    public StudentPublicInfo publicInfo()
+    {
+        return new StudentPublicInfo(id, name, roomNumber);
+    }
     @Override
     public String toFileString() {
         return id + "|" + name + "|STUDENT|" + department + "|" + passwordHash + "|" + phoneNumber + "|" + email;
     }
 
-    public String toComplaintFileString()
-    {
-        return id+"|"+name+"|"+roomNumber;
-    }
+    // public String toComplaintFileString()
+    // {
+    //     return id+"|"+name+"|"+roomNumber;
+    // }
 
     public static Student fromFileString(String fileString)
     {
