@@ -140,4 +140,64 @@ public class MyString {
     public String toString() {
         return new String(data);
     }
+
+    public boolean contains(MyString sub){
+        if (sub == null) return false;
+        if (sub.size == 0) return true;
+        if (sub.size > this.size) return false;
+
+        for (int i = 0; i <= this.size - sub.size; i++){
+            boolean ok = true;
+            for (int j = 0; j < sub.size; j++){
+                if (this.data[i+j] != sub.data[j]){
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) return true;
+        }
+        return false;
+    }
+
+    public boolean containsAny(MyString ... keys){
+        if (keys == null) return false;
+
+        for (int i = 0; i < keys.length; i++){
+            MyString k = keys[i];
+            if (k == null || k.size == 0) continue;
+            if (this.contains(k)) return true;
+        }
+        return false;
+    }
+
+    public static MyString join(char delimiter, MyString ... parts){
+        if (parts == null || parts.length == 0) return new MyString("");
+
+        // compute total size needed
+        int totalLength = 0;
+        for (int i = 0; i < parts.length; i++){
+            if (parts[i] != null) totalLength += parts[i].size;
+        }
+        // add delimiter count between elements (n - 1 delimiters)
+        totalLength += parts.length - 1;
+        // edge case
+        if (totalLength <= 0) return new MyString("");
+
+        // build final char array
+        char[] result = new char[totalLength];
+        int position = 0;
+
+        for (int i = 0; i < parts.length; i++){
+            if (i > 0) result[position++] = delimiter;
+
+            MyString p = parts[i];
+            if (p == null || p.size == 0) continue;
+
+            for (int j = 0; j < p.size; j++){
+                result[position++] = p.data[j];
+            }
+        }
+
+        return new MyString(result);
+    }
 }
