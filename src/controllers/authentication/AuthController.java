@@ -7,15 +7,20 @@ import libraries.collections.MyString;
 import java.io.*;
 
 public class AuthController {
+
     private static final MyString DATA_DIR = new MyString("data/users/");
+
     private MyString getFilePath(MyString role) {
         return DATA_DIR.concat(role.toLowerCase()).concat(new MyString("s.txt"));
     }
+
     public boolean authenticateUser(MyString username, MyString password, MyString role) {
         try {
             File file = new File(getFilePath(role).getValue());
             if (!file.exists()) return false;
+
             MyString hashedInput = HashFunction.hashPassword(password);
+
             try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -32,19 +37,24 @@ public class AuthController {
         }
         return false;
     }
+
     public void createDefaultAdmin() {
         File dir = new File(DATA_DIR.getValue());
         if (!dir.exists()) dir.mkdirs();
+
         File adminFile = new File(getFilePath(new MyString("ADMIN")).getValue());
         if (adminFile.exists()) return;
+
         MyString u = ConfigLoader.getAdminUsername();
         MyString p = ConfigLoader.getAdminPassword();
         MyString n = ConfigLoader.getAdminName();
         MyString ph = ConfigLoader.getAdminPhone();
+
         if (u == null || p == null || n == null || ph == null) {
             System.err.println("Setup Failed: specific keys missing in config/admin.config");
             return;
         }
+
         try (PrintWriter writer = new PrintWriter(new FileWriter(adminFile))) {
             MyString hashed = HashFunction.hashPassword(p);
             MyString record = u.concat(new MyString("|"))
@@ -58,10 +68,12 @@ public class AuthController {
             System.err.println("Admin Init Error: " + e.getMessage());
         }
     }
+
     public User getUserByUsername(MyString username, MyString role) {
         try {
             File file = new File(getFilePath(role).getValue());
             if (!file.exists()) return null;
+
             try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -76,15 +88,8 @@ public class AuthController {
         }
         return null;
     }
-    private User createUserFromParts(MyString[] parts, String role) {
-        // Common data for all users
-        // Index 0: ID
-        // Index 1: Name
-        // Index 2: Role (TEXT)
-        // Index 3: Department (or N/A)
-        // Index 4: Password Hash
-        // Index 5: Phone
 
+    private User createUserFromParts(MyString[] parts, String role) {
         String id = parts[0].getValue();
         String name = parts[1].getValue();
         String hash = parts.length > 4 ? parts[4].getValue() : "";
@@ -92,10 +97,15 @@ public class AuthController {
 
         switch (role) {
             case "STUDENT":
-                Student s = new Student(id, name, role, hash, phone);
-                if (parts.length > 3) s.setDepartment(parts[3].getValue());
-                if (parts.length > 6) s.setEmail(parts[6].getValue());
-                if (parts.length > 7) s.setRoomNumber(parts[7].getValue());
+                String dept = parts.length > 3 ? parts[3].getValue() : "N/A";
+                String email = parts.length > 6 ? parts[6].getValue() : "N/A";
+
+                Student s = new Student(id, name, role, hash, phone, email);
+                s.setDepartment(dept);
+
+                if (parts.length > 7) {
+                    s.setRoomNumber(parts[7].getValue());
+                }
                 return s;
 
             case "HALL_ATTENDANT":

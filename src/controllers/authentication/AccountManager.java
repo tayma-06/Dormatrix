@@ -1,9 +1,7 @@
 package controllers.authentication;
-
-import models.users.*;
+import models.users.User;
 import libraries.collections.MyString;
 import java.io.*;
-
 public class AccountManager {
     private static final MyString USER_DATA_PATH = new MyString("data/users/");
     public boolean userExists(MyString userId, MyString role) {
@@ -27,7 +25,6 @@ public class AccountManager {
         MyString filename = getFilename(role);
         File dir = new File(USER_DATA_PATH.getValue());
         if (!dir.exists()) dir.mkdirs();
-
         try (FileWriter fw = new FileWriter(filename.getValue(), true)) {
             fw.write(user.toFileString() + "\n");
             return true;
@@ -53,7 +50,6 @@ public class AccountManager {
                 content.append(line).append("\n");
             }
             reader.close();
-
             if (found) {
                 PrintWriter writer = new PrintWriter(new FileWriter(file));
                 writer.print(content.toString());
@@ -65,14 +61,12 @@ public class AccountManager {
         }
         return false;
     }
-
     public String findUserDetails(MyString userId) {
         MyString[] roles = {
                 new MyString("STUDENT"), new MyString("HALL_ATTENDANT"),
                 new MyString("MAINTENANCE_WORKER"), new MyString("STORE_IN_CHARGE"),
                 new MyString("HALL_OFFICER"), new MyString("ADMIN")
         };
-
         for (MyString role : roles) {
             MyString filename = getFilename(role);
             File file = new File(filename.getValue());
@@ -89,7 +83,6 @@ public class AccountManager {
         }
         return null;
     }
-
     public MyString getFilename(MyString role) {
         return USER_DATA_PATH.concat(role.toLowerCase()).concat(new MyString("s.txt"));
     }

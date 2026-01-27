@@ -9,7 +9,7 @@ public class InventoryController {
 
     private Item[] items = new Item[100];
     private int count = 0;
-    private final String FILE = "data/inventory.txt";
+    private final String FILE = "data/inventories/inventory.txt";
 
     public InventoryController() {
         load();

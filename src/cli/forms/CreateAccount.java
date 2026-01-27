@@ -66,9 +66,9 @@ public class CreateAccount {
 
         if (newUser != null) {
             if (manager.registerUser(newUser, role)) {
-                System.out.println("✓ Account created successfully!");
+                System.out.println(" Account created successfully!");
             } else {
-                System.out.println("✗ System Error: Could not save file.");
+                System.out.println(" System Error: Could not save file.");
             }
         }
     }
@@ -82,9 +82,8 @@ public class CreateAccount {
             System.out.print("Enter Email: ");
             String email = scanner.nextLine().trim();
 
-            Student s = new Student(id.getValue(), name.getValue(), role.getValue(), pass.getValue(), phone.getValue());
+            Student s = new Student(id.getValue(), name.getValue(), role.getValue(), pass.getValue(), phone.getValue(), email);
             s.setDepartment(dept);
-            s.setEmail(email);
             return s;
 
         } else if (roleStr.equals("MAINTENANCE_WORKER")) {

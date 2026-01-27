@@ -7,8 +7,8 @@ import java.io.*;
 
 public class PurchaseController {
     private InventoryController inventory;
-    private final String SALES = "data/sales.txt";
-    private final String DUES = "data/dues.txt";
+    private final String SALES = "data/inventories/sales.txt";
+    private final String DUES = "data/inventories/dues.txt";
 
     public PurchaseController(InventoryController inventory) {
         this.inventory = inventory;

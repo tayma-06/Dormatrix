@@ -3,20 +3,18 @@ package cli.dashboard;
 import controllers.dashboard.StudentDashboardController;
 import java.util.Scanner;
 
-public class StudentDashboard implements Dashboard{
-    
+public class StudentDashboard implements Dashboard {
+
     private final StudentDashboardController controller = new StudentDashboardController();
     private final Scanner sc = new Scanner(System.in);
 
     @Override
-    public void show(String username)
-    {
-        while (true)
-        {
-            System.out.println("-----------------------------------------------------------------------");
+    public void show(String username) {
+        while (true) {
+            System.out.println("\n-----------------------------------------------------------------------");
             System.out.println("|                        STUDENT DASHBOARD                            |");
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println("  Welcome, " + username + "                                            ");
+            System.out.println("  Welcome, " + username);
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("| 1. View Room Info                                                   |");
             System.out.println("| 2. Facility Booking                                                 |");
@@ -27,15 +25,25 @@ public class StudentDashboard implements Dashboard{
             System.out.println("| 7. View Announcements                                               |");
             System.out.println("| 0. Logout                                                           |");
             System.out.println("-----------------------------------------------------------------------");
-
             System.out.print("Enter your choice: ");
-            int choice = sc.nextInt();
+
+            int choice = -1;
+            try {
+                choice = sc.nextInt();
+                sc.nextLine();
+            } catch (Exception e) {
+                System.out.println("Invalid input. Please enter a number.");
+                sc.nextLine();
+                continue;
+            }
 
             if (choice == 0) {
                 System.out.println("-----------------------------------------------------------------------");
                 System.out.println("| Logging Out....                                                     |");
                 System.out.println("-----------------------------------------------------------------------");
+                return;
             }
+
             controller.handleInput(choice, username);
         }
     }

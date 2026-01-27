@@ -23,7 +23,7 @@ public class MealTokenPurchase {
             System.out.println("------------------------------------------------");
             System.out.println("| 1. Buy Meal Token                            |");
             System.out.println("| 2. Validate Meal Token                       |");
-            System.out.println("| 0. Back                                     |");
+            System.out.println("| 0. Back                                      |");
             System.out.println("------------------------------------------------");
             System.out.print("Enter choice: ");
 
