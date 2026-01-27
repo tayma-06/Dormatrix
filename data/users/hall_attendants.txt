@@ -1,0 +1,2 @@
+HA01|Rahima Khatun|HALL_ATTENDANT|N/A|62afa2d2|01700000000|rahima@hall.com
+HA02|Halima Begum|HALL_ATTENDANT|N/A|62afa2d2|01700000000|halima@hall.com
