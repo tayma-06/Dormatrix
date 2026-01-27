@@ -9,11 +9,14 @@ public class AccountManager {
     public boolean userExists(MyString userId, MyString role) {
         MyString filename = getFilename(role);
         File file = new File(filename.getValue());
+        if (!file.exists()) return false;
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 MyString[] parts = new MyString(line).split('|');
-                if (parts.length > 0 && parts[0].trim().equals(userId)) return true;
+                if (parts.length > 0 && parts[0].getValue().trim().equals(userId.getValue().trim())) {
+                    return true;
+                }
             }
         } catch (IOException e) {
             return false;
@@ -24,6 +27,7 @@ public class AccountManager {
         MyString filename = getFilename(role);
         File dir = new File(USER_DATA_PATH.getValue());
         if (!dir.exists()) dir.mkdirs();
+
         try (FileWriter fw = new FileWriter(filename.getValue(), true)) {
             fw.write(user.toFileString() + "\n");
             return true;
@@ -42,13 +46,14 @@ public class AccountManager {
             while ((line = reader.readLine()) != null) {
                 MyString mLine = new MyString(line);
                 MyString[] parts = mLine.split('|');
-                if (parts.length > 0 && parts[0].trim().equals(userId)) {
+                if (parts.length > 0 && parts[0].getValue().trim().equals(userId.getValue().trim())) {
                     found = true;
                     continue;
                 }
                 content.append(line).append("\n");
             }
             reader.close();
+
             if (found) {
                 PrintWriter writer = new PrintWriter(new FileWriter(file));
                 writer.print(content.toString());
@@ -60,12 +65,14 @@ public class AccountManager {
         }
         return false;
     }
+
     public String findUserDetails(MyString userId) {
         MyString[] roles = {
                 new MyString("STUDENT"), new MyString("HALL_ATTENDANT"),
                 new MyString("MAINTENANCE_WORKER"), new MyString("STORE_IN_CHARGE"),
                 new MyString("HALL_OFFICER"), new MyString("ADMIN")
         };
+
         for (MyString role : roles) {
             MyString filename = getFilename(role);
             File file = new File(filename.getValue());
@@ -74,7 +81,7 @@ public class AccountManager {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     MyString[] parts = new MyString(line).split('|');
-                    if (parts.length > 0 && parts[0].trim().equals(userId)) {
+                    if (parts.length > 0 && parts[0].getValue().trim().equals(userId.getValue().trim())) {
                         return "Found: " + parts[1].getValue() + " (" + role.getValue() + ")";
                     }
                 }
@@ -82,6 +89,7 @@ public class AccountManager {
         }
         return null;
     }
+
     public MyString getFilename(MyString role) {
         return USER_DATA_PATH.concat(role.toLowerCase()).concat(new MyString("s.txt"));
     }
