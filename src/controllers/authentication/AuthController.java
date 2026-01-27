@@ -1,6 +1,7 @@
 package controllers.authentication;
 
 import models.users.*;
+import models.enums.WorkerField;
 import libraries.hashing.HashFunction;
 import libraries.collections.MyString;
 import java.io.*;
@@ -33,7 +34,7 @@ public class AuthController {
     }
     public void createDefaultAdmin() {
         File dir = new File(DATA_DIR.getValue());
-        if (!dir.exists()) dir.mkdirs(); // later comment out this
+        if (!dir.exists()) dir.mkdirs();
         File adminFile = new File(getFilePath(new MyString("ADMIN")).getValue());
         if (adminFile.exists()) return;
         MyString u = ConfigLoader.getAdminUsername();
@@ -48,10 +49,9 @@ public class AuthController {
             MyString hashed = HashFunction.hashPassword(p);
             MyString record = u.concat(new MyString("|"))
                     .concat(n).concat(new MyString("|"))
-                    .concat(new MyString("ADMIN| |"))
+                    .concat(new MyString("ADMIN|N/A|"))
                     .concat(hashed).concat(new MyString("|"))
                     .concat(ph);
-
             writer.println(record.getValue());
             System.out.println("Default admin initialized from config file.");
         } catch (IOException e) {
@@ -62,7 +62,6 @@ public class AuthController {
         try {
             File file = new File(getFilePath(role).getValue());
             if (!file.exists()) return null;
-
             try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -78,26 +77,51 @@ public class AuthController {
         return null;
     }
     private User createUserFromParts(MyString[] parts, String role) {
+        // Common data for all users
+        // Index 0: ID
+        // Index 1: Name
+        // Index 2: Role (TEXT)
+        // Index 3: Department (or N/A)
+        // Index 4: Password Hash
+        // Index 5: Phone
+
         String id = parts[0].getValue();
         String name = parts[1].getValue();
         String hash = parts.length > 4 ? parts[4].getValue() : "";
         String phone = parts.length > 5 ? parts[5].getValue() : "";
+
         switch (role) {
             case "STUDENT":
                 Student s = new Student(id, name, role, hash, phone);
                 if (parts.length > 3) s.setDepartment(parts[3].getValue());
                 if (parts.length > 6) s.setEmail(parts[6].getValue());
+                if (parts.length > 7) s.setRoomNumber(parts[7].getValue());
                 return s;
+
             case "HALL_ATTENDANT":
-                return new HallAttendant(id, name, role, hash, phone, parts.length > 6 ? parts[6].getValue() : "");
+                String haEmail = parts.length > 6 ? parts[6].getValue() : "N/A";
+                return new HallAttendant(id, name, role, hash, phone, haEmail);
+
             case "MAINTENANCE_WORKER":
-                return new MaintenanceWorker(id, name, role, hash, phone);
+                String fieldStr = parts.length > 6 ? parts[6].getValue() : "ELECTRICIAN";
+                WorkerField field;
+                try {
+                    field = WorkerField.valueOf(fieldStr);
+                } catch (IllegalArgumentException e) {
+                    field = WorkerField.ELECTRICIAN;
+                }
+                return new MaintenanceWorker(id, name, role, hash, phone, field);
+
             case "STORE_IN_CHARGE":
                 return new StoreInCharge(id, name, role, hash, phone);
+
             case "HALL_OFFICER":
-                return new HallOfficer(id, name, role, hash, phone, parts.length > 6 ? parts[6].getValue() : "");
+                String hoEmail = parts.length > 6 ? parts[6].getValue() : "N/A";
+                return new HallOfficer(id, name, role, hash, phone, hoEmail);
+
             case "ADMIN":
                 return new SystemAdmin(id, name, role, hash, phone);
+
             default:
                 return null;
         }
