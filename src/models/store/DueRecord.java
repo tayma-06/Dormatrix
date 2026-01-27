@@ -17,4 +17,16 @@ public class DueRecord {
         String[] p = line.split(",");
         return new DueRecord(p[0], Double.parseDouble(p[1]));
     }
+
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public void addAmount(double amount) {
+        this.amount += amount;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
 }

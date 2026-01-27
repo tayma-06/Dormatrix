@@ -40,5 +40,9 @@ public class MealToken {
         t.status = TokenStatus.valueOf(p[3]);
         return t;
     }
+
+    public String getTokenId() {
+        return tokenId;
+    }
 }
 
