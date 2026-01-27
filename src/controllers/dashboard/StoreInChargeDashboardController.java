@@ -1,21 +1,26 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
+import cli.views.*;
 
 public class StoreInChargeDashboardController {
     MainDashboard mainDashboard = new MainDashboard();
+    PurchaseView purchaseView = new PurchaseView(); 
+    InventoryListView inventoryList = new InventoryListView();
+
     public void handleInput(int choice, String username)
     {
         switch(choice)
         {
             case 1: 
-                System.out.println("Opening Inventory List...");
-                // TODO: call Inventory class to show inventory list
+                inventoryList.show();
+
                 break;
             case 2:
-                System.out.println("Opening Purchase Record...");
-                // TODO: goes to purchase record class to show purchase record
+                purchaseView.show();  
+
                 break;
+
             case 3:
                 System.out.println("Opening Sales Summary...");
                 // TODO: goes to sales summary class to generate and show sales summary
