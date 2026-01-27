@@ -2,77 +2,52 @@ package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
 import cli.forms.MealTokenPurchase;
-//import cli.views.StoreLedgerView;
+import cli.views.StoreLedgerView;
+import controllers.room.RoomController; // Import the updated RoomController
 
 public class StudentDashboardController {
 
     private final MainDashboard mainDashboard;
     private final MealTokenPurchase mealTokenPurchase;
-    //private final StoreLedgerView storeLedgerView;
+    private final StoreLedgerView storeLedgerView;
+    private final RoomController roomController;
 
     public StudentDashboardController() {
         this.mainDashboard = new MainDashboard();
         this.mealTokenPurchase = new MealTokenPurchase();
-        //this.storeLedgerView = new StoreLedgerView();
+        this.storeLedgerView = new StoreLedgerView();
+        this.roomController = new RoomController();
     }
 
     public void handleInput(int choice, String username) {
         switch (choice) {
-
             case 1:
-                showRoomInfo(username);
+                roomController.showStudentRoomDetails(username);
                 break;
 
             case 2:
-                openFacilityBooking(username);
+                System.out.println(">> Feature [Facility Booking] is under development.");
                 break;
-
             case 3:
-                mealTokenPurchase.show(username);   
+                mealTokenPurchase.show(username);
                 break;
-
             case 4:
-                // storeLedgerView.show(username);     // ✅ Store & Dues Module
-                // break;
-
+                storeLedgerView.show(username);
+                break;
             case 5:
-                accessLostAndFound();
+                System.out.println(">> Feature [Lost & Found] is under development.");
                 break;
-
             case 6:
-                submitComplaint(username);
+                System.out.println(">> Feature [Submit Complaint] is under development.");
                 break;
-
             case 7:
-                fetchAnnouncements();
+                System.out.println(">> Feature [Announcements] is under development.");
                 break;
-
             case 0:
                 mainDashboard.show();
                 break;
-
             default:
                 System.out.println("Invalid choice. Please try again.");
         }
-    }
-
-    private void showRoomInfo(String username) {
-        System.out.println("Displaying Room Information for " + username + "...\n");
-    }
-
-    private void openFacilityBooking(String username) {
-        System.out.println("Opening Facility Booking for " + username + "...\n");
-    }
-
-    private void accessLostAndFound() {
-        System.out.println("Accessing Lost & Found...\n");
-    }
-
-    private void submitComplaint(String username) {
-        System.out.println("Submitting Complaint for " + username + "...\n");
-    }
-
-    private void fetchAnnouncements() {
-        System.out.println("Fetching Announcements...\n");
     }
 }

@@ -4,7 +4,7 @@ import models.store.DueRecord;
 import java.io.*;
 
 public class DueController {
-    private final String FILE = "data/dues.txt";
+    private final String FILE = "data/inventories/dues.txt";
 
     public double getDue(String studentId) {
         try (BufferedReader br = new BufferedReader(new FileReader(FILE))) {
