@@ -1,0 +1,20 @@
+230042101|Ayesha Siddiqua|STUDENT|CSE|62afa2d2|01700000001|ayesha@iut-dhaka.edu|301
+230042102|Fatema Tuz Zohra|STUDENT|EEE|62afa2d2|01700000002|fatema@iut-dhaka.edu|302
+230042103|Sumaiya Islam|STUDENT|SWE|62afa2d2|01700000003|sumaiya@iut-dhaka.edu|303
+230042104|Jannatul Ferdous|STUDENT|CSE|62afa2d2|01700000004|jannatul@iut-dhaka.edu|304
+230042105|Nusrat Jahan|STUDENT|EEE|62afa2d2|01700000005|nusrat@iut-dhaka.edu|305
+230042106|Sadia Afrin|STUDENT|MPE|62afa2d2|01700000006|sadia@iut-dhaka.edu|306
+230042107|Mariam Begum|STUDENT|CEE|62afa2d2|01700000007|mariam@iut-dhaka.edu|307
+230042108|Farhana Akter|STUDENT|CSE|62afa2d2|01700000008|farhana@iut-dhaka.edu|308
+230042109|Tasnim Rahman|STUDENT|SWE|62afa2d2|01700000009|tasnim@iut-dhaka.edu|309
+230042110|Khadija Kubra|STUDENT|EEE|62afa2d2|01700000010|khadija@iut-dhaka.edu|310
+230042111|Zainab Ahmed|STUDENT|MPE|62afa2d2|01700000011|zainab@iut-dhaka.edu|311
+230042112|Laila Yasmin|STUDENT|BTM|62afa2d2|01700000012|laila@iut-dhaka.edu|312
+230042113|Humaira Himu|STUDENT|CSE|62afa2d2|01700000013|humaira@iut-dhaka.edu|313
+230042114|Nadia Sultana|STUDENT|EEE|62afa2d2|01700000014|nadia@iut-dhaka.edu|314
+230042115|Rubina Khan|STUDENT|SWE|62afa2d2|01700000015|rubina@iut-dhaka.edu|315
+230042116|Parul Akhtar|STUDENT|CEE|62afa2d2|01700000016|parul@iut-dhaka.edu|316
+230042117|Shirin Akter|STUDENT|CSE|62afa2d2|01700000017|shirin@iut-dhaka.edu|317
+230042118|Tanjina Islam|STUDENT|IPE|62afa2d2|01700000018|tanjina@iut-dhaka.edu|318
+230042119|Umme Habiba|STUDENT|BTM|62afa2d2|01700000019|habiba@iut-dhaka.edu|319
+230042120|Fariha Tasin|STUDENT|CSE|62afa2d2|01700000020|fariha@iut-dhaka.edu|320
