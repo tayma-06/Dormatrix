@@ -46,9 +46,6 @@ public class StudentDashboardController {
             case 7:
                 System.out.println(">> Feature [Announcements] is under development.");
                 break;
-            case 8:
-                roomController.showComplaintsForMyRoom(username);
-                break;
             case 0:
                 mainDashboard.show();
                 break;
