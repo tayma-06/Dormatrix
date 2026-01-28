@@ -7,7 +7,7 @@ public abstract class SlotAllocator {
     public static final int REAL_MINS_PER_SLOT = 2;
     public static final int TOTAL_SLOTS = 6;
 
-    public int getCurrentSlotIndex() {
+    public static int getCurrentSlotIndex() {
         // Uses system clock to find which 2-minute window we are in within the 12-min cycle
         long minuteInHour = LocalTime.now().getMinute();
         long secondInHour = LocalTime.now().getSecond();
