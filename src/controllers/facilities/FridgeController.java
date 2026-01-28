@@ -1,7 +1,7 @@
 package controllers.facilities;
 
-import exceptions.SlotUnavailableException;
 import libraries.slots.FirstFitAllocator;
+import exceptions.SlotUnavailableException;
 
 public class FridgeController {
     private FirstFitAllocator allocator = new FirstFitAllocator();
@@ -13,7 +13,6 @@ public class FridgeController {
             currentFridgeSlots[assignedSlot] = studentId;
             System.out.println("Allocated slot: " + assignedSlot);
         } catch (SlotUnavailableException e) {
-            // This is where you handle the exception you created
             System.err.println("Booking Failed: " + e.getMessage());
         }
     }

@@ -4,8 +4,9 @@ import cli.dashboard.MainDashboard;
 import cli.views.MessageView;
 import cli.forms.MealTokenPurchase;
 import cli.views.StoreLedgerView;
-import controllers.room.RoomController; // Import the updated RoomController
-
+import controllers.room.RoomController;
+import cli.dashboard.FacilityDashboard;
+import controllers.facilities.*;
 public class StudentDashboardController {
 
     private final MainDashboard mainDashboard;
@@ -13,6 +14,10 @@ public class StudentDashboardController {
     private final StoreLedgerView storeLedgerView;
     private final RoomController roomController;
     private final MessageView msg;
+    private final StudyRoomController studyRoomController;
+    private final FridgeController fridgeController;
+    private final LaundryController laundryController;
+    private final FacilityDashboard facilityDashboard;
 
     public StudentDashboardController() {
         this.mainDashboard = new MainDashboard();
@@ -20,6 +25,10 @@ public class StudentDashboardController {
         this.storeLedgerView = new StoreLedgerView();
         this.roomController = new RoomController();
         this.msg = new MessageView();
+        this.studyRoomController = new StudyRoomController();
+        this.fridgeController = new FridgeController();
+        this.laundryController = new LaundryController();
+        this.facilityDashboard = new FacilityDashboard();
     }
 
     public void handleInput(int choice, String username) {
@@ -29,7 +38,7 @@ public class StudentDashboardController {
                 break;
 
             case 2:
-                System.out.println(">> Feature [Facility Booking] is under development.");
+                facilityDashboard.showMenu(username, studyRoomController, fridgeController, laundryController);
                 break;
             case 3:
                 mealTokenPurchase.show(username);
