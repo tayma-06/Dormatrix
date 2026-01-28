@@ -200,4 +200,23 @@ public class MyString {
 
         return new MyString(result);
     }
+
+    public MyString replace(char oldCh, char newCh) {
+        if (size == 0) return this;
+
+        char[] res = new char[size];
+        boolean mod = false;
+
+        for (int i = 0; i < size; i++) {
+            char c = data[i];
+            if (c == oldCh) {
+                res[i] = newCh;
+                mod = true;
+            } else {
+                res[i] = c;
+            }
+        }
+
+        return mod ? new MyString(res) : this;
+    }
 }

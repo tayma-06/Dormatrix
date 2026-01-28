@@ -1,4 +1,5 @@
 package models.complaints;
+import libraries.collections.MyString;
 import models.enums.ComplaintCategory;
 import models.enums.ComplaintStatus;
 import models.enums.PriorityLevel;
@@ -51,6 +52,12 @@ public class Complaint{
         this.status = ComplaintStatus.ASSIGNED;
     }
 
+    public void clearAssignment(){
+        this.assignedWorkerId = "";
+        this.status = ComplaintStatus.SUBMITTED;
+    }
+
+
     public void setStatus(ComplaintStatus status)
     {
         this.status = status;
@@ -67,6 +74,15 @@ public class Complaint{
     public PriorityLevel getPriority(){ return priority; }
     public String getTags(){ return tags; }
 
+    public void appendTagNote(String note){
+        if (note == null) return;
+
+        // prevent breaking file format (| delimiter)
+        String safe = new MyString(note).replace('|', '/').getValue();
+
+        if (this.tags == null || new MyString(this.tags).trim().isEmpty()) this.tags = safe;
+        else this.tags = this.tags + ";" + safe;
+    }
     
 }
 

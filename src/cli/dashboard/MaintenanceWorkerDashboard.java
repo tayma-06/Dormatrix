@@ -1,6 +1,8 @@
 package cli.dashboard;
 
 import controllers.dashboard.MaintenanceWorkerDashboardController;
+import cli.complaint.WorkerComplaintCLI;
+
 import java.util.Scanner;
 
 public class MaintenanceWorkerDashboard implements Dashboard{
@@ -31,6 +33,12 @@ public class MaintenanceWorkerDashboard implements Dashboard{
                 System.out.println("| Logging Out....                                                     |");
                 System.out.println("-----------------------------------------------------------------------");
             }
+            if (choice == 2 || choice == 3) {
+                cli.Input.SC.nextLine();
+                new cli.complaint.WorkerComplaintCLI().start(username);
+                continue;
+            }
+
             controller.handleInput(choice, username);
         }
     }

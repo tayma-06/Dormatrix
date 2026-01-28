@@ -5,6 +5,12 @@ import models.room.Room;
 import java.io.*;
 import java.util.*;
 
+import repo.file.FileComplaintRepository;
+import libraries.collections.MyArrayList;
+import libraries.collections.MyString;
+import models.complaints.Complaint;
+
+
 public class RoomController {
 
     private final String ROOM_FILE = "data/rooms/rooms.txt";
@@ -13,9 +19,13 @@ public class RoomController {
     private final StudentRoomView studentRoomView;
     private List<Room> rooms;
 
+    private final FileComplaintRepository complaintRepo;
+
+
     public RoomController() {
         this.rooms = loadRooms();
         this.studentRoomView = new StudentRoomView();
+        this.complaintRepo = new FileComplaintRepository();
 
         if (this.rooms.isEmpty()) {
             seedRooms();
@@ -25,6 +35,10 @@ public class RoomController {
 
     public List<Room> getAllRooms() {
         return rooms;
+    }
+
+    public String fetchStudentRoomNumber(String studentIdentifier) {
+        return getStudentRoomNumber(studentIdentifier);
     }
 
     // ==========================================
@@ -126,6 +140,55 @@ public class RoomController {
             }
         }
     }
+
+    // ==========================================
+    // Shows complaints for room
+    // ==========================================
+    public void showComplaintsForRoom(String roomId) {
+        if (roomId == null || roomId.trim().isEmpty()) {
+            System.out.println("Invalid room.");
+            return;
+        }
+
+        MyArrayList<Complaint> all = complaintRepo.findAll();
+        boolean found = false;
+
+        System.out.println("\n------------------ COMPLAINTS FOR ROOM " + roomId + " ------------------");
+
+        for (int i = 0; i < all.size(); i++) {
+            Complaint c = all.get(i);
+
+            if (new MyString(c.getStudentRoomNo()).trim().equals(new MyString(roomId).trim())) {
+                found = true;
+
+                String wid = c.getAssignedWorkerId();
+                boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
+
+                System.out.println(
+                        "ID: " + c.getComplaintId()
+                                + " | Student: " + c.getStudentId()
+                                + " | Cat: " + c.getCategory().name()
+                                + " | Status: " + c.getStatus().name()
+                                + " | Worker: " + (blank ? "(none)" : wid)
+                                + " | Priority: " + c.getPriority().name()
+                );
+            }
+        }
+
+        if (!found) System.out.println("(No complaints found for this room)");
+        System.out.println("-----------------------------------------------------------------------\n");
+    }
+
+    public void showComplaintsForMyRoom(String studentIdentifier) {
+        String roomNumber = getStudentRoomNumber(studentIdentifier);
+        if (roomNumber == null || roomNumber.equals("UNASSIGNED") || roomNumber.equals("N/A")) {
+            System.out.println("You are not assigned a room yet. No room-based complaints to show.");
+            return;
+        }
+        showComplaintsForRoom(roomNumber);
+    }
+
+
 
     // ==========================================
     // 4. DATA HELPERS

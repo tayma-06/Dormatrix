@@ -1,27 +1,45 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
+import controllers.authentication.AuthController;
+
+import java.util.Scanner;
+
+import libraries.collections.MyArrayList;
+import libraries.collections.MyOptional;
+import libraries.collections.MyString;
+
+import models.complaints.Complaint;
+import models.enums.ComplaintStatus;
+import models.users.MaintenanceWorker;
+
+import repo.file.FileComplaintRepository;
+import repo.file.FileMaintenanceWorkerRepository;
 
 public class MaintenanceWorkerDashboardController {
     MainDashboard mainDashboard = new MainDashboard();
 
+    private final AuthController auth = new AuthController();
+    private final Scanner sc = new Scanner(System.in);
+
+    private final FileComplaintRepository complaintRepo = new FileComplaintRepository();
+    private final FileMaintenanceWorkerRepository workerRepo = new FileMaintenanceWorkerRepository();
     // Returns false is user chooses to logout
     public void handleInput(int choice, String username)
     {
         switch (choice)
         {
-            case 1:     
-                System.out.println("Viewing work field...");
-                //TODO: call work field to show which field he works in
-                break;
-            case 2:
-                System.out.println("Viewing task queue...");
-                //TODO: call task queue for the particular worker type
-                break;
-            case 3:
-                System.out.println("Viewing updated student comment...");
-                //TODO: calls the student complaint class to show the updated status
-                break;
+//            case 1:
+//                System.out.println("Viewing work field...");
+//                viewWorkField(username);
+//                break;
+//            case 2:
+//                System.out.println("Viewing task queue...");
+//                taskQueueMenu(username);
+//                break;
+//            case 3:
+//                viewComplaintUpdates(username);
+//                break;
             case 0:
                 mainDashboard.show();
                 break;
@@ -29,4 +47,6 @@ public class MaintenanceWorkerDashboardController {
                 System.out.println("Invalid choice. Please try again");
         }
     }
+
+
 }

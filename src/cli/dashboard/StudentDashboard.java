@@ -1,6 +1,8 @@
 package cli.dashboard;
 
 import controllers.dashboard.StudentDashboardController;
+import cli.complaint.StudentComplaintCLI;
+
 import java.util.Scanner;
 
 public class StudentDashboard implements Dashboard {
@@ -23,6 +25,7 @@ public class StudentDashboard implements Dashboard {
             System.out.println("| 5. Lost & Found                                                     |");
             System.out.println("| 6. Submit Complaint                                                 |");
             System.out.println("| 7. View Announcements                                               |");
+            System.out.println("| 8. MyRoom Complaints                                                |");
             System.out.println("| 0. Logout                                                           |");
             System.out.println("-----------------------------------------------------------------------");
             System.out.print("Enter your choice: ");
@@ -43,6 +46,13 @@ public class StudentDashboard implements Dashboard {
                 System.out.println("-----------------------------------------------------------------------");
                 return;
             }
+
+            if (choice == 6) {
+                cli.Input.SC.nextLine();
+                new cli.complaint.StudentComplaintCLI().start(username);
+                continue;
+            }
+
 
             controller.handleInput(choice, username);
         }

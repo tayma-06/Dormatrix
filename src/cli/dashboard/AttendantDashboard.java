@@ -1,6 +1,8 @@
 package cli.dashboard;
 
 import controllers.dashboard.AttendantDashboardController;
+import cli.complaint.AttendantComplaintCLI;
+
 import java.util.Scanner;
 
 public class AttendantDashboard implements Dashboard {
@@ -31,6 +33,14 @@ public class AttendantDashboard implements Dashboard {
                 System.out.println("| Logging Out....                                                     |");
                 System.out.println("-----------------------------------------------------------------------");
             }
+
+            if (choice == 1) {
+                cli.Input.SC.nextLine();
+                new cli.complaint.AttendantComplaintCLI().start();
+                continue;
+            }
+
+
             controller.handleInput(choice, username);
         }
     }

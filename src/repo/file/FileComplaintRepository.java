@@ -152,10 +152,9 @@ public class FileComplaintRepository implements ComplaintRepository{
 
     private void ensureFile(String filePath){
         try{
-            File dir = new File(FilePaths.DATA_DIR);
-            if (!dir.exists()) dir.mkdirs();
-
             File f = new File(filePath);
+            File parent = f.getParentFile();
+            if (parent != null && !parent.exists()) parent.mkdirs();
             if (!f.exists()) f.createNewFile();
         } catch (IOException e) {
             throw new RuntimeException(e);
