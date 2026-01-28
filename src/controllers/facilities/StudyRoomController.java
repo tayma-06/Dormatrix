@@ -24,7 +24,7 @@ public class StudyRoomController {
             public void run() {
                 if (!checkedInUsers.contains(studentId)) {
                     bookings.get(currentSlot).remove(studentId);
-                    System.out.println("\n[SYSTEM] No-show: Seat released for " + studentId);
+                    System.out.println("\nNo-show: Seat released for " + studentId);
                 }
             }
         }, 30000);

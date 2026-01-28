@@ -11,7 +11,7 @@ public class FridgeController {
         try {
             int assignedSlot = allocator.findSlot(currentFridgeSlots);
             currentFridgeSlots[assignedSlot] = studentId;
-            System.out.println("Allocated slot: " + assignedSlot);
+            System.out.println("Allocated slot: " + assignedSlot+1);
         } catch (SlotUnavailableException e) {
             System.err.println("Booking Failed: " + e.getMessage());
         }
