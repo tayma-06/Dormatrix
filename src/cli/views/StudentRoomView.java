@@ -11,7 +11,11 @@ public class StudentRoomView {
         this.scanner = new Scanner(System.in);
     }
 
-    public void show(String roomNumber, Room room) {
+    /**
+     * Shows room details and returns the user's next choice.
+     * @return 0 to Exit, 1 to View Complaints
+     */
+    public int show(String roomNumber, Room room) {
         System.out.println("\n---------------------------------------------");
         System.out.println("|               MY ROOM STATUS              |");
         System.out.println("---------------------------------------------");
@@ -31,13 +35,19 @@ public class StudentRoomView {
             }
         }
         System.out.println("---------------------------------------------");
-        System.out.print("Press 0 to exit: ");
+        System.out.println("| 1. My Room Complaints                     |");
+        System.out.println("| 0. Exit                                   |");
+        System.out.println("---------------------------------------------");
+        System.out.print("Enter choice: ");
+
         while (true) {
-            String input = scanner.nextLine();
-            if (input.trim().equals("0")) {
-                break;
+            String input = scanner.nextLine().trim();
+            if (input.equals("0")) {
+                return 0;
+            } else if (input.equals("1")) {
+                return 1;
             } else {
-                System.out.print("Invalid choice. Press 0 to exit: ");
+                System.out.print("Invalid choice. Enter 0 or 1: ");
             }
         }
     }
