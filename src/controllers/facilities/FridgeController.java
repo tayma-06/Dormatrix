@@ -5,13 +5,13 @@ import exceptions.SlotUnavailableException;
 
 public class FridgeController {
     private FirstFitAllocator allocator = new FirstFitAllocator();
-    private String[] currentFridgeSlots = new String[10];
+    private static String[] currentFridgeSlots = new String[10];
 
     public void handleFridgeBooking(String studentId) {
         try {
             int assignedSlot = allocator.findSlot(currentFridgeSlots);
             currentFridgeSlots[assignedSlot] = studentId;
-            System.out.println("Allocated slot: " + assignedSlot+1);
+            System.out.println("Allocated slot: " + (assignedSlot+1));
         } catch (SlotUnavailableException e) {
             System.err.println("Booking Failed: " + e.getMessage());
         }
