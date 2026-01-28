@@ -11,15 +11,13 @@ public class FacilityDashboard {
         while (true) {
             System.out.println("\n-----------------------------------------------------------------------");
             System.out.println("|                       Facility Booking System                          |");
-            System.out.println("-----------------------------------------------------------------------");
-            System.out.println("Current Virtual Time Slot: " + (SlotAllocator.getCurrentSlotIndex() + 1) + "/6");
-            System.out.println("-----------------------------------------------------------------------");
-            System.out.println("| 1.Book Study Room Seat                                                   |");
-            System.out.println("| 2.Check-in to Study Room                                                 |");
-            System.out.println("| 3.Book Fridge Slot                                                       |");
-            System.out.println("| 4.Schedule Laundry Machine                                               |");
-            System.out.println("| 0. Logout                                                                |");
-            System.out.println("---------------------------------------------------------------------------");
+            System.out.println("-------------------------------------------------------------------------");
+            System.out.println("| 1.Book Study Room Seat                                                 |");
+            System.out.println("| 2.Check-in to Study Room                                               |");
+            System.out.println("| 3.Book Fridge Slot                                                     |");
+            System.out.println("| 4.Schedule Laundry Machine                                             |");
+            System.out.println("| 0. Logout                                                              |");
+            System.out.println("-------------------------------------------------------------------------");
             System.out.print("Enter your choice: ");
             int choice = scanner.nextInt();
             if (choice == 0) break;
@@ -31,8 +29,8 @@ public class FacilityDashboard {
     private void handleFacilityChoice(int choice, String user, StudyRoomController s, FridgeController f, LaundryController l) {
         switch (choice) {
             case 1:
-                if (s.bookSeat(user)) System.out.println("Seat reserved! You have 30 seconds to Check-in (Option 2).");
-                else System.out.println("Booking failed. Already booked or slot full.");
+                if (s.bookSeat(user)) System.out.println("Seat reserved! You have 30 seconds to Check-in (Click Option 2).");
+                else System.out.println("Booking failed.");
                 break;
             case 2:
                 s.checkIn(user);
