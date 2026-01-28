@@ -1,5 +1,3 @@
-package main;
-
 import cli.dashboard.MainDashboard;
 
 public class Dormatrix {

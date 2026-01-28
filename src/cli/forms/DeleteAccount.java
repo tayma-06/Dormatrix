@@ -1,5 +1,6 @@
 package cli.forms;
 
+import cli.utils.InputHelper;
 import controllers.authentication.AccountManager;
 import controllers.authentication.AuthController;
 import libraries.collections.MyString;
@@ -40,8 +41,11 @@ public class DeleteAccount {
         System.out.println("Please re-enter your ADMIN credentials to confirm.");
         System.out.print("Admin Username: ");
         MyString adminUser = new MyString(scanner.nextLine().trim());
+
         System.out.print("Admin Password: ");
-        MyString adminPass = new MyString(scanner.nextLine().trim());
+        // UPDATED: Using helper for masking
+        MyString adminPass = InputHelper.readPassword(scanner);
+
         boolean isAdmin = authController.authenticateUser(adminUser, adminPass, new MyString("ADMIN"));
         if (!isAdmin) {
             System.out.println("-----------------------------------------------------------------------");

@@ -1,5 +1,6 @@
 package cli.forms;
 
+import cli.utils.InputHelper;
 import controllers.authentication.AccountManager;
 import libraries.collections.MyString;
 import libraries.hashing.HashFunction;
@@ -55,7 +56,8 @@ public class CreateAccount {
         MyString name = new MyString(scanner.nextLine().trim());
 
         System.out.print("Enter Password: ");
-        MyString rawPass = new MyString(scanner.nextLine().trim());
+        // UPDATED: Using helper for masking
+        MyString rawPass = InputHelper.readPassword(scanner);
 
         System.out.print("Enter Phone: ");
         MyString phone = new MyString(scanner.nextLine().trim());

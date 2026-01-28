@@ -12,12 +12,12 @@ public class FacilityDashboard {
             System.out.println("\n-----------------------------------------------------------------------");
             System.out.println("|                       Facility Booking System                          |");
             System.out.println("-------------------------------------------------------------------------");
-            System.out.println("| 1.Book Study Room Seat                                                   |");
-            System.out.println("| 2.Check-in to Study Room                                                 |");
-            System.out.println("| 3.Book Fridge Slot                                                       |");
-            System.out.println("| 4.Schedule Laundry Machine                                               |");
-            System.out.println("| 0. Logout                                                                |");
-            System.out.println("---------------------------------------------------------------------------");
+            System.out.println("| 1.Book Study Room Seat                                                 |");
+            System.out.println("| 2.Check-in to Study Room                                               |");
+            System.out.println("| 3.Book Fridge Slot                                                     |");
+            System.out.println("| 4.Schedule Laundry Machine                                             |");
+            System.out.println("| 0. Logout                                                              |");
+            System.out.println("-------------------------------------------------------------------------");
             System.out.print("Enter your choice: ");
             int choice = scanner.nextInt();
             if (choice == 0) break;
@@ -28,13 +28,22 @@ public class FacilityDashboard {
 
     private void handleFacilityChoice(int choice, String user, StudyRoomController s, FridgeController f, LaundryController l) {
         switch (choice) {
-            case 1:
-                if (s.bookSeat(user)) System.out.println("Seat reserved! You have 30 seconds to Check-in (Click Option 2).");
-                else System.out.println("Booking failed.");
+            case 1: // Book Study Seat
+                System.out.print("Enter seat number (1-10): ");
+                int seatToBook = scanner.nextInt() - 1; // Convert to 0-index for the array
+
+                if (s.bookSeat(user, seatToBook)) {
+                    System.out.println("Seat " + (seatToBook + 1) + " reserved! You have 30 seconds to Check-in.");
+                } else {
+                    System.out.println("Booking failed. Seat occupied or you already have a booking.");
+                }
                 break;
-            case 2:
-                s.checkIn(user);
-                System.out.println("Check-in confirmed for " + user);
+
+            case 2: // Check-in
+                System.out.print("Enter your reserved seat number (1-10) to confirm arrival: ");
+                int seatToCheckIn = scanner.nextInt() - 1;
+
+                s.checkIn(seatToCheckIn); // This marks checkInStatus[slot][seat] as true
                 break;
             case 3:
                 f.handleFridgeBooking(user);

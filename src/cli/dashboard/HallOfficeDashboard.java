@@ -25,7 +25,7 @@ public class HallOfficeDashboard implements Dashboard{
             System.out.println("| 0. Logout                                                           |");
             System.out.println("-----------------------------------------------------------------------");
 
-            System.out.println("Enter your choice: ");
+            System.out.print("Enter your choice: ");
 
             int choice = sc.nextInt();
 
