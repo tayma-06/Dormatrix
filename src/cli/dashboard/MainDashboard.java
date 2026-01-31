@@ -1,22 +1,23 @@
 package cli.dashboard;
 
 import cli.components.DormatrixBanner;
-import cli.utils.InputHelper;
+import utils.InputHelper;
+import utils.FastInput;
+import utils.ConsoleUtil;
 import controllers.dashboard.MainDashboardController;
 import libraries.collections.MyString;
-import java.util.Scanner;
 
 public class MainDashboard {
     private final DormatrixBanner banner = new DormatrixBanner();
-    private final Scanner sc = new Scanner(System.in);
     private final MainDashboardController controller = new MainDashboardController();
 
     public void show() {
-        banner.printBanner();
-        System.out.println("-----------------------------------------------------------------------");
-        System.out.println("|                   Welcome to IUT Female Dormitory                   |");
-        System.out.println("-----------------------------------------------------------------------\n");
         while (true) {
+            ConsoleUtil.clearScreen();
+            banner.printBanner();
+            System.out.println("-----------------------------------------------------------------------");
+            System.out.println("|                   Welcome to IUT Female Dormitory                   |");
+            System.out.println("-----------------------------------------------------------------------\n");
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                           Select Role                               |");
             System.out.println("-----------------------------------------------------------------------");
@@ -29,11 +30,7 @@ public class MainDashboard {
             System.out.println("| 0. Exit                                                             |");
             System.out.println("-----------------------------------------------------------------------");
             System.out.print("Enter your choice: ");
-            int choice = -1;
-            if (sc.hasNextInt()) {
-                choice = sc.nextInt();
-            }
-            sc.nextLine();
+            int choice = FastInput.readInt();
             if (choice == 0) {
                 System.out.println("-----------------------------------------------------------------------");
                 System.out.println("| Exiting Dormatrix. Goodbye!                                         |");
@@ -41,9 +38,9 @@ public class MainDashboard {
                 System.exit(0);
             }
             System.out.print("Enter userID: ");
-            MyString username = new MyString(sc.nextLine().trim());
+            MyString username = new MyString(FastInput.readNonEmptyLine());
             System.out.print("Enter password: ");
-            MyString password = InputHelper.readPassword(sc);
+            MyString password = InputHelper.readPassword();
             controller.handleRoleInput(choice, username, password);
         }
     }

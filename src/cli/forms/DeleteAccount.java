@@ -1,22 +1,23 @@
 package cli.forms;
 
-import cli.utils.InputHelper;
+import utils.FastInput;
+import utils.InputHelper;
+import utils.ConsoleUtil;
 import controllers.authentication.AccountManager;
 import controllers.authentication.AuthController;
 import libraries.collections.MyString;
-import java.util.Scanner;
 
 public class DeleteAccount {
     private final AccountManager manager;
     private final AuthController authController;
-    private final Scanner scanner;
 
-    public DeleteAccount(AccountManager manager, Scanner scanner) {
+    public DeleteAccount(AccountManager manager) {
         this.manager = manager;
         this.authController = new AuthController();
-        this.scanner = scanner;
     }
+
     public void show() {
+        ConsoleUtil.clearScreen();
         System.out.println();
         System.out.println("-----------------------------------------------------------------------");
         System.out.println("|                           DELETE ACCOUNT                            |");
@@ -30,21 +31,22 @@ public class DeleteAccount {
         System.out.println("| 0. Cancel                                                           |");
         System.out.println("-----------------------------------------------------------------------");
         System.out.print("Enter role choice (1-6): ");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
+
+        int choice = FastInput.readInt();
         if (choice == 0) return;
+
         MyString role = CreateAccount.getRoleFromChoice(choice);
+
         System.out.print("Enter User ID to delete: ");
-        MyString idToDelete = new MyString(scanner.nextLine().trim());
+        MyString idToDelete = new MyString(FastInput.readNonEmptyLine());
         System.out.println();
         System.out.println("SECURITY WARNING: You are about to delete a user.");
         System.out.println("Please re-enter your ADMIN credentials to confirm.");
         System.out.print("Admin Username: ");
-        MyString adminUser = new MyString(scanner.nextLine().trim());
+        MyString adminUser = new MyString(FastInput.readNonEmptyLine());
 
         System.out.print("Admin Password: ");
-        // UPDATED: Using helper for masking
-        MyString adminPass = InputHelper.readPassword(scanner);
+        MyString adminPass = InputHelper.readPassword();
 
         boolean isAdmin = authController.authenticateUser(adminUser, adminPass, new MyString("ADMIN"));
         if (!isAdmin) {
@@ -53,6 +55,7 @@ public class DeleteAccount {
             System.out.println("-----------------------------------------------------------------------");
             return;
         }
+
         if (manager.deleteUser(idToDelete, role)) {
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("| Account deleted successfully.                                       |");

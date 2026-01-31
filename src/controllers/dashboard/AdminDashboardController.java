@@ -1,18 +1,18 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
-import cli.forms.*;
-import cli.views.*;
+import cli.forms.CreateAccount;
+import cli.forms.DeleteAccount;
+import cli.views.ViewAccount;
+import cli.views.SearchUser;
 import controllers.authentication.AccountManager;
-import controllers.room.RoomController; // Import RoomController
-
-import java.util.Scanner;
+import controllers.room.RoomController;
+import utils.FastInput;
 
 public class AdminDashboardController {
     private final MainDashboard mainDashboard;
     private final AccountManager accountManager;
-    private final RoomController roomController; // Add RoomController field
-    private final Scanner scanner;
+    private final RoomController roomController;
 
     private final CreateAccount createAccountForm;
     private final DeleteAccount deleteAccountForm;
@@ -22,36 +22,25 @@ public class AdminDashboardController {
     public AdminDashboardController() {
         this.mainDashboard = new MainDashboard();
         this.accountManager = new AccountManager();
-        this.roomController = new RoomController(); // Initialize RoomController
-        this.scanner = new Scanner(System.in);
+        this.roomController = new RoomController();
 
-        this.createAccountForm = new CreateAccount(accountManager, scanner);
-        this.deleteAccountForm = new DeleteAccount(accountManager, scanner);
-        this.viewAccountForm = new ViewAccount(accountManager, scanner);
-        this.searchUserForm = new SearchUser(accountManager, scanner);
+        this.createAccountForm = new CreateAccount(accountManager);
+        this.deleteAccountForm = new DeleteAccount(accountManager);
+        this.viewAccountForm = new ViewAccount(accountManager);
+        this.searchUserForm = new SearchUser(accountManager);
     }
 
     public void handleInput(int choice, String username) {
         switch (choice) {
-            case 1:
-                createAccountForm.show();
-                break;
-            case 2:
-                deleteAccountForm.show();
-                break;
-            case 3:
-                handleViewMenu();
-                break;
-            case 4:
-                handleRoomMenu(); // New Case for Rooms
-                break;
-            case 0:
-                mainDashboard.show();
-                break;
-            default:
-                System.out.println("Invalid choice. Please try again...");
+            case 1 -> createAccountForm.show();
+            case 2 -> deleteAccountForm.show();
+            case 3 -> handleViewMenu();
+            case 4 -> handleRoomMenu();
+            case 0 -> mainDashboard.show();
+            default -> System.out.println("Invalid choice. Please try again...");
         }
     }
+
     private void handleViewMenu() {
         System.out.println("-----------------------------------------------------------------------");
         System.out.println("|                      View and Search Accounts                       |");
@@ -62,25 +51,15 @@ public class AdminDashboardController {
         System.out.println("-----------------------------------------------------------------------");
         System.out.print("Enter choice: ");
 
-        if (scanner.hasNextInt()) {
-            int viewChoice = scanner.nextInt();
-            scanner.nextLine();
-            switch (viewChoice) {
-                case 1:
-                    viewAccountForm.show();
-                    break;
-                case 2:
-                    searchUserForm.show();
-                    break;
-                case 0:
-                    return;
-                default:
-                    System.out.println("Invalid choice!");
-            }
-        } else {
-            scanner.nextLine();
+        int viewChoice = FastInput.readInt();
+        switch (viewChoice) {
+            case 1 -> viewAccountForm.show();
+            case 2 -> searchUserForm.show();
+            case 0 -> { return; }
+            default -> System.out.println("Invalid choice!");
         }
     }
+
     private void handleRoomMenu() {
         while (true) {
             System.out.println("-----------------------------------------------------------------------");
@@ -91,27 +70,17 @@ public class AdminDashboardController {
             System.out.println("| 0. Back                                                             |");
             System.out.println("-----------------------------------------------------------------------");
             System.out.print("Enter choice: ");
-            if (scanner.hasNextInt()) {
-                int roomChoice = scanner.nextInt();
-                scanner.nextLine();
 
-                switch (roomChoice) {
-                    case 1:
-                        addNewRoomFlow();
-                        break;
-                    case 2:
-                        roomController.showAvailableRooms();
-                        System.out.println("\nPress Enter to continue...");
-                        scanner.nextLine();
-                        break;
-                    case 0:
-                        return;
-                    default:
-                        System.out.println("Invalid choice!");
+            int roomChoice = FastInput.readInt();
+            switch (roomChoice) {
+                case 1 -> addNewRoomFlow();
+                case 2 -> {
+                    roomController.showAvailableRooms();
+                    System.out.println("\nPress Enter to continue...");
+                    FastInput.readLine();
                 }
-            } else {
-                System.out.println("Invalid input.");
-                scanner.nextLine();
+                case 0 -> { return; }
+                default -> System.out.println("Invalid choice!");
             }
         }
     }
@@ -119,19 +88,14 @@ public class AdminDashboardController {
     private void addNewRoomFlow() {
         System.out.println("\n--- Add New Room ---");
         System.out.print("Enter Room Number/ID : ");
-        String roomId = scanner.nextLine().trim();
+        String roomId = FastInput.readNonEmptyLine();
         if (roomId.isEmpty()) {
             System.out.println("Error: Room ID cannot be empty.");
             return;
         }
+
         System.out.print("Enter Room Capacity (e.g., 4): ");
-        if (scanner.hasNextInt()) {
-            int capacity = scanner.nextInt();
-            scanner.nextLine();
-            roomController.addRoom(roomId, capacity);
-        } else {
-            System.out.println("Error: Capacity must be a number.");
-            scanner.nextLine();
-        }
+        int capacity = FastInput.readInt();
+        roomController.addRoom(roomId, capacity);
     }
 }
