@@ -11,10 +11,6 @@ public class StudentRoomView {
         this.scanner = new Scanner(System.in);
     }
 
-    /**
-     * Shows room details and returns the user's next choice.
-     * @return 0 to Exit, 1 to View Complaints
-     */
     public int show(String roomNumber, Room room) {
         System.out.println("\n---------------------------------------------");
         System.out.println("|               MY ROOM STATUS              |");
@@ -28,7 +24,8 @@ public class StudentRoomView {
 
             if (room != null) {
                 String status = room.isAvailable() ? "AVAILABLE" : "FULL";
-                System.out.printf("| %-10s %-30s |\n", "Occupancy:", room.getCurrentOccupancy() + "/" + room.getCapacity());
+                System.out.printf("| %-10s %-30s |\n", "Occupancy:",
+                        room.getCurrentOccupancy() + "/" + room.getCapacity());
                 System.out.printf("| %-10s %-30s |\n", "Status:", status);
             } else {
                 System.out.printf("| %-10s %-30s |\n", "Info:", "Room details not found.");

@@ -15,6 +15,10 @@ public class Room {
     public int getCapacity() { return capacity; }
     public int getCurrentOccupancy() { return currentOccupancy; }
 
+    public void setCurrentOccupancy(int currentOccupancy) {
+        this.currentOccupancy = currentOccupancy;
+    }
+
     public boolean isAvailable() {
         return currentOccupancy < capacity;
     }
@@ -39,6 +43,7 @@ public class Room {
 
     @Override
     public String toString() {
-        return "Room " + roomId + " [" + currentOccupancy + "/" + capacity + "] " + (isAvailable() ? "AVAILABLE" : "FULL");
+        return "Room " + roomId + " [" + currentOccupancy + "/" + capacity + "] "
+                + (isAvailable() ? "AVAILABLE" : "FULL");
     }
 }
