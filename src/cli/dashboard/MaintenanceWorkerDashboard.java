@@ -2,40 +2,41 @@ package cli.dashboard;
 
 import controllers.dashboard.MaintenanceWorkerDashboardController;
 import cli.complaint.WorkerComplaintCLI;
+import utils.FastInput;
+import utils.ConsoleUtil;
 
-import java.util.Scanner;
+public class MaintenanceWorkerDashboard implements Dashboard {
 
-public class MaintenanceWorkerDashboard implements Dashboard{
-
-    private final MaintenanceWorkerDashboardController controller= new MaintenanceWorkerDashboardController();
-    private final Scanner sc = new Scanner(System.in);
+    private final MaintenanceWorkerDashboardController controller =
+            new MaintenanceWorkerDashboardController();
 
     @Override
-    public void show(String username)
-    {
-        while (true) { 
+    public void show(String username) {
+        while (true) {
+            ConsoleUtil.clearScreen();
             System.out.println("-----------------------------------------------------------------");
             System.out.println("|                 MAINTENANCE WORKER DASHBOARD                  |");
             System.out.println("-----------------------------------------------------------------");
-            System.out.println("  Welcome, "+username);
+            System.out.println("  Welcome, " + username);
             System.out.println("-----------------------------------------------------------------");
             System.out.println("| 1. Work Field                                                 |");
             System.out.println("| 2. View Task Queue                                            |");
             System.out.println("| 3. Updated Student Complain Status                            |");
             System.out.println("| 0. Logout                                                     |");
             System.out.println("-----------------------------------------------------------------");
+            System.out.print("Enter your choice: ");
 
-            System.out.println("Enter your choice: ");
-            int choice = sc.nextInt();
+            int choice = FastInput.readInt();
 
             if (choice == 0) {
                 System.out.println("-----------------------------------------------------------------------");
                 System.out.println("| Logging Out....                                                     |");
                 System.out.println("-----------------------------------------------------------------------");
+                return;
             }
+
             if (choice == 2 || choice == 3) {
-                cli.Input.SC.nextLine();
-                new cli.complaint.WorkerComplaintCLI().start(username);
+                new WorkerComplaintCLI().start(username);
                 continue;
             }
 

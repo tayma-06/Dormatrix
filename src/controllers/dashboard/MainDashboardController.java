@@ -20,7 +20,7 @@ public class MainDashboardController {
             return;
         }
         System.out.println("\n-----------------------------------------------------------------------");
-        System.out.println("| Login successful!                                                    |");
+        System.out.println("| Login successful!                                                   |");
         System.out.println("-----------------------------------------------------------------------\n");
         User loggedInUser = authController.getUserByUsername(username, role);
         Dashboard dashboard = getDashboardForRole(choice);

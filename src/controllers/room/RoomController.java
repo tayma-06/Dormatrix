@@ -17,15 +17,20 @@ public class RoomController {
     private final StudentRoomView studentRoomView;
     private List<Room> rooms;
     private final FileComplaintRepository complaintRepo;
+
     public RoomController() {
         this.rooms = loadRooms();
         this.studentRoomView = new StudentRoomView();
         this.complaintRepo = new FileComplaintRepository();
     }
+
     public List<Room> getAllRooms() {
         return rooms;
     }
+
     public void showStudentRoomDetails(String studentIdentifier) {
+        this.rooms = loadRooms();
+
         String roomNumber = getStudentRoomNumber(studentIdentifier);
 
         Room roomDetails = null;
@@ -36,7 +41,12 @@ public class RoomController {
                     break;
                 }
             }
+            if (roomDetails != null) {
+                int realOccupancy = countStudentsInRoom(roomNumber);
+                roomDetails.setCurrentOccupancy(realOccupancy);
+            }
         }
+
         boolean stayInMenu = true;
         while (stayInMenu) {
             int choice = studentRoomView.show(roomNumber, roomDetails);
@@ -50,10 +60,11 @@ public class RoomController {
                 System.out.print("Press Enter to return...");
                 new Scanner(System.in).nextLine();
             } else {
-                stayInMenu = false; // Exit
+                stayInMenu = false;
             }
         }
     }
+
     public boolean addRoom(String roomId, int capacity) {
         for (Room r : rooms) {
             if (r.getRoomId().equals(roomId)) {
@@ -67,7 +78,10 @@ public class RoomController {
         System.out.println("Success: Room " + roomId + " added.");
         return true;
     }
+
     public void showAvailableRooms() {
+        this.rooms = loadRooms();
+
         System.out.println("\n--- Available Rooms ---");
         boolean found = false;
         for (Room r : rooms) {
@@ -78,6 +92,7 @@ public class RoomController {
         }
         if (!found) System.out.println("No rooms available.");
     }
+
     public boolean allocateRoom(String roomId) {
         for (Room r : rooms) {
             if (r.getRoomId().equals(roomId)) {
@@ -94,6 +109,7 @@ public class RoomController {
         System.out.println("Error: Room ID not found.");
         return false;
     }
+
     public void freeRoom(String roomId) {
         if (roomId == null || roomId.equals("N/A") || roomId.isEmpty() || roomId.equals("UNASSIGNED")) return;
 
@@ -105,6 +121,7 @@ public class RoomController {
             }
         }
     }
+
     public void showComplaintsForRoom(String roomId) {
         if (roomId == null || roomId.trim().isEmpty()) {
             System.out.println("Invalid room.");
@@ -153,6 +170,32 @@ public class RoomController {
         } catch (IOException e) { e.printStackTrace(); }
         return "UNASSIGNED";
     }
+    private int countStudentsInRoom(String roomId) {
+        if (roomId == null || roomId.trim().isEmpty()) return 0;
+
+        File file = new File(STUDENT_FILE);
+        if (!file.exists()) return 0;
+
+        int count = 0;
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split("\\|", -1);
+                if (parts.length > 7) {
+                    String r = parts[7].trim();
+                    if (!r.isEmpty() && r.equalsIgnoreCase(roomId.trim())) {
+                        count++;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
     private void saveRooms() {
         try (PrintWriter pw = new PrintWriter(new FileWriter(ROOM_FILE))) {
             for (Room r : rooms) {
@@ -160,6 +203,7 @@ public class RoomController {
             }
         } catch (IOException e) { e.printStackTrace(); }
     }
+
     private List<Room> loadRooms() {
         List<Room> list = new ArrayList<>();
         File file = new File(ROOM_FILE);

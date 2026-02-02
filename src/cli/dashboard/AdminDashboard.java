@@ -1,14 +1,16 @@
 package cli.dashboard;
 
 import controllers.dashboard.AdminDashboardController;
-import java.util.Scanner;
+import utils.FastInput;
+import utils.ConsoleUtil;
 
 public class AdminDashboard implements Dashboard {
     private final AdminDashboardController controller = new AdminDashboardController();
-    private final Scanner sc = new Scanner(System.in);
+
     @Override
     public void show(String username) {
         while (true) {
+            ConsoleUtil.clearScreen();
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                           ADMIN DASHBOARD                           |");
             System.out.println("-----------------------------------------------------------------------");
@@ -21,17 +23,15 @@ public class AdminDashboard implements Dashboard {
             System.out.println("| 0. Logout                                                           |");
             System.out.println("-----------------------------------------------------------------------");
             System.out.print("Enter your choice: ");
-            if (sc.hasNextInt()) {
-                int choice = sc.nextInt();
-                sc.nextLine();
-                if (choice == 0) {
-                    System.out.println("Logging Out....");
-                }
-                controller.handleInput(choice, username);
-            } else {
-                System.out.println("Invalid input. Please enter a number.");
-                sc.nextLine();
+
+            int choice = FastInput.readInt();
+
+            if (choice == 0) {
+                System.out.println("Logging Out....");
+                return;
             }
+
+            controller.handleInput(choice, username);
         }
     }
 }

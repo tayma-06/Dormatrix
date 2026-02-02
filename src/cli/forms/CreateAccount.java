@@ -1,22 +1,24 @@
 package cli.forms;
 
+import utils.FastInput;
+import utils.InputHelper;
+import utils.ConsoleUtil;
 import controllers.authentication.AccountManager;
 import libraries.collections.MyString;
 import libraries.hashing.HashFunction;
 import models.users.*;
 import models.enums.WorkerField;
-import java.util.Scanner;
 
 public class CreateAccount {
-    private final AccountManager manager;
-    private final Scanner scanner;
 
-    public CreateAccount(AccountManager manager, Scanner scanner) {
+    private final AccountManager manager;
+
+    public CreateAccount(AccountManager manager) {
         this.manager = manager;
-        this.scanner = scanner;
     }
 
     public void show() {
+        ConsoleUtil.clearScreen();
         System.out.println("-----------------------------------------------------------------------");
         System.out.println("|                           Create New Account                        |");
         System.out.println("-----------------------------------------------------------------------");
@@ -30,14 +32,7 @@ public class CreateAccount {
         System.out.println("-----------------------------------------------------------------------");
         System.out.print("Enter choice: ");
 
-        int choice = -1;
-        if (scanner.hasNextInt()) {
-            choice = scanner.nextInt();
-            scanner.nextLine();
-        } else {
-            scanner.nextLine();
-        }
-
+        int choice = FastInput.readInt();
         if (choice == 0) return;
 
         MyString role = getRoleFromChoice(choice);
@@ -45,20 +40,22 @@ public class CreateAccount {
             System.out.println("Invalid role choice!");
             return;
         }
+
         System.out.print("Enter User ID: ");
-        MyString id = new MyString(scanner.nextLine().trim());
+        MyString id = new MyString(FastInput.readNonEmptyLine());
         if (manager.userExists(id, role)) {
             System.out.println("Error: User ID already exists!");
             return;
         }
+
         System.out.print("Enter Full Name: ");
-        MyString name = new MyString(scanner.nextLine().trim());
+        MyString name = new MyString(FastInput.readNonEmptyLine());
 
         System.out.print("Enter Password: ");
-        MyString rawPass = new MyString(scanner.nextLine().trim());
+        MyString rawPass = InputHelper.readPassword();
 
         System.out.print("Enter Phone: ");
-        MyString phone = new MyString(scanner.nextLine().trim());
+        MyString phone = new MyString(FastInput.readNonEmptyLine());
 
         MyString hashedPass = HashFunction.hashPassword(rawPass);
 
@@ -78,11 +75,18 @@ public class CreateAccount {
 
         if (roleStr.equals("STUDENT")) {
             System.out.print("Enter Department: ");
-            String dept = scanner.nextLine().trim();
+            String dept = FastInput.readNonEmptyLine();
             System.out.print("Enter Email: ");
-            String email = scanner.nextLine().trim();
+            String email = FastInput.readNonEmptyLine();
 
-            Student s = new Student(id.getValue(), name.getValue(), role.getValue(), pass.getValue(), phone.getValue(), email);
+            Student s = new Student(
+                    id.getValue(),
+                    name.getValue(),
+                    role.getValue(),
+                    pass.getValue(),
+                    phone.getValue(),
+                    email
+            );
             s.setDepartment(dept);
             return s;
 
@@ -97,43 +101,68 @@ public class CreateAccount {
             System.out.println("| 5. Security                                                         |");
             System.out.println("-----------------------------------------------------------------------");
             System.out.print("Enter Field Choice: ");
-            int fieldChoice = 1;
-            if(scanner.hasNextInt()) {
-                fieldChoice = scanner.nextInt();
-                scanner.nextLine();
-            } else {
-                scanner.nextLine();
-            }
 
-            WorkerField field;
-            switch (fieldChoice) {
-                case 1 -> field = WorkerField.ELECTRICIAN;
-                case 2 -> field = WorkerField.PLUMBER;
-                case 3 -> field = WorkerField.INTERNET_TECH;
-                case 4 -> field = WorkerField.CLEANING;
-                case 5 -> field = WorkerField.SECURITY;
-                default -> {
-                    System.out.println("Invalid choice, defaulting to ELECTRICIAN.");
-                    field = WorkerField.ELECTRICIAN;
-                }
-            }
-            return new MaintenanceWorker(id.getValue(), name.getValue(), role.getValue(), pass.getValue(), phone.getValue(), field);
+            int fieldChoice = FastInput.readInt();
+
+            WorkerField field = switch (fieldChoice) {
+                case 1 -> WorkerField.ELECTRICIAN;
+                case 2 -> WorkerField.PLUMBER;
+                case 3 -> WorkerField.INTERNET_TECH;
+                case 4 -> WorkerField.CLEANING;
+                case 5 -> WorkerField.SECURITY;
+                default -> WorkerField.ELECTRICIAN;
+            };
+
+            return new MaintenanceWorker(
+                    id.getValue(),
+                    name.getValue(),
+                    role.getValue(),
+                    pass.getValue(),
+                    phone.getValue(),
+                    field
+            );
 
         } else if (roleStr.equals("HALL_ATTENDANT")) {
             System.out.print("Enter Email: ");
-            String email = scanner.nextLine().trim();
-            return new HallAttendant(id.getValue(), name.getValue(), role.getValue(), pass.getValue(), phone.getValue(), email);
+            String email = FastInput.readNonEmptyLine();
+            return new HallAttendant(
+                    id.getValue(),
+                    name.getValue(),
+                    role.getValue(),
+                    pass.getValue(),
+                    phone.getValue(),
+                    email
+            );
 
         } else if (roleStr.equals("STORE_IN_CHARGE")) {
-            return new StoreInCharge(id.getValue(), name.getValue(), role.getValue(), pass.getValue(), phone.getValue());
+            return new StoreInCharge(
+                    id.getValue(),
+                    name.getValue(),
+                    role.getValue(),
+                    pass.getValue(),
+                    phone.getValue()
+            );
 
         } else if (roleStr.equals("HALL_OFFICER")) {
             System.out.print("Enter Email: ");
-            String email = scanner.nextLine().trim();
-            return new HallOfficer(id.getValue(), name.getValue(), role.getValue(), pass.getValue(), phone.getValue(), email);
+            String email = FastInput.readNonEmptyLine();
+            return new HallOfficer(
+                    id.getValue(),
+                    name.getValue(),
+                    role.getValue(),
+                    pass.getValue(),
+                    phone.getValue(),
+                    email
+            );
 
         } else if (roleStr.equals("ADMIN")) {
-            return new SystemAdmin(id.getValue(), name.getValue(), role.getValue(), pass.getValue(), phone.getValue());
+            return new SystemAdmin(
+                    id.getValue(),
+                    name.getValue(),
+                    role.getValue(),
+                    pass.getValue(),
+                    phone.getValue()
+            );
         }
 
         return null;

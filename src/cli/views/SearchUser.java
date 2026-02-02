@@ -1,21 +1,25 @@
 package cli.views;
+
 import controllers.authentication.AccountManager;
 import libraries.collections.MyString;
-import java.util.Scanner;
+import utils.FastInput;
+import utils.ConsoleUtil;
+
 public class SearchUser {
     private final AccountManager manager;
-    private final Scanner scanner;
-    public SearchUser(AccountManager manager, Scanner scanner) {
+
+    public SearchUser(AccountManager manager) {
         this.manager = manager;
-        this.scanner = scanner;
     }
+
     public void show() {
+        ConsoleUtil.clearScreen();
         System.out.println();
         System.out.println("-----------------------------------------------------------------------");
         System.out.println("|                      Search Accounts                                |");
         System.out.println("-----------------------------------------------------------------------");
         System.out.print("Enter User ID: ");
-        MyString id = new MyString(scanner.nextLine().trim());
+        MyString id = new MyString(FastInput.readNonEmptyLine());
         String result = manager.findUserDetails(id);
         if (result != null) {
             System.out.println(result);

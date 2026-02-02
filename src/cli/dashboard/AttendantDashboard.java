@@ -2,19 +2,17 @@ package cli.dashboard;
 
 import controllers.dashboard.AttendantDashboardController;
 import cli.complaint.AttendantComplaintCLI;
-
-import java.util.Scanner;
+import utils.FastInput;
+import utils.ConsoleUtil;
 
 public class AttendantDashboard implements Dashboard {
 
     private final AttendantDashboardController controller = new AttendantDashboardController();
-    private final Scanner sc = new Scanner(System.in);
-
-
 
     @Override
     public void show(String username) {
         while (true) {
+            ConsoleUtil.clearScreen();
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                        ATTENDANT DASHBOARD                          |");
             System.out.println("-----------------------------------------------------------------------");
@@ -24,25 +22,22 @@ public class AttendantDashboard implements Dashboard {
             System.out.println("| 2. Handle Worker Schedule                                           |");
             System.out.println("| 0. Logout                                                           |");
             System.out.println("-----------------------------------------------------------------------");
-
             System.out.print("Enter your choice: ");
-            int choice = sc.nextInt();
+            int choice = FastInput.readInt();
 
             if (choice == 0) {
                 System.out.println("-----------------------------------------------------------------------");
                 System.out.println("| Logging Out....                                                     |");
                 System.out.println("-----------------------------------------------------------------------");
+                return;
             }
 
             if (choice == 1) {
-                cli.Input.SC.nextLine();
-                new cli.complaint.AttendantComplaintCLI().start();
+                new AttendantComplaintCLI().start();
                 continue;
             }
-
 
             controller.handleInput(choice, username);
         }
     }
-
 }
