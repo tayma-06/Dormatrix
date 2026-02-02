@@ -16,6 +16,7 @@ public class MaintenanceWorkerDashboard implements Dashboard {
         while (true) {
             ConsoleUtil.clearScreen();
             BackgroundFiller.applyMaintenanceTheme();
+            System.out.println();
             System.out.println("-----------------------------------------------------------------");
             System.out.println("|                 MAINTENANCE WORKER DASHBOARD                  |");
             System.out.println("-----------------------------------------------------------------");

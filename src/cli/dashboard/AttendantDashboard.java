@@ -15,6 +15,7 @@ public class AttendantDashboard implements Dashboard {
         while (true) {
             ConsoleUtil.clearScreen();
             BackgroundFiller.applyAttendantTheme();
+            System.out.println();
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                        ATTENDANT DASHBOARD                          |");
             System.out.println("-----------------------------------------------------------------------");

@@ -21,7 +21,7 @@ public class MainDashboard {
         while (true) {
             ConsoleUtil.clearScreen();
             BackgroundFiller.applyMainMenuTheme();
-
+            System.out.println();
             banner.printBannerOnTheme();
 
             System.out.println(BOX + "-----------------------------------------------------------------------");

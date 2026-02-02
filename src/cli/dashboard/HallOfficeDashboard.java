@@ -14,6 +14,7 @@ public class HallOfficeDashboard implements Dashboard {
         while (true) {
             ConsoleUtil.clearScreen();
             BackgroundFiller.applyHallOfficeTheme();
+            System.out.println();
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                        HALL OFFICE DASHBOARD                        |");
             System.out.println("-----------------------------------------------------------------------");

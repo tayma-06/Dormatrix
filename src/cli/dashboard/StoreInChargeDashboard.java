@@ -15,6 +15,7 @@ public class StoreInChargeDashboard implements Dashboard {
         while (true) {
             ConsoleUtil.clearScreen();
             BackgroundFiller.applyStoreInChargeTheme();
+            System.out.println();
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                      STORE-IN-CHARGE DASHBOARD                      |");
             System.out.println("-----------------------------------------------------------------------");

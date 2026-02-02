@@ -13,6 +13,7 @@ public class AdminDashboard implements Dashboard {
         while (true) {
             ConsoleUtil.clearScreen();
             BackgroundFiller.applyAdminTheme();
+            System.out.println();
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                           ADMIN DASHBOARD                           |");
             System.out.println("-----------------------------------------------------------------------");

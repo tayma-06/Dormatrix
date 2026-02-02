@@ -3,7 +3,6 @@ package cli.dashboard;
 import cli.complaint.StudentComplaintCLI;
 import controllers.dashboard.StudentDashboardController;
 import utils.BackgroundFiller;
-import utils.ConsoleColors;
 import utils.ConsoleUtil;
 import utils.FastInput;
 
@@ -17,6 +16,7 @@ public class StudentDashboard implements Dashboard {
         while (true) {
             ConsoleUtil.clearScreen();
             BackgroundFiller.applyStudentTheme();
+            System.out.println();
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                        STUDENT DASHBOARD                            |");
             System.out.println("-----------------------------------------------------------------------");

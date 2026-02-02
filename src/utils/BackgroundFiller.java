@@ -2,22 +2,26 @@ package utils;
 
 public final class BackgroundFiller {
 
-    private static final int DEFAULT_ROWS = 40;
-    private static final int DEFAULT_COLS = 140;
+    private static final int DEFAULT_ROWS = 100;
+    private static final int DEFAULT_COLS = 200;
 
     private BackgroundFiller() {}
 
     private static void fillWithCurrentBackground() {
-        System.out.print("\u001B[H");
+        System.out.print("\u001B[s");
+
         StringBuilder line = new StringBuilder();
         for (int i = 0; i < DEFAULT_COLS; i++) {
             line.append(' ');
         }
-        for (int r = 0; r < DEFAULT_ROWS; r++) {
-            System.out.print(line);
-            System.out.print('\n');
+        String lineStr = line.toString();
+
+        for (int r = 1; r <= DEFAULT_ROWS; r++) {
+            System.out.print("\u001B[" + r + ";1H");
+            System.out.print(lineStr);
         }
-        System.out.print("\u001B[H");
+
+        System.out.print("\u001B[u");
     }
 
     public static void applyMainMenuTheme() {
