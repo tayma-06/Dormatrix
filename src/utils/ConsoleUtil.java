@@ -11,7 +11,7 @@ public final class ConsoleUtil {
     private static final String HIDE_CURSOR = ESC + "?25l";
 
     private ConsoleUtil() {}
-    
+
     public static void clearScreen() {
         System.out.print(CURSOR_HOME + CLEAR_SCREEN);
         System.out.flush();
