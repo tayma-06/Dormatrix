@@ -3,10 +3,17 @@ setlocal EnableDelayedExpansion
 title Dormatrix Launcher
 
 REM ==========================================
+REM =========== ANSI ESC SETUP ===============
+REM ==========================================
+REM Get the ESC character for ANSI sequences
+for /F "delims=" %%A in ('echo prompt $E^| cmd') do set "ESC=%%A"
+
+REM ==========================================
 REM ============= CONFIG =====================
 REM ==========================================
-set "SRC_DIR=src"
-set "OUT_DIR=out"
+set "ROOT=%~dp0"
+set "SRC_DIR=%ROOT%src"
+set "OUT_DIR=%ROOT%out"
 set "MAIN_CLASS=Dormatrix"
 
 REM ==========================================
@@ -20,7 +27,6 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Go to menu after JDK check
 goto menu
 
 REM ==========================================
@@ -37,7 +43,9 @@ echo  [2] Run only
 echo  [3] Clean
 echo  [4] Exit
 echo.
-set /p choice="Select option: "
+
+set "choice="
+set /p "choice=Select option (1-4): "
 
 if "%choice%"=="1" goto build_and_run
 if "%choice%"=="2" goto run_only
@@ -54,7 +62,7 @@ REM ============ ENSURE OUT DIR =============
 REM ==========================================
 :ensure_out
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
-exit /b 0
+goto :eof
 
 REM ==========================================
 REM ================ BUILD ===================
@@ -63,10 +71,9 @@ REM ==========================================
 call :ensure_out
 echo Compiling...
 
-REM Create a list of all .java sources
 dir /s /b "%SRC_DIR%\*.java" > "%OUT_DIR%\sources.txt"
 
-javac -d "%OUT_DIR%" -sourcepath "%SRC_DIR%" @"%OUT_DIR%\sources.txt"
+javac -encoding UTF-8 -d "%OUT_DIR%" -sourcepath "%SRC_DIR%" @"%OUT_DIR%\sources.txt"
 if errorlevel 1 (
     echo.
     echo [ERROR] Compilation failed!
@@ -77,7 +84,7 @@ if errorlevel 1 (
 
 del "%OUT_DIR%\sources.txt" 2>nul
 echo Compilation successful.
-exit /b 0
+goto :eof
 
 REM ==========================================
 REM ========= BUILD + RUN OPTION =============
@@ -85,13 +92,16 @@ REM ==========================================
 :build_and_run
 call :build
 if errorlevel 1 (
-    REM build already printed the error
     goto menu
 )
 echo.
 echo Launching Dormatrix...
 echo.
 java -cp "%OUT_DIR%" %MAIN_CLASS%
+
+REM After Java exits: force-reset colors and cursor
+>nul echo %ESC%[0m%ESC%[?25h
+
 echo.
 pause
 goto menu
@@ -110,6 +120,10 @@ if not exist "%OUT_DIR%" (
 echo Launching Dormatrix...
 echo.
 java -cp "%OUT_DIR%" %MAIN_CLASS%
+
+REM Reset ANSI state again
+>nul echo %ESC%[0m%ESC%[?25h
+
 echo.
 pause
 goto menu
