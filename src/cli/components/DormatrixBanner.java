@@ -2,18 +2,27 @@ package cli.components;
 
 import utils.ConsoleColors;
 
-public class DormatrixBanner
-{
-    public void printBanner()
-    {
+public class DormatrixBanner {
+
+    public void printBanner() {
+        printBanner(true);
+    }
+
+    public void printBannerOnTheme() {
+        printBanner(false);
+    }
+
+    private void printBanner(boolean reset) {
+        String r = reset ? ConsoleColors.RESET : "";
+
         System.out.println(
-                ConsoleColors.BRIGHT_PURPLE +
+                ConsoleColors.Accent.BANNER +
                         "██████   ██████  ██████  ███    ███  █████  ████████ ██████  ██ ██   ██\n" +
                         "██   ██ ██    ██ ██   ██ ████  ████ ██   ██    ██    ██   ██ ██  ██ ██\n" +
                         "██   ██ ██    ██ ██████  ██ ████ ██ ███████    ██    ██████  ██   ███ \n" +
                         "██   ██ ██    ██ ██   ██ ██  ██  ██ ██   ██    ██    ██   ██ ██  ██ ██ \n" +
                         "██████   ██████  ██   ██ ██      ██ ██   ██    ██    ██   ██ ██ ██   ██" +
-                        ConsoleColors.RESET
+                        r
         );
     }
 }

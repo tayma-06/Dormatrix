@@ -1,6 +1,7 @@
 package cli.dashboard;
 
 import controllers.dashboard.HallOfficeDashboardController;
+import utils.BackgroundFiller;
 import utils.FastInput;
 import utils.ConsoleUtil;
 
@@ -12,6 +13,7 @@ public class HallOfficeDashboard implements Dashboard {
     public void show(String username) {
         while (true) {
             ConsoleUtil.clearScreen();
+            BackgroundFiller.applyHallOfficeTheme();
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                        HALL OFFICE DASHBOARD                        |");
             System.out.println("-----------------------------------------------------------------------");
@@ -31,6 +33,7 @@ public class HallOfficeDashboard implements Dashboard {
                 System.out.println("-----------------------------------------------------------------------");
                 System.out.println("| Logging Out....                                                     |");
                 System.out.println("-----------------------------------------------------------------------");
+                BackgroundFiller.resetTheme();
                 return;
             }
 

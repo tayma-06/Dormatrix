@@ -2,6 +2,7 @@ package utils;
 
 public final class ConsoleUtil {
     private ConsoleUtil() {}
+
     public static void clearScreen() {
         try {
             new ProcessBuilder("cmd", "/c", "cls")

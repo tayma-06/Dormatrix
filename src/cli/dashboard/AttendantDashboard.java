@@ -2,6 +2,7 @@ package cli.dashboard;
 
 import controllers.dashboard.AttendantDashboardController;
 import cli.complaint.AttendantComplaintCLI;
+import utils.BackgroundFiller;
 import utils.FastInput;
 import utils.ConsoleUtil;
 
@@ -13,6 +14,7 @@ public class AttendantDashboard implements Dashboard {
     public void show(String username) {
         while (true) {
             ConsoleUtil.clearScreen();
+            BackgroundFiller.applyAttendantTheme();
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                        ATTENDANT DASHBOARD                          |");
             System.out.println("-----------------------------------------------------------------------");
@@ -29,6 +31,7 @@ public class AttendantDashboard implements Dashboard {
                 System.out.println("-----------------------------------------------------------------------");
                 System.out.println("| Logging Out....                                                     |");
                 System.out.println("-----------------------------------------------------------------------");
+                BackgroundFiller.resetTheme();
                 return;
             }
 

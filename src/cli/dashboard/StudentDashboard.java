@@ -1,19 +1,22 @@
 package cli.dashboard;
 
-import controllers.dashboard.StudentDashboardController;
 import cli.complaint.StudentComplaintCLI;
-import utils.FastInput;
+import controllers.dashboard.StudentDashboardController;
+import utils.BackgroundFiller;
+import utils.ConsoleColors;
 import utils.ConsoleUtil;
+import utils.FastInput;
 
 public class StudentDashboard implements Dashboard {
 
-    private final StudentDashboardController controller =
-            new StudentDashboardController();
+    private final StudentDashboardController controller
+            = new StudentDashboardController();
 
     @Override
     public void show(String username) {
         while (true) {
             ConsoleUtil.clearScreen();
+            BackgroundFiller.applyStudentTheme();
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                        STUDENT DASHBOARD                            |");
             System.out.println("-----------------------------------------------------------------------");
@@ -36,6 +39,7 @@ public class StudentDashboard implements Dashboard {
                 System.out.println("-----------------------------------------------------------------------");
                 System.out.println("| Logging Out....                                                     |");
                 System.out.println("-----------------------------------------------------------------------");
+                BackgroundFiller.resetTheme();
                 return;
             }
 

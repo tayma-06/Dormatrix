@@ -2,6 +2,7 @@ package cli.dashboard;
 
 import controllers.dashboard.MaintenanceWorkerDashboardController;
 import cli.complaint.WorkerComplaintCLI;
+import utils.BackgroundFiller;
 import utils.FastInput;
 import utils.ConsoleUtil;
 
@@ -14,6 +15,7 @@ public class MaintenanceWorkerDashboard implements Dashboard {
     public void show(String username) {
         while (true) {
             ConsoleUtil.clearScreen();
+            BackgroundFiller.applyMaintenanceTheme();
             System.out.println("-----------------------------------------------------------------");
             System.out.println("|                 MAINTENANCE WORKER DASHBOARD                  |");
             System.out.println("-----------------------------------------------------------------");
@@ -32,6 +34,7 @@ public class MaintenanceWorkerDashboard implements Dashboard {
                 System.out.println("-----------------------------------------------------------------------");
                 System.out.println("| Logging Out....                                                     |");
                 System.out.println("-----------------------------------------------------------------------");
+                BackgroundFiller.resetTheme();
                 return;
             }
 

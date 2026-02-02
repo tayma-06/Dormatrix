@@ -1,6 +1,7 @@
 package cli.dashboard;
 
 import controllers.dashboard.AdminDashboardController;
+import utils.BackgroundFiller;
 import utils.FastInput;
 import utils.ConsoleUtil;
 
@@ -11,6 +12,7 @@ public class AdminDashboard implements Dashboard {
     public void show(String username) {
         while (true) {
             ConsoleUtil.clearScreen();
+            BackgroundFiller.applyAdminTheme();
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                           ADMIN DASHBOARD                           |");
             System.out.println("-----------------------------------------------------------------------");
@@ -27,7 +29,10 @@ public class AdminDashboard implements Dashboard {
             int choice = FastInput.readInt();
 
             if (choice == 0) {
-                System.out.println("Logging Out....");
+                System.out.println("-----------------------------------------------------------------------");
+                System.out.println("| Logging Out....                                                     |");
+                System.out.println("-----------------------------------------------------------------------");
+                BackgroundFiller.resetTheme();
                 return;
             }
 
