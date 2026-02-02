@@ -11,7 +11,7 @@ public final class ConsoleUtil {
     private static final String HIDE_CURSOR = ESC + "?25l";
 
     private ConsoleUtil() {}
-    
+
     public static void clearScreen() {
         System.out.print(CURSOR_HOME + CLEAR_SCREEN);
         System.out.flush();
@@ -35,5 +35,11 @@ public final class ConsoleUtil {
     public static void showCursor() {
         System.out.print(SHOW_CURSOR);
         System.out.flush();
+    }
+
+    public static void pause() {
+        System.out.println();
+        System.out.print("Press Enter to continue...");
+        FastInput.readLine();
     }
 }

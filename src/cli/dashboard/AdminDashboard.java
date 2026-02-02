@@ -2,10 +2,11 @@ package cli.dashboard;
 
 import controllers.dashboard.AdminDashboardController;
 import utils.BackgroundFiller;
-import utils.FastInput;
 import utils.ConsoleUtil;
+import utils.FastInput;
 
 public class AdminDashboard implements Dashboard {
+
     private final AdminDashboardController controller = new AdminDashboardController();
 
     @Override
@@ -21,14 +22,12 @@ public class AdminDashboard implements Dashboard {
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("| 1. Create Account                                                   |");
             System.out.println("| 2. Delete Account                                                   |");
-            System.out.println("| 3. View and Search Accounts                                         |");
+            System.out.println("| 3. View & Search Accounts                                           |");
             System.out.println("| 4. Manage Rooms                                                     |");
             System.out.println("| 0. Logout                                                           |");
             System.out.println("-----------------------------------------------------------------------");
             System.out.print("Enter your choice: ");
-
             int choice = FastInput.readInt();
-
             if (choice == 0) {
                 System.out.println("-----------------------------------------------------------------------");
                 System.out.println("| Logging Out....                                                     |");
@@ -36,8 +35,8 @@ public class AdminDashboard implements Dashboard {
                 BackgroundFiller.resetTheme();
                 return;
             }
-
             controller.handleInput(choice, username);
+            ConsoleUtil.pause();
         }
     }
 }

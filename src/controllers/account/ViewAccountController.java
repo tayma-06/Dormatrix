@@ -1,54 +1,38 @@
-package cli.views;
+package controllers.account;
 
-import cli.forms.CreateAccount;
 import controllers.authentication.AccountManager;
 import libraries.collections.MyString;
-import utils.FastInput;
-import utils.ConsoleUtil;
+
 import java.io.*;
 
-public class ViewAccount {
+public class ViewAccountController {
 
     private final AccountManager manager;
 
-    public ViewAccount(AccountManager manager) {
+    public ViewAccountController(AccountManager manager) {
         this.manager = manager;
     }
 
-    public void show() {
-        ConsoleUtil.clearScreen();
-        System.out.println();
-        System.out.println("-----------------------------------------------------------------------");
-        System.out.println("|                          View Accounts                              |");
-        System.out.println("-----------------------------------------------------------------------");
-        System.out.println("| 1. Student                                                          |");
-        System.out.println("| 2. Attendant                                                        |");
-        System.out.println("| 3. Maintenance Worker                                               |");
-        System.out.println("| 4. Store-in-Charge                                                  |");
-        System.out.println("| 5. Hall Office                                                      |");
-        System.out.println("| 6. Admin                                                            |");
-        System.out.println("| 7. View All Accounts                                                |");
-        System.out.println("| 0. Exit                                                             |");
-        System.out.println("-----------------------------------------------------------------------");
-        System.out.print("Enter choice: ");
-
-        int choice = FastInput.readInt();
-        if (choice == 0) return;
-
+    public void handleViewChoice(int choice) {
         if (choice == 7) {
             viewAll();
         } else {
-            viewRole(CreateAccount.getRoleFromChoice(choice));
+            viewRole(getRoleFromChoice(choice));
         }
     }
 
     private void viewRole(MyString role) {
+        if (role.getValue().equals("UNKNOWN")) {
+            System.out.println("Invalid role choice!");
+            return;
+        }
+
         MyString filename = manager.getFilename(role);
         File file = new File(filename.getValue());
 
         System.out.println();
         System.out.println("-----------------------------------------------------------------------");
-        System.out.println("                          " + role.getValue() + "                        ");
+        System.out.println("                          " + role.getValue());
         System.out.println("-----------------------------------------------------------------------");
 
         if (!file.exists()) {
@@ -83,8 +67,20 @@ public class ViewAccount {
                 new MyString("ADMIN")
         };
 
-        for (MyString r : roles) {
-            viewRole(r);
+        for (MyString role : roles) {
+            viewRole(role);
         }
+    }
+
+    private MyString getRoleFromChoice(int choice) {
+        return switch (choice) {
+            case 1 -> new MyString("STUDENT");
+            case 2 -> new MyString("HALL_ATTENDANT");
+            case 3 -> new MyString("MAINTENANCE_WORKER");
+            case 4 -> new MyString("STORE_IN_CHARGE");
+            case 5 -> new MyString("HALL_OFFICER");
+            case 6 -> new MyString("ADMIN");
+            default -> new MyString("UNKNOWN");
+        };
     }
 }

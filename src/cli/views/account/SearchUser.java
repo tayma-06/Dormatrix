@@ -1,15 +1,15 @@
-package cli.views;
+package cli.views.account;
 
-import controllers.authentication.AccountManager;
-import libraries.collections.MyString;
-import utils.FastInput;
+import controllers.account.SearchUserController;
 import utils.ConsoleUtil;
+import utils.FastInput;
 
 public class SearchUser {
-    private final AccountManager manager;
 
-    public SearchUser(AccountManager manager) {
-        this.manager = manager;
+    private final SearchUserController controller;
+
+    public SearchUser(SearchUserController controller) {
+        this.controller = controller;
     }
 
     public void show() {
@@ -19,8 +19,10 @@ public class SearchUser {
         System.out.println("|                      Search Accounts                                |");
         System.out.println("-----------------------------------------------------------------------");
         System.out.print("Enter User ID: ");
-        MyString id = new MyString(FastInput.readNonEmptyLine());
-        String result = manager.findUserDetails(id);
+
+        String id = FastInput.readNonEmptyLine();
+        String result = controller.searchById(id);
+
         if (result != null) {
             System.out.println(result);
         } else {

@@ -1,4 +1,4 @@
-package cli.views;
+package cli.views.room;
 
 import models.room.Room;
 import java.util.Scanner;
