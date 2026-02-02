@@ -1,18 +1,12 @@
 package utils;
 
 public final class ConsoleUtil {
+    private static final String ANSI_CLEAR_SCREEN = "\u001b[H\u001b[2J";
+
     private ConsoleUtil() {}
 
     public static void clearScreen() {
-        try {
-            new ProcessBuilder("cmd", "/c", "cls")
-                    .inheritIO()
-                    .start()
-                    .waitFor();
-        } catch (Exception e) {
-            for (int i = 0; i < 50; i++) {
-                System.out.println();
-            }
-        }
+        System.out.print(ANSI_CLEAR_SCREEN);
+        System.out.flush();
     }
 }
