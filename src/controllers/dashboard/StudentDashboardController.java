@@ -3,15 +3,18 @@ package controllers.dashboard;
 import cli.dashboard.MainDashboard;
 import cli.views.MessageView;
 import cli.forms.MealTokenPurchase;
-import cli.views.StoreLedgerView;
+import cli.views.store.StoreLedgerView;
+import cli.views.store.ShoppingCartView;
 import controllers.room.RoomController;
 import cli.dashboard.FacilityDashboard;
 import controllers.facilities.*;
+
 public class StudentDashboardController {
 
     private final MainDashboard mainDashboard;
     private final MealTokenPurchase mealTokenPurchase;
     private final StoreLedgerView storeLedgerView;
+    private final ShoppingCartView shoppingCartView;
     private final RoomController roomController;
     private final MessageView msg;
     private final StudyRoomController studyRoomController;
@@ -23,6 +26,7 @@ public class StudentDashboardController {
         this.mainDashboard = new MainDashboard();
         this.mealTokenPurchase = new MealTokenPurchase();
         this.storeLedgerView = new StoreLedgerView();
+        this.shoppingCartView = new ShoppingCartView();
         this.roomController = new RoomController();
         this.msg = new MessageView();
         this.studyRoomController = new StudyRoomController();
@@ -40,25 +44,35 @@ public class StudentDashboardController {
             case 2:
                 facilityDashboard.showMenu(username, studyRoomController, fridgeController, laundryController);
                 break;
+
             case 3:
                 mealTokenPurchase.show(username);
                 break;
+
             case 4:
+                // Store Purchases & Dues - Enhanced with balance, purchase history, and payment
                 storeLedgerView.show(username);
                 break;
+
             case 5:
                 System.out.println(">> Feature [Lost & Found] is under development.");
                 break;
-//            case 6:
-//                studentComplaintMenu(username);
-//                break;
+
             case 7:
                 System.out.println(">> Feature [Announcements] is under development.");
                 break;
+
+            case 8:
+                // Shopping Cart - New feature for making purchases
+                shoppingCartView.show(username);
+                break;
+
             case 0:
                 mainDashboard.show();
                 break;
+
             default:
                 System.out.println("Invalid choice. Please try again.");
         }
-    }}
+    }
+}

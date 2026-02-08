@@ -34,4 +34,15 @@ public final class FastInput {
             System.out.print("Input cannot be empty. Try again: ");
         }
     }
+
+    public static double readDouble() {
+        while (true) {
+            try {
+                String line = readLine();
+                return Double.parseDouble(line.trim());
+            } catch (NumberFormatException e) {
+                System.out.print("Invalid number. Try again: ");
+            }
+        }
+    }
 }

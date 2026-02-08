@@ -1,1 +1,6 @@
+//String id, String name, String role, String passwordHash, String phoneNumber
+
 ST01|Salma Akter|STORE_IN_CHARGE|N/A|62afa2d2|01700000000
+ST02|Rahima Begum|STORE_IN_CHARGE|N/A|62afa2d2|01711111111
+ST03|Nasima Khatun|STORE_IN_CHARGE|N/A|62afa2d2|01722222222
+ST04|Amina Rahman|STORE_IN_CHARGE|N/A|62afa2d2|01733333333

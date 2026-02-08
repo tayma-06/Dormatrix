@@ -21,9 +21,9 @@ public class StoreInChargeDashboard implements Dashboard {
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("  Welcome, " + username);
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println("| 1. Inventory List                                                   |");
-            System.out.println("| 2. Purchase Record                                                  |");
-            System.out.println("| 3. Sale Summary                                                     |");
+            System.out.println("| 1. Inventory Management                                             |");
+            System.out.println("| 2. Process Purchase                                                 |");
+            System.out.println("| 3. Sales Summary & Reports                                          |");
             System.out.println("| 0. Logout                                                           |");
             System.out.println("-----------------------------------------------------------------------");
             System.out.print("Enter your choice: ");
