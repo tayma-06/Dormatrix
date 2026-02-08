@@ -20,5 +20,6 @@
 230042139|Sayma Tasnim|STUDENT|SWE|4e17f28c|01700000000|saymatasnim@iut-dhaka.edu|301
 230042101|Ayesha Siddiqua|STUDENT|CSE|62afa2d2|01700000001|ayesha@iut-dhaka.edu|318
 230042114|Procheta Silvie|STUDENT|SWE|4e17e6e2|01700000000|prochetasilvie@iut-dhaka.edu|301
-
 230042122|Sayema Tabassum|STUDENT|EEE|62afa2d2|01763016648|sayema@iut-dhaka.edu|UNASSIGNED
+
+230042138|Maisha Rahman|STUDENT|EEE|62afa2d2|01763016648|maisha@iut-dhaka.edu|302

@@ -23,7 +23,6 @@ public class MainDashboard {
             BackgroundFiller.applyMainMenuTheme();
             System.out.println();
             banner.printBannerOnTheme();
-
             System.out.println(BOX + "-----------------------------------------------------------------------");
             System.out.println(BOX + "|                   Welcome to IUT Female Dormitory                   |");
             System.out.println(BOX + "-----------------------------------------------------------------------\n");
@@ -38,6 +37,7 @@ public class MainDashboard {
             System.out.println(BOX + "| 4. Store-in-Charge                                                  |");
             System.out.println(BOX + "| 5. Hall Office                                                      |");
             System.out.println(BOX + "| 6. Admin                                                            |");
+            System.out.println(BOX + "| 7. Cafeteria Manager                                                           |");
             System.out.println(BOX + "| 0. Exit                                                             |");
             System.out.println(BOX + "-----------------------------------------------------------------------");
 

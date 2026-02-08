@@ -1,0 +1,4 @@
+MONDAY|LUNCH|Rice, Chicken Curry, Dal
+MONDAY|DINNER|Rice, Fish Fry, Veg
+TUESDAY|LUNCH|Rice, Beef Bhuna, Salad
+TUESDAY|DINNER|Rice, Egg Curry, Spinach

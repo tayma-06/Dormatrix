@@ -6,7 +6,6 @@ import models.users.User;
 import libraries.collections.MyString;
 public class MainDashboardController {
     private final AuthController authController = new AuthController();
-    private final AccountManager accountManager = new AccountManager();
     public MainDashboardController() {
         authController.createDefaultAdmin();
     }
@@ -42,6 +41,7 @@ public class MainDashboardController {
             case 4 -> new StoreInChargeDashboard();
             case 5 -> new HallOfficeDashboard();
             case 6 -> new AdminDashboard();
+            case 7 -> new CafeteriaManagerDashboard();
             default -> null;
         };
     }
@@ -53,6 +53,7 @@ public class MainDashboardController {
             case 4 -> new MyString("STORE_IN_CHARGE");
             case 5 -> new MyString("HALL_OFFICER");
             case 6 -> new MyString("ADMIN");
+            case 7 -> new MyString("CAFETERIA_MANAGER");
             default -> new MyString("UNKNOWN");
         };
     }
