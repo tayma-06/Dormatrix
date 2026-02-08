@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DueController {
-    private final String FILE = "data/inventories/dues.txt";
+    private static final String FILE = "data/inventories/dues.txt";
 
-    public double getDue(String studentId) {
+    public static double getDue(String studentId) {
         List<DueRecord> list = readAll();
         for (DueRecord dr : list) {
             if (dr.getStudentId().equals(studentId)) return dr.getAmount();
@@ -16,7 +16,7 @@ public class DueController {
         return 0.0;
     }
 
-    public void addDue(String studentId, double amount) {
+    public static void addDue(String studentId, double amount) {
         List<DueRecord> list = readAll();
         boolean found = false;
         for (DueRecord dr : list) {
@@ -36,7 +36,7 @@ public class DueController {
         writeAll(list);
     }
 
-    private List<DueRecord> readAll() {
+    private static List<DueRecord> readAll() {
         List<DueRecord> list = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(FILE))) {
             String line;
@@ -48,7 +48,7 @@ public class DueController {
         return list;
     }
 
-    private void writeAll(List<DueRecord> list) {
+    private static void writeAll(List<DueRecord> list) {
         try (PrintWriter pw = new PrintWriter(new FileWriter(FILE))) {
             for (DueRecord dr : list) pw.println(dr.toFileString());
         } catch (IOException ignored) { }

@@ -86,7 +86,7 @@ public class PurchaseController {
     /**
      * Process shopping cart purchase (multiple items)
      */
-    public boolean purchaseCart(String studentId, CartItem[] cartItems, boolean useCredit) {
+    public static boolean purchaseCart(String studentId, CartItem[] cartItems, boolean useCredit) {
         if (studentId == null || cartItems == null || cartItems.length == 0) {
             System.out.println("✗ Cart is empty");
             return false;
@@ -95,7 +95,7 @@ public class PurchaseController {
         // Calculate total and validate stock
         double grandTotal = 0.0;
         for (CartItem cartItem : cartItems) {
-            Item item = inventoryController.getItem(cartItem.getItemId());
+            Item item = InventoryController.getItem(cartItem.getItemId());
             if (item == null) {
                 System.out.println("✗ Item not found: " + cartItem.getItemId());
                 return false;
@@ -112,7 +112,7 @@ public class PurchaseController {
 
         // Check payment
         if (!useCredit) {
-            double balance = balanceController.getBalance(studentId);
+            double balance = BalanceController.getBalance(studentId);
             if (balance < grandTotal) {
                 System.out.printf("✗ Insufficient balance! Required: $%.2f, Available: $%.2f\n",
                         grandTotal, balance);
@@ -122,18 +122,18 @@ public class PurchaseController {
 
         // Process payment
         if (!useCredit) {
-            if (!balanceController.deductBalance(studentId, grandTotal)) {
+            if (!BalanceController.deductBalance(studentId, grandTotal)) {
                 System.out.println("✗ Failed to deduct balance");
                 return false;
             }
         } else {
-            dueController.addDue(studentId, grandTotal);
+            DueController.addDue(studentId, grandTotal);
         }
 
         // Update inventory and record sales
         for (CartItem cartItem : cartItems) {
-            inventoryController.reduceQuantity(cartItem.getItemId(), cartItem.getQuantity());
-            salesController.recordSale(studentId, cartItem.getItemId(),
+            InventoryController.reduceQuantity(cartItem.getItemId(), cartItem.getQuantity());
+            SalesController.recordSale(studentId, cartItem.getItemId(),
                     cartItem.getQuantity(), cartItem.getSubtotal());
         }
 
@@ -144,11 +144,11 @@ public class PurchaseController {
         System.out.printf("  Total Amount: $%.2f\n", grandTotal);
 
         if (useCredit) {
-            double totalDue = dueController.getDue(studentId);
+            double totalDue = DueController.getDue(studentId);
             System.out.printf("  Payment:      On Credit\n");
             System.out.printf("  Total Dues:   $%.2f\n", totalDue);
         } else {
-            double newBalance = balanceController.getBalance(studentId);
+            double newBalance = BalanceController.getBalance(studentId);
             System.out.printf("  Payment:      Cash (Balance)\n");
             System.out.printf("  Remaining:    $%.2f\n", newBalance);
         }

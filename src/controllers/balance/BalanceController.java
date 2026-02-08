@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BalanceController {
-    private final String FILE = "data/inventories/balances.txt";
+    private static final String FILE = "data/inventories/balances.txt";
 
-    public double getBalance(String studentId) {
+    public static double getBalance(String studentId) {
         List<StudentBalance> list = readAll();
         for (StudentBalance sb : list) {
             if (sb.getStudentId().equals(studentId)) return sb.getBalance();
@@ -30,7 +30,7 @@ public class BalanceController {
         writeAll(list);
     }
 
-    public boolean deductBalance(String studentId, double amount) {
+    public static boolean deductBalance(String studentId, double amount) {
         List<StudentBalance> list = readAll();
         boolean success = false;
         for (StudentBalance sb : list) {
@@ -43,7 +43,7 @@ public class BalanceController {
         return success;
     }
 
-    private List<StudentBalance> readAll() {
+    private static List<StudentBalance> readAll() {
         List<StudentBalance> list = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(FILE))) {
             String line;
@@ -55,7 +55,7 @@ public class BalanceController {
         return list;
     }
 
-    private void writeAll(List<StudentBalance> list) {
+    private static void writeAll(List<StudentBalance> list) {
         try (PrintWriter pw = new PrintWriter(new FileWriter(FILE))) {
             for (StudentBalance sb : list) pw.println(sb.toFileString());
         } catch (IOException ignored) { }

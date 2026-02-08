@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InventoryController {
-    private final String FILE = "data/inventories/inventory.txt";
+    private static final String FILE = "data/inventories/inventory.txt";
 
-    public Item getItem(String itemId) {
+    public static Item getItem(String itemId) {
         List<Item> list = readAll();
         for (Item item : list) {
             if (item.getItemId().equals(itemId)) return item;
@@ -16,7 +16,7 @@ public class InventoryController {
         return null;
     }
 
-    public void reduceQuantity(String itemId, int qty) {
+    public static void reduceQuantity(String itemId, int qty) {
         List<Item> list = readAll();
         for (Item item : list) {
             if (item.getItemId().equals(itemId)) {
@@ -32,7 +32,7 @@ public class InventoryController {
         return list.toArray(new Item[0]);
     }
 
-    private List<Item> readAll() {
+    private static List<Item> readAll() {
         List<Item> list = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(FILE))) {
             String line;
@@ -44,7 +44,7 @@ public class InventoryController {
         return list;
     }
 
-    private void writeAll(List<Item> list) {
+    private static void writeAll(List<Item> list) {
         try (PrintWriter pw = new PrintWriter(new FileWriter(FILE))) {
             for (Item item : list) pw.println(item.toFileString());
         } catch (IOException ignored) { }

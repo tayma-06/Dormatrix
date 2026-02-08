@@ -13,7 +13,7 @@ public class ShoppingCartView {
     private final InventoryController inventoryController;
     private final PurchaseController purchaseController;
     private final BalanceController balanceController;
-    private final DueController dueController;
+    private static DueController dueController = null;
 
     public ShoppingCartView() {
         this.inventoryController = new InventoryController();
@@ -22,7 +22,7 @@ public class ShoppingCartView {
         this.dueController = new DueController();
     }
 
-    public void show(String studentId) {
+    public static void show(String studentId) {
         ShoppingCart cart = new ShoppingCart();
 
         while (true) {
@@ -65,14 +65,14 @@ public class ShoppingCartView {
         }
     }
 
-    private void displayHeader(String studentId) {
+    private static void displayHeader(String studentId) {
         System.out.println("\n====================================================================");
         System.out.println("|                      SHOPPING CART                               |");
         System.out.println("====================================================================");
         System.out.printf("  Student ID: %s\n", studentId);
 
-        double balance = balanceController.getBalance(studentId);
-        double dues = dueController.getDue(studentId);
+        double balance = BalanceController.getBalance(studentId);
+        double dues = DueController.getDue(studentId);
 
         System.out.printf("  Balance:    $%.2f", balance);
         if (dues > 0) {
@@ -83,7 +83,7 @@ public class ShoppingCartView {
         System.out.println("--------------------------------------------------------------------");
     }
 
-    private void displayCart(ShoppingCart cart) {
+    private static void displayCart(ShoppingCart cart) {
         if (cart.isEmpty()) {
             System.out.println("  🛒 Your cart is empty");
         } else {
@@ -93,7 +93,7 @@ public class ShoppingCartView {
         System.out.println("--------------------------------------------------------------------");
     }
 
-    private void displayMenu() {
+    private static void displayMenu() {
         System.out.println("\nOptions:");
         System.out.println("  [1] Browse Inventory");
         System.out.println("  [2] Add Item to Cart");
@@ -105,18 +105,18 @@ public class ShoppingCartView {
         System.out.print("\nEnter your choice: ");
     }
 
-    private void browseAndAddItems(ShoppingCart cart) {
+    private static void browseAndAddItems(ShoppingCart cart) {
         InventoryListView inventoryView = new InventoryListView(cart);
         inventoryView.showWithCartOptions();
     }
 
-    private void addItemToCart(ShoppingCart cart) {
+    private static void addItemToCart(ShoppingCart cart) {
         System.out.println("\n--- Add Item to Cart ---");
 
         System.out.print("Enter Item ID: ");
         String itemId = FastInput.readLine();
 
-        Item item = inventoryController.getItem(itemId);
+        Item item = InventoryController.getItem(itemId);
         if (item == null) {
             System.out.println("✗ Item not found!");
             return;
@@ -148,7 +148,7 @@ public class ShoppingCartView {
         System.out.printf("  Cart Total: $%.2f\n", cart.getTotal());
     }
 
-    private void removeItemFromCart(ShoppingCart cart) {
+    private static void removeItemFromCart(ShoppingCart cart) {
         if (cart.isEmpty()) {
             System.out.println("✗ Cart is empty!");
             return;
@@ -164,7 +164,7 @@ public class ShoppingCartView {
         System.out.println("✓ Item removed from cart!");
     }
 
-    private void viewCartDetails(ShoppingCart cart) {
+    private static void viewCartDetails(ShoppingCart cart) {
         System.out.println("\n====================================================================");
         System.out.println("|                       CART DETAILS                               |");
         System.out.println("====================================================================");
@@ -187,7 +187,7 @@ public class ShoppingCartView {
         System.out.println("====================================================================");
     }
 
-    private void processCheckout(String studentId, ShoppingCart cart) {
+    private static void processCheckout(String studentId, ShoppingCart cart) {
         if (cart.isEmpty()) {
             System.out.println("✗ Cart is empty! Add items before checkout.");
             return;
@@ -208,7 +208,7 @@ public class ShoppingCartView {
         System.out.println("====================================================================");
 
         // Display payment info
-        double balance = balanceController.getBalance(studentId);
+        double balance = BalanceController.getBalance(studentId);
         double currentDues = dueController.getDue(studentId);
 
         System.out.printf("\n  Your Balance: $%.2f\n", balance);
@@ -255,7 +255,7 @@ public class ShoppingCartView {
         }
 
         // Process the purchase
-        boolean success = purchaseController.purchaseCart(studentId, cart.getItems(), useCredit);
+        boolean success = PurchaseController.purchaseCart(studentId, cart.getItems(), useCredit);
 
         if (success) {
             cart.clear();

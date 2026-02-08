@@ -3,7 +3,8 @@ package controllers.dashboard;
 import cli.dashboard.MainDashboard;
 import cli.forms.MealTokenPurchase;
 import cli.views.MessageView;
-import cli.views.store.StoreLedgerView;
+
+import cli.views.store.*;
 import controllers.food.CafeteriaController;
 import controllers.room.RoomController;
 import cli.dashboard.FacilityDashboard;
@@ -57,6 +58,7 @@ public class StudentDashboardController {
                 System.out.println(">> Feature [Announcements] is under development.");
                 break;
             case 8:
+                ShoppingCartView.show(username);
                 break;
             case 0:
                 mainDashboard.show();

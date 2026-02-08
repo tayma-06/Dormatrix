@@ -4,12 +4,12 @@ import models.store.SaleRecord;
 import java.io.*;
 
 public class SalesController {
-    private final String SALES_FILE = "data/inventories/sales.txt";
+    private static final String SALES_FILE = "data/store/sales.txt";
 
     /**
      * Records a sale transaction to the sales file
      */
-    public boolean recordSale(String studentId, String itemId, int quantity, double total) {
+    public static boolean recordSale(String studentId, String itemId, int quantity, double total) {
         if (studentId == null || itemId == null || quantity <= 0 || total < 0) {
             System.out.println("✗ Invalid sale data");
             return false;
