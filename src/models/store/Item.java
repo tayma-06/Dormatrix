@@ -1,7 +1,6 @@
 package models.store;
 
 public class Item {
-
     private String itemId;
     private String name;
     private int quantity;
@@ -19,18 +18,33 @@ public class Item {
     public int getQuantity() { return quantity; }
     public double getPrice() { return price; }
 
-    public void reduceQuantity(int amount) {
-        this.quantity -= amount;
-    }
+    public void reduceQuantity(int amount) { this.quantity -= amount; }
 
-    @Override
-    public String toString() {
+    public String toFileString() {
         return itemId + "," + name + "," + quantity + "," + price;
     }
 
     public static Item fromString(String line) {
+        if (line == null || line.isEmpty()) return null;
         String[] p = line.split(",");
-        return new Item(p[0], p[1], Integer.parseInt(p[2]), Double.parseDouble(p[3]));
+        if (p.length < 4) return null;
+        try {
+            return new Item(p[0], p[1], Integer.parseInt(p[2]), Double.parseDouble(p[3]));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    public void setName(String newName) {
+        this.name = newName;
+    }
+
+    public void setQuantity(int newQuantity) {
+        this.quantity = newQuantity;
+    }
+
+    public void setPrice(double newPrice) {
+        this.price = newPrice;
     }
 }
 

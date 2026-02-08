@@ -5,43 +5,25 @@ public class ShoppingCart {
     private int count;
 
     public ShoppingCart() {
-        this.items = new CartItem[50];
-        this.count = 0;
+        items = new CartItem[50];
+        count = 0;
     }
 
-    public void addItem(String itemId, String itemName, int quantity, double unitPrice) {
-        // Check if item already exists in cart
+    public void addItem(String itemId, String name, int quantity, double price) {
         for (int i = 0; i < count; i++) {
             if (items[i].getItemId().equals(itemId)) {
                 items[i].setQuantity(items[i].getQuantity() + quantity);
                 return;
             }
         }
-        // Add new item
-        items[count++] = new CartItem(itemId, itemName, quantity, unitPrice);
+        items[count++] = new CartItem(itemId, name, quantity, price);
     }
 
     public void removeItem(String itemId) {
         for (int i = 0; i < count; i++) {
             if (items[i].getItemId().equals(itemId)) {
-                // Shift items left
-                for (int j = i; j < count - 1; j++) {
-                    items[j] = items[j + 1];
-                }
+                for (int j = i; j < count - 1; j++) items[j] = items[j + 1];
                 items[--count] = null;
-                return;
-            }
-        }
-    }
-
-    public void updateQuantity(String itemId, int newQuantity) {
-        for (int i = 0; i < count; i++) {
-            if (items[i].getItemId().equals(itemId)) {
-                if (newQuantity <= 0) {
-                    removeItem(itemId);
-                } else {
-                    items[i].setQuantity(newQuantity);
-                }
                 return;
             }
         }
@@ -53,24 +35,16 @@ public class ShoppingCart {
         return result;
     }
 
-    public int getItemCount() {
-        return count;
-    }
-
     public double getTotal() {
         double total = 0;
-        for (int i = 0; i < count; i++) {
-            total += items[i].getSubtotal();
-        }
+        for (int i = 0; i < count; i++) total += items[i].getSubtotal();
         return total;
     }
 
-    public void clear() {
-        items = new CartItem[50];
-        count = 0;
-    }
+    public boolean isEmpty() { return count == 0; }
+    public void clear() { items = new CartItem[50]; count = 0; }
 
-    public boolean isEmpty() {
-        return count == 0;
+    public int getItemCount() {
+        return count;
     }
 }

@@ -1,32 +1,30 @@
 package models.store;
 
 public class DueRecord {
-    public String studentId;
-    public double amount;
+    private String studentId;
+    private double amount;
 
     public DueRecord(String studentId, double amount) {
         this.studentId = studentId;
         this.amount = amount;
     }
 
-    public String toString() {
+    public String getStudentId() { return studentId; }
+    public double getAmount() { return amount; }
+    public void addAmount(double amount) { this.amount += amount; }
+
+    public String toFileString() {
         return studentId + "," + amount;
     }
 
     public static DueRecord fromString(String line) {
-        String[] p = line.split(",");
-        return new DueRecord(p[0], Double.parseDouble(p[1]));
-    }
-
-    public String getStudentId() {
-        return studentId;
-    }
-
-    public void addAmount(double amount) {
-        this.amount += amount;
-    }
-
-    public double getAmount() {
-        return amount;
+        if (line == null || line.isEmpty()) return null;
+        String[] parts = line.split(",");
+        if (parts.length < 2) return null;
+        try {
+            return new DueRecord(parts[0], Double.parseDouble(parts[1]));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

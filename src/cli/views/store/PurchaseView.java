@@ -38,12 +38,8 @@ public class PurchaseView {
         System.out.print("Credit purchase? (y/n): ");
         boolean credit = scanner.nextLine().equalsIgnoreCase("y");
 
-        try {
-            purchaseController.purchase(studentId, itemId, qty, credit);
-            System.out.println("Purchase successful!");
-        } catch (InsufficientInventoryException e) {
-            System.out.println("Purchase failed: " + e.getMessage());
-        }
+        purchaseController.purchase(studentId, itemId, qty, credit);
+        System.out.println("Purchase successful!");
     }
 }
 

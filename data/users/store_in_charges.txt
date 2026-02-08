@@ -1,4 +1,4 @@
-//String id, String name, String role, String passwordHash, String phoneNumber
+//String id, String name, String role, String passwordHash, String phoneNumber. generic password 123456
 
 ST01|Salma Akter|STORE_IN_CHARGE|N/A|62afa2d2|01700000000
 ST02|Rahima Begum|STORE_IN_CHARGE|N/A|62afa2d2|01711111111

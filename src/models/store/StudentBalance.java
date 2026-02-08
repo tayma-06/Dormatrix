@@ -9,18 +9,10 @@ public class StudentBalance {
         this.balance = balance;
     }
 
-    public String getStudentId() {
-        return studentId;
-    }
+    public String getStudentId() { return studentId; }
+    public double getBalance() { return balance; }
 
-    public double getBalance() {
-        return balance;
-    }
-
-    public void addBalance(double amount) {
-        this.balance += amount;
-    }
-
+    public void addBalance(double amount) { this.balance += amount; }
     public boolean deductBalance(double amount) {
         if (this.balance >= amount) {
             this.balance -= amount;
@@ -29,13 +21,19 @@ public class StudentBalance {
         return false;
     }
 
-    @Override
-    public String toString() {
+    public String toFileString() {
         return studentId + "," + balance;
     }
 
     public static StudentBalance fromString(String line) {
+        if (line == null || line.isEmpty()) return null;
         String[] parts = line.split(",");
-        return new StudentBalance(parts[0], Double.parseDouble(parts[1]));
+        if (parts.length < 2) return null;
+        try {
+            return new StudentBalance(parts[0], Double.parseDouble(parts[1]));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }
+

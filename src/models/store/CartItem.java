@@ -13,29 +13,12 @@ public class CartItem {
         this.unitPrice = unitPrice;
     }
 
-    public String getItemId() {
-        return itemId;
-    }
-
-    public String getItemName() {
-        return itemName;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
-
-    public double getUnitPrice() {
-        return unitPrice;
-    }
-
-    public double getSubtotal() {
-        return quantity * unitPrice;
-    }
+    public String getItemId() { return itemId; }
+    public String getItemName() { return itemName; }
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public double getUnitPrice() { return unitPrice; }
+    public double getSubtotal() { return quantity * unitPrice; }
 
     @Override
     public String toString() {
