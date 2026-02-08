@@ -1,6 +1,7 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
+import cli.forms.MealTokenPurchase;
 import cli.views.MessageView;
 import cli.views.store.StoreLedgerView;
 import controllers.food.CafeteriaController;
@@ -10,7 +11,7 @@ import controllers.facilities.*;
 public class StudentDashboardController {
 
     private final MainDashboard mainDashboard;
-    private final CafeteriaController cafeteriaController;
+    private final MealTokenPurchase mealTokenPurchase;
     private final StoreLedgerView storeLedgerView;
     private final RoomController roomController;
     private final MessageView msg;
@@ -20,7 +21,7 @@ public class StudentDashboardController {
     private final FacilityDashboard facilityDashboard;
 
     public StudentDashboardController() {
-        this.cafeteriaController = new CafeteriaController();
+        this.mealTokenPurchase = new MealTokenPurchase();
         this.mainDashboard = new MainDashboard();
         this.storeLedgerView = new StoreLedgerView();
         this.roomController = new RoomController();
@@ -41,8 +42,7 @@ public class StudentDashboardController {
                 facilityDashboard.showMenu(username, studyRoomController, fridgeController, laundryController);
                 break;
             case 3:
-                String result = cafeteriaController.purchaseToken(username);
-                System.out.println(result);
+                mealTokenPurchase.show(username);
                 break;
             case 4:
                 storeLedgerView.show(username);
@@ -64,4 +64,5 @@ public class StudentDashboardController {
             default:
                 System.out.println("Invalid choice. Please try again.");
         }
-    }}
+    }
+}

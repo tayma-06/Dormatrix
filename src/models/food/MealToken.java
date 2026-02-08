@@ -7,37 +7,53 @@ public class MealToken {
     private String studentId;
     private MealType type;
     private LocalDate date;
-    private boolean isUsed;
+    private TokenStatus status;
 
-    public MealToken(String tokenId, String studentId, MealType type, LocalDate date, boolean isUsed) {
+    public MealToken(String tokenId, String studentId, MealType type, LocalDate date, TokenStatus status) {
         this.tokenId = tokenId;
         this.studentId = studentId;
         this.type = type;
         this.date = date;
-        this.isUsed = isUsed;
+        this.status = status;
+    }
+
+    // Logic to auto-expire tokens if the date has passed
+    public TokenStatus getStatus() {
+        if (status == TokenStatus.ACTIVE && date.isBefore(LocalDate.now())) {
+            return TokenStatus.EXPIRED;
+        }
+        return status;
+    }
+
+    public void setStatus(TokenStatus status) {
+        this.status = status;
     }
 
     @Override
     public String toString() {
-        return tokenId + "|" + studentId + "|" + type + "|" + date + "|" + isUsed;
+        // We save the Status name (ACTIVE/USED/EXPIRED) instead of a boolean
+        return tokenId + "|" + studentId + "|" + type + "|" + date + "|" + status;
     }
 
     public static MealToken fromString(String line) {
         String[] parts = line.split("\\|");
-        return new MealToken(parts[0], parts[1], MealType.valueOf(parts[2]),
-                LocalDate.parse(parts[3]), Boolean.parseBoolean(parts[4]));
+        return new MealToken(
+                parts[0],
+                parts[1],
+                MealType.valueOf(parts[2]),
+                LocalDate.parse(parts[3]),
+                TokenStatus.valueOf(parts[4]) // Parses ACTIVE, USED, or EXPIRED
+        );
     }
 
+    // Getters
     public String getTokenId() { return tokenId; }
-    public boolean isUsed() { return isUsed; }
-    public void setUsed(boolean used) { isUsed = used; }
     public LocalDate getDate() { return date; }
+    public MealType getType() { return type; }
+    public String getStudentId() { return studentId; }
 
-    public MealType getType() {
-        return type;
-    }
-
-    public Object getStudentId() {
-        return studentId;
+    // Compatibility helper for your controller
+    public boolean isUsed() {
+        return this.status != TokenStatus.ACTIVE;
     }
 }

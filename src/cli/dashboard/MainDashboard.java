@@ -23,10 +23,6 @@ public class MainDashboard {
             BackgroundFiller.applyMainMenuTheme();
             System.out.println();
             banner.printBannerOnTheme();
-            String currentMeal = utils.TimeManager.getCurrentMealSlot().toString();
-            System.out.println( " [ System Time: " + java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")) +
-                    " | Current Slot: " + currentMeal + " ] ");
-
             System.out.println(BOX + "-----------------------------------------------------------------------");
             System.out.println(BOX + "|                   Welcome to IUT Female Dormitory                   |");
             System.out.println(BOX + "-----------------------------------------------------------------------\n");

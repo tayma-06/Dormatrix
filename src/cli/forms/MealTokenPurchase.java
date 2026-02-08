@@ -5,7 +5,6 @@ import models.food.MealType;
 import models.store.StudentBalance;
 import utils.FastInput;
 import utils.TimeManager;
-import utils.ConsoleColors;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -16,16 +15,19 @@ public class MealTokenPurchase {
     public void show(String username) {
         while (true) {
             // 1. Get Live Data
+            LocalDate todayDate = LocalDate.now();
             MealType currentSlot = TimeManager.getCurrentMealSlot();
-            String today = LocalDate.now().getDayOfWeek().toString();
-            String menuItems = controller.getTodaysMenu(today, currentSlot);
+            String dayOfWeek = todayDate.getDayOfWeek().toString();
+
+            // UPDATED: Now checks Calendar first, then Weekly Menu
+            String menuItems = controller.getMenuForTime(todayDate, dayOfWeek, currentSlot);
             StudentBalance balance = controller.loadStudentBalance(username);
 
             // 2. Display Header
-            System.out.println("\n=======================================================================");
-            System.out.println("|                      DORMATRIX MEAL TOKEN SYSTEM                    |");
-            System.out.println("=======================================================================" );
-            System.out.println(" Date: " + LocalDate.now() + " | Time: " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+            System.out.println("\n-----------------------------------------------------------------------");
+            System.out.println("|                      Meal Token Purchase                            |");
+            System.out.println("-----------------------------------------------------------------------" );
+            System.out.println(" Date: " + todayDate + " | Time: " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             System.out.println(" Current Status: " + (currentSlot == MealType.NONE ? "CLOSED" : "ACTIVE - " + currentSlot));
             System.out.println("-----------------------------------------------------------------------");
 
@@ -37,25 +39,35 @@ public class MealTokenPurchase {
 
             System.out.println(" Your Balance: " + (balance != null ? balance.getBalance() : "N/A") + " BDT");
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println(" 1. Buy Current Meal Token (" + currentSlot + ")");
-            System.out.println(" 2. Pre-order Next Meal");
-            System.out.println(" 3. View My Tokens");
-            System.out.println(" 0. Back to Dashboard");
+            System.out.println("| 1. Buy Current Meal Token                                           |");
+            System.out.println("| 2. View My Tokens                                                   |");
+            System.out.println("| 0. Back to Dashboard                                                |");
+            System.out.println("-----------------------------------------------------------------------");
             System.out.print("\n Enter choice: ");
 
             int choice = FastInput.readInt();
             if (choice == 0) break;
 
-            if (choice == 1) {
-                if (currentSlot == MealType.NONE) {
-                    System.out.println(">> No active meal to buy right now!");
-                } else {
-                    String result = controller.purchaseToken(username);
-                    System.out.println(">> " + result);
+            switch (choice) {
+                case 1 -> {
+                    if (currentSlot == MealType.NONE) {
+                        System.out.println(">> No active meal to buy right now!");
+                    } else {
+                        String result = controller.purchaseToken(username);
+                        System.out.println(">> " + result);
+                    }
                 }
-                System.out.print("Press Enter to continue...");
-                FastInput.readLine();
+                case 2 -> {
+                    // This calls the controller method we fixed to show all student tokens
+                    var tokens = controller.getStudentTokens(username);
+                    System.out.println("\n--- Your Purchased Tokens ---");
+                    if(tokens.isEmpty()) System.out.println("No tokens found.");
+                    else tokens.forEach(t -> System.out.println(t.getTokenId() + " | " + t.getType() + " | " + t.getStatus()));
+                }
+                default -> System.out.println("Invalid choice.");
             }
+            System.out.print("\nPress Enter to continue...");
+            FastInput.readLine();
         }
     }
 }

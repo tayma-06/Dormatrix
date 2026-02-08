@@ -13,6 +13,7 @@ public final class RoleMapper {
             case 4 -> new MyString("STORE_IN_CHARGE");
             case 5 -> new MyString("HALL_OFFICER");
             case 6 -> new MyString("ADMIN");
+            case 7 -> new MyString("CAFETERIA_MANAGER"); // Add this
             default -> new MyString("UNKNOWN");
         };
     }

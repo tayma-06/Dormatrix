@@ -135,6 +135,9 @@ public class AuthController {
             case "ADMIN":
                 return new SystemAdmin(id, name, role, hash, phone);
 
+            case "CAFETERIA_MANAGER":
+                return new CafeteriaManager(id, name, role, hash, phone);
+
             default:
                 return null;
         }

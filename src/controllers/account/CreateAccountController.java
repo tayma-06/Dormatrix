@@ -27,18 +27,22 @@ public class CreateAccountController {
     }
 
     public boolean isValidEmail(String email, String role) throws InvalidEmailException {
-        String emailRegex = "";
+        if (role.equals("MAINTENANCE_WORKER") ||
+                role.equals("STORE_IN_CHARGE") ||
+                role.equals("CAFETERIA_MANAGER")) {
+            return true;
+        }
 
-        if (role.equals("STUDENT")) {
-            emailRegex = "^[a-zA-Z0-9_+&*-]+@iut-dhaka\\.edu$";
-        } else if (role.equals("ADMIN")) {
+        String emailRegex = "";
+        if (role.equals("STUDENT") || role.equals("ADMIN")) {
             emailRegex = "^[a-zA-Z0-9_+&*-]+@iut-dhaka\\.edu$";
         } else if (role.equals("HALL_ATTENDANT") || role.equals("HALL_OFFICER")) {
             emailRegex = "^[a-zA-Z0-9_+&*-]+@iut-dhaka\\.com$";
-        } else if (role.equals("MAINTENANCE_WORKER") || role.equals("STORE_IN_CHARGE")) {
-            return true;
         } else {
             throw new InvalidEmailException("Error: Invalid email format!");
+        }
+        if (email == null) {
+            throw new InvalidEmailException("Error: Email is required for this role!");
         }
 
         Pattern pattern = Pattern.compile(emailRegex);
@@ -130,7 +134,9 @@ public class CreateAccountController {
             return new StoreInCharge(id, name, roleStr, hashedPass, phone);
         } else if (roleStr.equals("HALL_OFFICER")) {
             return new HallOfficer(id, name, roleStr, hashedPass, phone, email);
-        } else if (roleStr.equals("ADMIN")) {
+        } else if (roleStr.equals("CAFETERIA_MANAGER")) {
+            return new models.users.CafeteriaManager(id, name, roleStr, hashedPass, phone);
+        }else if (roleStr.equals("ADMIN")) {
             return new SystemAdmin(id, name, roleStr, hashedPass, phone);
         }
         return null;

@@ -28,6 +28,7 @@ public class CreateAccount {
         System.out.println("| 4. Store-in-Charge                                                  |");
         System.out.println("| 5. Hall Office                                                      |");
         System.out.println("| 6. Admin                                                            |");
+        System.out.println("| 7. Cafeteria Manager                                                |");
         System.out.println("| 0. Back                                                             |");
         System.out.println("-----------------------------------------------------------------------");
         System.out.print("Enter choice: ");
