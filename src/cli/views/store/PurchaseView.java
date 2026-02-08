@@ -1,4 +1,4 @@
-package cli.views;
+package cli.views.store;
 
 import controllers.store.InventoryController;
 import controllers.store.PurchaseController;

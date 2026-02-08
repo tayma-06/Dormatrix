@@ -1,40 +1,29 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
-import cli.dashboard.room.StudentRoomDashboard;
-import controllers.dashboard.room.StudentRoomDashboardController; // Added import
 import cli.views.MessageView;
 import cli.forms.MealTokenPurchase;
 import cli.views.StoreLedgerView;
-import controllers.room.RoomService;
+import controllers.room.RoomController;
 import cli.dashboard.FacilityDashboard;
 import controllers.facilities.*;
-
 public class StudentDashboardController {
 
     private final MainDashboard mainDashboard;
     private final MealTokenPurchase mealTokenPurchase;
     private final StoreLedgerView storeLedgerView;
-    private final StudentRoomDashboard studentRoomDashboard;
+    private final RoomController roomController;
     private final MessageView msg;
     private final StudyRoomController studyRoomController;
     private final FridgeController fridgeController;
     private final LaundryController laundryController;
     private final FacilityDashboard facilityDashboard;
-    private final RoomService roomService; // Renamed for consistency
 
     public StudentDashboardController() {
-        // STEP 1: Initialize Service first
-        this.roomService = new RoomService();
-
-        // STEP 2: Initialize Dashboards that depend on the Service
-        // We pass a new DashboardController to the Dashboard
-        this.studentRoomDashboard = new StudentRoomDashboard(new StudentRoomDashboardController(roomService));
-
-        // STEP 3: Initialize everything else
         this.mainDashboard = new MainDashboard();
         this.mealTokenPurchase = new MealTokenPurchase();
         this.storeLedgerView = new StoreLedgerView();
+        this.roomController = new RoomController();
         this.msg = new MessageView();
         this.studyRoomController = new StudyRoomController();
         this.fridgeController = new FridgeController();
@@ -45,9 +34,7 @@ public class StudentDashboardController {
     public void handleInput(int choice, String username) {
         switch (choice) {
             case 1:
-                // FIX: Instead of calling roomService directly,
-                // we call the Dashboard's show() method.
-                studentRoomDashboard.show(username);
+                roomController.showStudentRoomDetails(username);
                 break;
 
             case 2:
@@ -63,6 +50,7 @@ public class StudentDashboardController {
                 System.out.println(">> Feature [Lost & Found] is under development.");
                 break;
 //            case 6:
+//                studentComplaintMenu(username);
 //                break;
             case 7:
                 System.out.println(">> Feature [Announcements] is under development.");
@@ -73,5 +61,4 @@ public class StudentDashboardController {
             default:
                 System.out.println("Invalid choice. Please try again.");
         }
-    }
-}
+    }}

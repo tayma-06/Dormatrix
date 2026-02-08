@@ -18,24 +18,43 @@ public class PurchaseController {
             throws InsufficientInventoryException {
 
         Item item = inventory.getItem(itemId);
+        if (item == null) {
+            throw new InsufficientInventoryException("Item not found");
+        }
+
         inventory.reduceStock(itemId, qty);
 
         double total = item.getPrice() * qty;
         writeSale(new SaleRecord(studentId, itemId, qty, total));
 
-        if (credit) updateDue(studentId, total);
+        if (credit) {
+            updateDue(studentId, total);
+        }
     }
 
     private void writeSale(SaleRecord s) {
-        try (PrintWriter pw = new PrintWriter(new FileWriter(SALES, true))) {
+        try {
+            File f = new File(SALES);
+            if (!f.exists()) {
+                f.getParentFile().mkdirs();
+                f.createNewFile();
+            }
+
+            PrintWriter pw = new PrintWriter(new FileWriter(SALES, true));
             pw.println(s);
-        } catch (IOException ignored) {}
+            pw.close();
+        } catch (IOException e) {
+            System.out.println("Error recording sale: " + e.getMessage());
+        }
     }
 
     private void updateDue(String studentId, double amount) {
         try {
             File f = new File(DUES);
-            if (!f.exists()) f.createNewFile();
+            if (!f.exists()) {
+                f.getParentFile().mkdirs();
+                f.createNewFile();
+            }
 
             BufferedReader br = new BufferedReader(new FileReader(DUES));
             StringBuilder sb = new StringBuilder();
@@ -52,12 +71,16 @@ public class PurchaseController {
             }
             br.close();
 
-            if (!found) sb.append(new DueRecord(studentId, amount)).append("\n");
+            if (!found) {
+                sb.append(new DueRecord(studentId, amount)).append("\n");
+            }
 
             PrintWriter pw = new PrintWriter(new FileWriter(DUES));
             pw.print(sb);
             pw.close();
 
-        } catch (IOException ignored) {}
+        } catch (IOException e) {
+            System.out.println("Error updating dues: " + e.getMessage());
+        }
     }
 }
