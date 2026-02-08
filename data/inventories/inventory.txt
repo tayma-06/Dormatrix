@@ -40,7 +40,7 @@ H004,Toothbrush,90,60.0
 H005,Face Wash,70,180.0
 H006,Hand Sanitizer,130,50.0
 H007,Tissues (Pack),160,35.0
-H008,Wet Wipes,85,60.0
+H008,Wet Wipes,84,60.0
 H009,Hair Oil (Small),45,80.0
 H010,Body Lotion,40,150.0
 H011,Deodorant,35,250.0
