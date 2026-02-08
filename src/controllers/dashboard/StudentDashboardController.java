@@ -2,15 +2,15 @@ package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
 import cli.views.MessageView;
-import cli.forms.MealTokenPurchase;
 import cli.views.store.StoreLedgerView;
+import controllers.food.CafeteriaController;
 import controllers.room.RoomController;
 import cli.dashboard.FacilityDashboard;
 import controllers.facilities.*;
 public class StudentDashboardController {
 
     private final MainDashboard mainDashboard;
-    private final MealTokenPurchase mealTokenPurchase;
+    private final CafeteriaController cafeteriaController;
     private final StoreLedgerView storeLedgerView;
     private final RoomController roomController;
     private final MessageView msg;
@@ -20,8 +20,8 @@ public class StudentDashboardController {
     private final FacilityDashboard facilityDashboard;
 
     public StudentDashboardController() {
+        this.cafeteriaController = new CafeteriaController();
         this.mainDashboard = new MainDashboard();
-        this.mealTokenPurchase = new MealTokenPurchase();
         this.storeLedgerView = new StoreLedgerView();
         this.roomController = new RoomController();
         this.msg = new MessageView();
@@ -41,7 +41,8 @@ public class StudentDashboardController {
                 facilityDashboard.showMenu(username, studyRoomController, fridgeController, laundryController);
                 break;
             case 3:
-                mealTokenPurchase.show(username);
+                String result = cafeteriaController.purchaseToken(username);
+                System.out.println(result);
                 break;
             case 4:
                 storeLedgerView.show(username);

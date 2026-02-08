@@ -5,44 +5,39 @@ import java.time.LocalDate;
 public class MealToken {
     private String tokenId;
     private String studentId;
+    private MealType type;
     private LocalDate date;
-    private TokenStatus status;
+    private boolean isUsed;
 
-    public MealToken(String tokenId, String studentId) {
+    public MealToken(String tokenId, String studentId, MealType type, LocalDate date, boolean isUsed) {
         this.tokenId = tokenId;
         this.studentId = studentId;
-        this.date = LocalDate.now();
-        this.status = TokenStatus.ACTIVE;
-    }
-
-    public String getTokenID(){
-        return tokenId;
-    }
-
-
-    public boolean isExpired() {
-        return !date.equals(LocalDate.now());
-    }
-
-    public void expire() {
-        status = TokenStatus.EXPIRED;
+        this.type = type;
+        this.date = date;
+        this.isUsed = isUsed;
     }
 
     @Override
     public String toString() {
-        return tokenId + "," + studentId + "," + date + "," + status;
+        return tokenId + "|" + studentId + "|" + type + "|" + date + "|" + isUsed;
     }
 
     public static MealToken fromString(String line) {
-        String[] p = line.split(",");
-        MealToken t = new MealToken(p[0], p[1]);
-        t.date = LocalDate.parse(p[2]);
-        t.status = TokenStatus.valueOf(p[3]);
-        return t;
+        String[] parts = line.split("\\|");
+        return new MealToken(parts[0], parts[1], MealType.valueOf(parts[2]),
+                LocalDate.parse(parts[3]), Boolean.parseBoolean(parts[4]));
     }
 
-    public String getTokenId() {
-        return tokenId;
+    public String getTokenId() { return tokenId; }
+    public boolean isUsed() { return isUsed; }
+    public void setUsed(boolean used) { isUsed = used; }
+    public LocalDate getDate() { return date; }
+
+    public MealType getType() {
+        return type;
+    }
+
+    public Object getStudentId() {
+        return studentId;
     }
 }
-

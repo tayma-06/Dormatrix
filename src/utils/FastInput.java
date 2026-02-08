@@ -45,4 +45,15 @@ public final class FastInput {
             }
         }
     }
+    public static boolean readBoolean() {
+        while (true) {
+            try {
+                String line = readLine();
+                return Boolean.parseBoolean(line.trim());
+            }
+            catch (NumberFormatException e) {
+                System.out.print("Invalid number. Try again: ");
+            }
+        }
+    }
 }

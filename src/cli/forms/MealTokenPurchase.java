@@ -1,68 +1,61 @@
 package cli.forms;
 
-import controllers.food.MealTokenController;
-import exceptions.InvalidTokenException;
-import models.food.MealToken;
-
-import java.util.Scanner;
+import controllers.food.CafeteriaController;
+import models.food.MealType;
+import models.store.StudentBalance;
+import utils.FastInput;
+import utils.TimeManager;
+import utils.ConsoleColors;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 public class MealTokenPurchase {
-
-    private final MealTokenController mealTokenController;
-    private final Scanner scanner;
-
-    public MealTokenPurchase() {
-        this.mealTokenController = new MealTokenController();
-        this.scanner = new Scanner(System.in);
-    }
+    private final CafeteriaController controller = new CafeteriaController();
 
     public void show(String username) {
         while (true) {
-            System.out.println("------------------------------------------------");
-            System.out.println("|              Meal Token System               |");
-            System.out.println("------------------------------------------------");
-            System.out.println("| 1. Buy Meal Token                            |");
-            System.out.println("| 2. Validate Meal Token                       |");
-            System.out.println("| 0. Back                                      |");
-            System.out.println("------------------------------------------------");
-            System.out.print("Enter choice: ");
+            // 1. Get Live Data
+            MealType currentSlot = TimeManager.getCurrentMealSlot();
+            String today = LocalDate.now().getDayOfWeek().toString();
+            String menuItems = controller.getTodaysMenu(today, currentSlot);
+            StudentBalance balance = controller.loadStudentBalance(username);
 
-            int choice = scanner.nextInt();
-            scanner.nextLine();
+            // 2. Display Header
+            System.out.println("\n=======================================================================");
+            System.out.println("|                      DORMATRIX MEAL TOKEN SYSTEM                    |");
+            System.out.println("=======================================================================" );
+            System.out.println(" Date: " + LocalDate.now() + " | Time: " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+            System.out.println(" Current Status: " + (currentSlot == MealType.NONE ? "CLOSED" : "ACTIVE - " + currentSlot));
+            System.out.println("-----------------------------------------------------------------------");
 
-            switch (choice) {
-                case 1:
-                    buyToken(username);
-                    break;
-
-                case 2:
-                    validateToken();
-                    break;
-
-                case 0:
-                    return;
-
-                default:
-                    System.out.println("Invalid choice!");
+            if (currentSlot != MealType.NONE) {
+                System.out.println(" TODAY'S MENU: " + menuItems );
+            } else {
+                System.out.println(" Cafeteria is currently closed. Check back during meal hours.");
             }
-        }
-    }
 
-    private void buyToken(String username) {
-        MealToken token = mealTokenController.buyToken(username);
-        System.out.println("Token purchased successfully!");
-        System.out.println("Token ID: " + token.getTokenId());
-    }
+            System.out.println(" Your Balance: " + (balance != null ? balance.getBalance() : "N/A") + " BDT");
+            System.out.println("-----------------------------------------------------------------------");
+            System.out.println(" 1. Buy Current Meal Token (" + currentSlot + ")");
+            System.out.println(" 2. Pre-order Next Meal");
+            System.out.println(" 3. View My Tokens");
+            System.out.println(" 0. Back to Dashboard");
+            System.out.print("\n Enter choice: ");
 
-    private void validateToken() {
-        System.out.print("Enter Token ID: ");
-        String tokenId = scanner.nextLine();
+            int choice = FastInput.readInt();
+            if (choice == 0) break;
 
-        try {
-            mealTokenController.validate(tokenId);
-            System.out.println("Token is valid. Enjoy your meal!");
-        } catch (InvalidTokenException e) {
-            System.out.println("Validation failed: " + e.getMessage());
+            if (choice == 1) {
+                if (currentSlot == MealType.NONE) {
+                    System.out.println(">> No active meal to buy right now!");
+                } else {
+                    String result = controller.purchaseToken(username);
+                    System.out.println(">> " + result);
+                }
+                System.out.print("Press Enter to continue...");
+                FastInput.readLine();
+            }
         }
     }
 }

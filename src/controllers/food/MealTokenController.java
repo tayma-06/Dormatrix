@@ -1,69 +1,51 @@
 package controllers.food;
 
 import models.food.MealToken;
-import exceptions.InvalidTokenException;
 import java.io.*;
 import java.util.*;
 
 public class MealTokenController {
-    private final String FILE = "data/foods/mealTokens.txt";
+    private final String TOKEN_FILE = "data/foods/tokens.txt";
 
-    public MealToken buyToken(String studentId) {
-        String prettyId = generateId();
-        MealToken t = new MealToken(prettyId, studentId);
-        save(t);
-        return t;
-    }
+    public String verifyAndUseToken(String inputTokenId) {
+        List<MealToken> tokens = loadAllTokens();
+        boolean found = false;
+        String message = "Invalid Token ID.";
 
-    public void validate(String tokenId) throws InvalidTokenException {
-        List<MealToken> tokens = loadAll();
         for (MealToken t : tokens) {
-            if (t.getTokenId().trim().equals(tokenId.trim())) {
-                if (t.isExpired()) {
-                    throw new InvalidTokenException("Token has expired");
+            if (t.getTokenId().equals(inputTokenId)) {
+                if (t.isUsed()) {
+                    return "Error: This token has already been used!";
                 }
-                return;
+                if (!t.getDate().equals(java.time.LocalDate.now())) {
+                    return "Error: This token was for a different date (" + t.getDate() + ").";
+                }
+
+                t.setUsed(true);
+                found = true;
+                message = "Success: Token verified! Enjoy your meal.";
+                break;
             }
         }
-        throw new InvalidTokenException("Token ID not found in system.");
+
+        if (found) saveAllTokens(tokens);
+        return message;
     }
 
-    private String generateId() {
-        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        StringBuilder sb = new StringBuilder("MT-");
-        Random rnd = new Random();
-        for (int i = 0; i < 4; i++) sb.append(chars.charAt(rnd.nextInt(chars.length())));
-        return sb.toString();
-    }
-
-    private void save(MealToken t) {
-        new File("data/foods").mkdirs();
-        try (PrintWriter pw = new PrintWriter(new FileWriter(FILE, true))) {
-            pw.println(t.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private List<MealToken> loadAll() {
+    private List<MealToken> loadAllTokens() {
         List<MealToken> list = new ArrayList<>();
-        File file = new File(FILE);
-        if (!file.exists()) return list;
-
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(TOKEN_FILE))) {
             String line;
             while ((line = br.readLine()) != null) {
-                if(line.trim().isEmpty()) continue;
-                try {
-                    MealToken t = MealToken.fromString(line);
-                    if (t != null) list.add(t);
-                } catch (Exception e) {
-                    continue;
-                }
+                list.add(MealToken.fromString(line));
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException e) { /* Handle empty file */ }
         return list;
+    }
+
+    private void saveAllTokens(List<MealToken> tokens) {
+        try (PrintWriter pw = new PrintWriter(new FileWriter(TOKEN_FILE))) {
+            for (MealToken t : tokens) pw.println(t.toString());
+        } catch (IOException e) { e.printStackTrace(); }
     }
 }
