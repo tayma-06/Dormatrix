@@ -3,6 +3,7 @@ package controllers.account;
 import controllers.authentication.AccountManager;
 import controllers.authentication.AuthController;
 import libraries.collections.MyString;
+import utils.RoleMapper;
 
 public class DeleteAccountController {
 

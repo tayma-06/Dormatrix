@@ -11,6 +11,9 @@ public class AuthController {
     private static final MyString DATA_DIR = new MyString("data/users/");
 
     private MyString getFilePath(MyString role) {
+        if (role.getValue().equals("ADMIN")) {
+            return DATA_DIR.concat(new MyString("admin.txt"));
+        }
         return DATA_DIR.concat(role.toLowerCase()).concat(new MyString("s.txt"));
     }
 
@@ -25,8 +28,8 @@ public class AuthController {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     MyString[] parts = new MyString(line).split('|');
-                    if (parts.length > 4 && parts[0].trim().equals(username.trim())) {
-                        if (parts[4].equals(hashedInput)) {
+                    if (parts.length > 4 && parts[0].getValue().trim().equals(username.getValue().trim())) {
+                        if (parts[4].getValue().equals(hashedInput.getValue())) {
                             return true;
                         }
                     }
@@ -78,7 +81,7 @@ public class AuthController {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     MyString[] parts = new MyString(line).split('|');
-                    if (parts.length > 0 && parts[0].trim().equals(username.trim())) {
+                    if (parts.length > 0 && parts[0].getValue().trim().equals(username.getValue().trim())) {
                         return createUserFromParts(parts, role.getValue());
                     }
                 }

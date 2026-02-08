@@ -1,13 +1,14 @@
 package controllers.room;
 
 import models.room.Room;
-import java.io.*;
-import java.util.*;
-
 import repo.file.FileComplaintRepository;
 import libraries.collections.MyArrayList;
 import libraries.collections.MyString;
 import models.complaints.Complaint;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RoomService {
 
@@ -18,17 +19,17 @@ public class RoomService {
     private final FileComplaintRepository complaintRepo;
 
     public RoomService() {
-        this.rooms = loadRooms();
+        this.rooms = loadRooms(); // Initialize with loaded rooms
         this.complaintRepo = new FileComplaintRepository();
     }
 
     public List<Room> getAllRooms() {
-        this.rooms = loadRooms();
+        this.rooms = loadRooms(); // Always reload rooms when getting them
         return rooms;
     }
 
     public boolean addRoom(String roomId, int capacity) {
-        this.rooms = loadRooms();
+        this.rooms = loadRooms(); // Reload rooms to get the latest data
 
         for (Room r : rooms) {
             if (r.getRoomId().equals(roomId)) {
@@ -43,7 +44,7 @@ public class RoomService {
     }
 
     public List<Room> getAvailableRooms() {
-        this.rooms = loadRooms();
+        this.rooms = loadRooms(); // Reload rooms before checking availability
 
         List<Room> available = new ArrayList<>();
         for (Room r : rooms) {
@@ -53,7 +54,7 @@ public class RoomService {
     }
 
     public Room getRoomDetailsWithRealOccupancy(String roomId) {
-        this.rooms = loadRooms();
+        this.rooms = loadRooms(); // Reload rooms to ensure current data
 
         Room room = null;
         for (Room r : rooms) {
@@ -72,6 +73,8 @@ public class RoomService {
     }
 
     public String getStudentRoomNumber(String studentIdentifier) {
+        this.rooms = loadRooms(); // Reload rooms if needed
+
         File file = new File(STUDENT_FILE);
         if (!file.exists()) return "UNASSIGNED";
 
@@ -80,14 +83,14 @@ public class RoomService {
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split("\\|", -1);
                 if (parts.length > 1) {
-                    String fileId = parts[0].trim().replace("\uFEFF", "");
-                    String fileName = parts[1].trim();
-                    if (fileId.equals(studentIdentifier.trim())
-                            || fileName.equalsIgnoreCase(studentIdentifier.trim())) {
+                    String studentId = parts[0].trim();
+                    String studentName = parts[1].trim();
+                    if (studentId.equals(studentIdentifier.trim())
+                            || studentName.equalsIgnoreCase(studentIdentifier.trim())) {
 
                         if (parts.length > 7) {
-                            String r = parts[7].trim();
-                            return r.isEmpty() ? "UNASSIGNED" : r;
+                            String roomNumber = parts[7].trim();
+                            return roomNumber.isEmpty() ? "UNASSIGNED" : roomNumber;
                         }
                     }
                 }
@@ -100,7 +103,7 @@ public class RoomService {
     }
 
     public boolean allocateRoom(String roomId) {
-        this.rooms = loadRooms();
+        this.rooms = loadRooms(); // Reload rooms before allocating
 
         for (Room r : rooms) {
             if (r.getRoomId().equals(roomId)) {
@@ -116,9 +119,9 @@ public class RoomService {
     }
 
     public void freeRoom(String roomId) {
-        if (roomId == null || roomId.equals("N/A") || roomId.isEmpty() || roomId.equals("UNASSIGNED")) return;
+        this.rooms = loadRooms(); // Reload rooms before freeing any room
 
-        this.rooms = loadRooms();
+        if (roomId == null || roomId.equals("N/A") || roomId.isEmpty() || roomId.equals("UNASSIGNED")) return;
 
         for (Room r : rooms) {
             if (r.getRoomId().equals(roomId)) {

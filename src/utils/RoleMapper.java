@@ -1,4 +1,4 @@
-package controllers.account;
+package utils;
 
 import libraries.collections.MyString;
 
