@@ -21,10 +21,11 @@ public class AttendantDashboard implements Dashboard {
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("  Welcome, " + username + "                                             ");
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println("| 1. Handle Student Complaints                                        |");
-            System.out.println("| 2. Handle Worker Schedule                                           |");
-            System.out.println("| 0. Logout                                                           |");
+            System.out.println("| [1] Handle Student Complaints                                       |");
+            System.out.println("| [2] Handle Worker Schedule                                          |");
+            System.out.println("| [0] Logout                                                          |");
             System.out.println("-----------------------------------------------------------------------");
+            System.out.println();
             System.out.print("Enter your choice: ");
             int choice = FastInput.readInt();
 
