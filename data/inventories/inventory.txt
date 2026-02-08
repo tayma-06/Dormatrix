@@ -45,7 +45,7 @@ H009,Hair Oil (Small),45,80.0
 H010,Body Lotion,40,150.0
 H011,Deodorant,35,250.0
 H012,Razor (Pack),50,80.0
-H013,Comb,120,30.0
+H013,Comb,118,30.0
 H014,Towel (Small),25,200.0
 H015,Detergent (Sachet),100,20.0
 M001,Pain Relief (Strip),80,40.0
