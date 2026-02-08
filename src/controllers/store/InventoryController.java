@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InventoryController {
-    private final String FILE = "data/inventories/items.txt";
+    private final String FILE = "data/inventories/inventory.txt";
 
     public Item getItem(String itemId) {
         List<Item> list = readAll();
