@@ -24,12 +24,14 @@ public class MealTokenPurchase {
             StudentBalance balance = controller.loadStudentBalance(username);
 
             // 2. Display Header
-            System.out.println("\n-----------------------------------------------------------------------");
+            System.out.println();
+            System.out.println("-----------------------------------------------------------------------");
             System.out.println("|                      Meal Token Purchase                            |");
             System.out.println("-----------------------------------------------------------------------" );
             System.out.println(" Date: " + todayDate + " | Time: " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             System.out.println(" Current Status: " + (currentSlot == MealType.NONE ? "CLOSED" : "ACTIVE - " + currentSlot));
             System.out.println("-----------------------------------------------------------------------");
+            System.out.println();
 
             if (currentSlot != MealType.NONE) {
                 System.out.println(" TODAY'S MENU: " + menuItems );
@@ -39,11 +41,12 @@ public class MealTokenPurchase {
 
             System.out.println(" Your Balance: " + (balance != null ? balance.getBalance() : "N/A") + " BDT");
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println("| 1. Buy Current Meal Token                                           |");
-            System.out.println("| 2. View My Tokens                                                   |");
-            System.out.println("| 0. Back to Dashboard                                                |");
+            System.out.println("| [1] Buy Current Meal Token                                          |");
+            System.out.println("| [2] View My Tokens                                                  |");
+            System.out.println("| [0] Back to Dashboard                                               |");
             System.out.println("-----------------------------------------------------------------------");
-            System.out.print("\n Enter choice: ");
+            System.out.println();
+            System.out.print("Enter choice: ");
 
             int choice = FastInput.readInt();
             if (choice == 0) break;

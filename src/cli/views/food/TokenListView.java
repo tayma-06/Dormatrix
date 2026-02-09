@@ -10,8 +10,9 @@ public class TokenListView {
 
     public void show(String username) {
         List<MealToken> tokens = controller.getStudentTokens(username);
-
-        System.out.println("========== YOUR MEAL TOKENS ==========");
+        System.out.println("----------------------------------------------------------");
+        System.out.println("|                    YOUR MEAL TOKENS                    |");
+        System.out.println("----------------------------------------------------------");
 
         if (tokens.isEmpty()) {
             System.out.println(" No tokens found. Go buy some delicious food!");
@@ -26,7 +27,7 @@ public class TokenListView {
                         t.getTokenId(), t.getType(), t.getDate(), status);
             }
         }
-        System.out.println("======================================");
+        System.out.println("-----------------------------------------------------------");
         System.out.println("Press Enter to return...");
         utils.FastInput.readLine();
     }

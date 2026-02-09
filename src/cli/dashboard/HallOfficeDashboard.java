@@ -20,12 +20,13 @@ public class HallOfficeDashboard implements Dashboard {
             System.out.println("-----------------------------------------------------------------------");
             System.out.println("  Welcome, " + username);
             System.out.println("-----------------------------------------------------------------------");
-            System.out.println("| 1. Update Student Hall Room Info                                    |");
-            System.out.println("| 2. View Student Complaints                                          |");
-            System.out.println("| 3. View Worker Schedule                                             |");
-            System.out.println("| 4. Handle Attendant Task                                            |");
-            System.out.println("| 0. Logout                                                           |");
+            System.out.println("| [1] Update Student Hall Room Info                                   |");
+            System.out.println("| [2] View Student Complaints                                         |");
+            System.out.println("| [3] View Worker Schedule                                            |");
+            System.out.println("| [4] Handle Attendant Task                                           |");
+            System.out.println("| [0] Logout                                                          |");
             System.out.println("-----------------------------------------------------------------------");
+            System.out.println();
             System.out.print("Enter your choice: ");
 
             int choice = FastInput.readInt();

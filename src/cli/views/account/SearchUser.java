@@ -16,8 +16,9 @@ public class SearchUser {
         ConsoleUtil.clearScreen();
         System.out.println();
         System.out.println("-----------------------------------------------------------------------");
-        System.out.println("|                      Search Accounts                                |");
+        System.out.println("|                        SEARCH ACCOUNTS                              |");
         System.out.println("-----------------------------------------------------------------------");
+        System.out.println();
         System.out.print("Enter User ID: ");
 
         String id = FastInput.readNonEmptyLine();

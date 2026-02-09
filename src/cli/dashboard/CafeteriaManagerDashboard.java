@@ -16,13 +16,19 @@ public class CafeteriaManagerDashboard implements Dashboard {
     @Override
     public void show(String username) {
         while (true) {
-            System.out.println("\n--- CAFETERIA MANAGER PANEL ---");
-            System.out.println("1. Update Weekly Menu (General)");
-            System.out.println("2. Schedule Special Event (Calendar)");
-            System.out.println("3. Verify Student Token");
-            System.out.println("4. Toggle Ramadan Mode");
-            System.out.println("0. Logout");
-            System.out.print("Selection: ");
+            System.out.println("-----------------------------------------------------------------------");
+            System.out.println("|                      CAFETERIA MANAGER DASHBOARD                    |");
+            System.out.println("-----------------------------------------------------------------------");
+            System.out.println("  Welcome, " + username + "                                             ");
+            System.out.println("-----------------------------------------------------------------------");
+            System.out.println("| [1] Update Weekly Menu                                              |");
+            System.out.println("| [2] Schedule Special Event                                          |");
+            System.out.println("| [3] Verify Student Token                                            |");
+            System.out.println("| [4] Toggle Ramadan Mode                                             |");
+            System.out.println("| [0] Logout                                                          |");
+            System.out.println("-----------------------------------------------------------------------");
+            System.out.println();
+            System.out.print("Enter your choice: ");
 
             int choice = FastInput.readInt();
             if (choice == 0) break;
