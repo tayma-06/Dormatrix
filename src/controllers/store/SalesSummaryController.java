@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class SalesSummaryController {
-    private final String SALES_FILE = "data/inventories/sales.txt";
+    private final String SALES_FILE = "data/store/sales.txt"; // FIXED
 
     public void showDailySummary() {
         LocalDate today = LocalDate.now();

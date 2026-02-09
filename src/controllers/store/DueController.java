@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DueController {
-    private static final String FILE = "data/inventories/dues.txt";
+    private static final String FILE = "data/store/dues.txt";
 
     public static double getDue(String studentId) {
         List<DueRecord> list = readAll();

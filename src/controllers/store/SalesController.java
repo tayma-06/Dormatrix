@@ -2,23 +2,32 @@ package controllers.store;
 
 import models.store.SaleRecord;
 import java.io.*;
+import java.time.LocalDate;
 
 public class SalesController {
     private static final String SALES_FILE = "data/store/sales.txt";
 
     /**
      * Records a sale transaction to the sales file
+     * Format: studentId,itemId,quantity,amount,date
      */
-    public static boolean recordSale(String studentId, String itemId, int quantity, double total) {
+    public boolean recordSale(String studentId, String itemId, int quantity, double total) {
         if (studentId == null || itemId == null || quantity <= 0 || total < 0) {
             System.out.println("✗ Invalid sale data");
             return false;
         }
 
-        SaleRecord record = new SaleRecord(studentId, itemId, quantity, total);
+        // Write in exact CSV format: studentId,itemId,quantity,amount,date
+        String saleRecord = String.format("%s,%s,%d,%.2f,%s",
+                studentId,
+                itemId,
+                quantity,
+                total,
+                LocalDate.now().toString()  // Format: YYYY-MM-DD
+        );
 
         try (PrintWriter pw = new PrintWriter(new FileWriter(SALES_FILE, true))) {
-            pw.println(record.toString());
+            pw.println(saleRecord);
             return true;
         } catch (IOException e) {
             System.out.println("✗ Error recording sale: " + e.getMessage());
