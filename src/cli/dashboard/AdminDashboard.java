@@ -18,7 +18,6 @@ public class AdminDashboard implements Dashboard {
             System.out.println("═══════════════════════════════════════════════════════════════════════");
             System.out.println("║                           ADMIN DASHBOARD                           ║");
             System.out.println("═══════════════════════════════════════════════════════════════════════");
-
             String welcomeMessage = "Welcome, " + username;
             int totalWidth = 69;
             int paddingLeft = (totalWidth - welcomeMessage.length()) / 2;
