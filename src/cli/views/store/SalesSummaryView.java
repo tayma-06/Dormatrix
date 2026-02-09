@@ -7,6 +7,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 public class SalesSummaryView {
+    private final String SALES_FILE = "data/store/sales.txt";
+
     private final SalesSummaryController salesController;
 
     public SalesSummaryView() {

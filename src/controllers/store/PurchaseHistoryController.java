@@ -4,7 +4,7 @@ import java.io.*;
 import java.time.LocalDate;
 
 public class PurchaseHistoryController {
-    private final String SALES_FILE = "data/inventories/sales.txt";
+    private final String SALES_FILE = "data/store/sales.txt"; // FIXED
 
     public void showPurchaseHistory(String studentId) {
         System.out.println("====================================================================");

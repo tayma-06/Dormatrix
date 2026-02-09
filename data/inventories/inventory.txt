@@ -61,6 +61,6 @@ E005,AA Batteries (Pack),60,80.0
 E006,Memory Card (32GB),15,650.0
 O001,Umbrella,18,300.0
 O002,Raincoat,22,200.0
-O003,Padlock,35,150.0
+O003,Padlock,32,150.0
 O004,Key Chain,100,25.0
-O005,Cloth Bag,39,120.0
+O005,Cloth Bag,38,120.0
