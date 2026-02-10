@@ -10,15 +10,15 @@ public class TokenListView {
 
     public void show(String username) {
         List<MealToken> tokens = controller.getStudentTokens(username);
-        System.out.println("----------------------------------------------------------");
-        System.out.println("|                    YOUR MEAL TOKENS                    |");
-        System.out.println("----------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                           YOUR MEAL TOKENS                          |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         if (tokens.isEmpty()) {
             System.out.println(" No tokens found. Go buy some delicious food!");
         } else {
             System.out.printf("%-18s | %-10s | %-10s | %-8s\n", "TOKEN ID", "MEAL", "DATE", "STATUS");
-            System.out.println("----------------------------------------------------------");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
 
             for (MealToken t : tokens) {
                 String status = t.isUsed() ? "USED": "ACTIVE";
@@ -27,7 +27,7 @@ public class TokenListView {
                         t.getTokenId(), t.getType(), t.getDate(), status);
             }
         }
-        System.out.println("-----------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("Press Enter to return...");
         utils.FastInput.readLine();
     }

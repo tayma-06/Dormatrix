@@ -15,9 +15,9 @@ public class ViewAccount {
     public void show() {
         ConsoleUtil.clearScreen();
         System.out.println();
-        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("|                          VIEW ACCOUNTS                              |");
-        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("| [1] Student                                                         |");
         System.out.println("| [2] Attendant                                                       |");
         System.out.println("| [3] Maintenance Worker                                              |");
@@ -26,7 +26,7 @@ public class ViewAccount {
         System.out.println("| [6] Admin                                                           |");
         System.out.println("| [7] View All Accounts                                               |");
         System.out.println("| [0] Back                                                            |");
-        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println();
         System.out.print("Enter choice: ");
 

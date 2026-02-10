@@ -15,9 +15,9 @@ public class SearchUser {
     public void show() {
         ConsoleUtil.clearScreen();
         System.out.println();
-        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("|                        SEARCH ACCOUNTS                              |");
-        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println();
         System.out.print("Enter User ID: ");
 

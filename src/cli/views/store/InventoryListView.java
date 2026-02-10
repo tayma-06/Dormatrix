@@ -22,11 +22,11 @@ public class InventoryListView {
 
     // Simple display (original functionality)
     public void show() {
-        System.out.println("====================================================================");
-        System.out.println("|                        INVENTORY LIST                            |");
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                           INVENTORY LIST                            |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         inventoryController.showInventory();
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     // Enhanced display with cart integration
@@ -37,15 +37,16 @@ public class InventoryListView {
         }
 
         while (true) {
-            System.out.println("\n====================================================================");
-            System.out.println("|                   BROWSE STORE INVENTORY                         |");
-            System.out.println("====================================================================");
+            System.out.println();
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
+            System.out.println("|                      BROWSE STORE INVENTORY                         |");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
 
             // Show current cart summary
             if (!cart.isEmpty()) {
                 System.out.printf("  🛒 Cart: %d item(s) | Total: $%.2f\n",
                         cart.getItemCount(), cart.getTotal());
-                System.out.println("--------------------------------------------------------------------");
+                System.out.println("═══════════════════════════════════════════════════════════════════════");
             }
 
             inventoryController.showInventory();
@@ -55,14 +56,16 @@ public class InventoryListView {
                 return;
             }
 
-            System.out.println("\n--------------------------------------------------------------------");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
             System.out.println("Options:");
             System.out.println("  [A] Quick Add to Cart");
             System.out.println("  [V] View Item Details");
             System.out.println("  [S] Search Items");
             System.out.println("  [C] View Cart");
             System.out.println("  [B] Back");
-            System.out.print("\nEnter your choice: ");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
+            System.out.println();
+            System.out.print("Enter your choice: ");
 
             String choice = FastInput.readLine().toUpperCase();
 
@@ -89,7 +92,8 @@ public class InventoryListView {
 
     // Quick add item to cart
     private void quickAddToCart() {
-        System.out.print("\nEnter Item ID to add: ");
+        System.out.println();
+        System.out.print("Enter Item ID to add: ");
         String itemId = FastInput.readLine();
 
         Item item = inventoryController.getItem(itemId);
@@ -135,9 +139,9 @@ public class InventoryListView {
             return;
         }
 
-        System.out.println("\n====================================================================");
-        System.out.println("|                      ITEM DETAILS                                |");
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                          ITEM DETAILS                               |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  Item ID:    %s\n", item.getItemId());
         System.out.printf("  Name:       %s\n", item.getName());
         System.out.printf("  Price:      $%.2f\n", item.getPrice());
@@ -149,7 +153,7 @@ public class InventoryListView {
             System.out.println("  Status:     ✗ Out of Stock");
         }
 
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         if (item.getQuantity() > 0) {
             System.out.print("\nAdd to cart? (y/n): ");
@@ -176,9 +180,10 @@ public class InventoryListView {
 
         Item[] results = inventoryController.searchByName(searchTerm);
 
-        System.out.println("\n====================================================================");
-        System.out.println("|                      SEARCH RESULTS                              |");
-        System.out.println("====================================================================");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                         SEARCH RESULTS                              |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         if (results.length == 0) {
             System.out.println("  No items found matching '" + searchTerm + "'");
@@ -211,9 +216,9 @@ public class InventoryListView {
 
     // View current cart
     private void viewCart() {
-        System.out.println("\n====================================================================");
-        System.out.println("|                       YOUR CART                                  |");
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                          YOUR CART                                  |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         if (cart.isEmpty()) {
             System.out.println("  Your cart is empty.");
@@ -221,22 +226,22 @@ public class InventoryListView {
         }
 
         System.out.println("  Item ID    Item Name            Qty x Price    = Subtotal");
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         for (models.store.CartItem item : cart.getItems()) {
             System.out.println("  " + item);
         }
 
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  TOTAL: $%.2f (%d items)\n", cart.getTotal(), cart.getItemCount());
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     // Display items with stock indicators
     public void showWithStockIndicators() {
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("|                   INVENTORY WITH STOCK STATUS                    |");
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         Item[] items = inventoryController.getAllItems();
 
@@ -245,10 +250,10 @@ public class InventoryListView {
             return;
         }
 
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  %-10s %-25s %10s %10s %8s\n",
                 "Item ID", "Name", "Price", "Stock", "Status");
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         for (Item item : items) {
             String status;
@@ -265,19 +270,19 @@ public class InventoryListView {
                     item.getQuantity(), status);
         }
 
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     // Show items by category (if you want to add categories later)
     public void showByPriceRange(double min, double max) {
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("|          ITEMS IN PRICE RANGE: $%.2f - $%.2f           |\n", min, max);
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         Item[] results = inventoryController.filterByPriceRange(min, max);
         inventoryController.showItems(results);
 
         System.out.printf("\nFound %d item(s) in this price range\n", results.length);
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 }

@@ -49,9 +49,10 @@ public class SalesSummaryView {
     }
 
     private void displayHeader() {
-        System.out.println("\n====================================================================");
-        System.out.println("|                      SALES REPORTS                               |");
-        System.out.println("====================================================================");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                         SALES REPORTS                               |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     private void displayMenu() {

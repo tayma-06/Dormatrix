@@ -18,13 +18,14 @@ public class RoomDashboard implements Dashboard {
         while (true) {
             ConsoleUtil.clearScreen();
 
-            System.out.println("-----------------------------------------------------------------------");
-            System.out.println("|                         MANAGE ROOMS DASHBOARD                       |");
-            System.out.println("-----------------------------------------------------------------------");
-            System.out.println("| [1] Add New Room                                                    |");
-            System.out.println("| [2] View Available Rooms                                            |");
-            System.out.println("| [0] Back                                                            |");
-            System.out.println("-----------------------------------------------------------------------");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
+            System.out.println("║                         MANAGE ROOMS DASHBOARD                      ║");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
+            System.out.println("║ [1] Add New Room                                                    ║");
+            System.out.println("║ [2] View Available Rooms                                            ║");
+            System.out.println("║ [0] Back                                                            ║");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
+            System.out.println();
             System.out.print("Enter choice: ");
 
             int choice = FastInput.readInt();

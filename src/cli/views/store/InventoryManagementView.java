@@ -58,9 +58,9 @@ public class InventoryManagementView {
     }
 
     private void displayHeader() {
-        System.out.println("\n====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("|                   INVENTORY MANAGEMENT                           |");
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     private void displayInventorySummary() {
@@ -73,7 +73,7 @@ public class InventoryManagementView {
         } else {
             System.out.println();
         }
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     private void displayMenu() {
@@ -91,9 +91,10 @@ public class InventoryManagementView {
     }
 
     private void viewInventory() {
-        System.out.println("\n====================================================================");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("|                    COMPLETE INVENTORY                            |");
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         Item[] items = inventoryController.getAllItems();
 
@@ -104,7 +105,7 @@ public class InventoryManagementView {
 
         System.out.printf("  %-10s %-25s %10s %10s %8s\n",
                 "Item ID", "Name", "Price", "Stock", "Status");
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         for (Item item : items) {
             String status;
@@ -121,9 +122,9 @@ public class InventoryManagementView {
                     item.getQuantity(), status);
         }
 
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  Total Items: %d\n", items.length);
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     private void addNewItem() {
@@ -259,9 +260,9 @@ public class InventoryManagementView {
 
         Item[] results = inventoryController.searchByName(searchTerm);
 
-        System.out.println("\n====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("|                      SEARCH RESULTS                              |");
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         if (results.length == 0) {
             System.out.println("  No items found matching '" + searchTerm + "'");
@@ -270,7 +271,7 @@ public class InventoryManagementView {
 
         inventoryController.showItems(results);
         System.out.printf("\nFound %d item(s)\n", results.length);
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     private void viewLowStock() {
@@ -282,11 +283,12 @@ public class InventoryManagementView {
 
         Item[] lowStock = inventoryController.getLowStockItems(threshold);
 
-        System.out.println("\n====================================================================");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("|                    LOW STOCK ALERT                               |");
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  Items with stock <= %d:\n", threshold);
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         if (lowStock.length == 0) {
             System.out.println("  ✓ No low stock items found!");
@@ -294,7 +296,7 @@ public class InventoryManagementView {
         }
 
         System.out.printf("  %-10s %-25s %10s %10s\n", "Item ID", "Name", "Stock", "Price");
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         for (Item item : lowStock) {
             String alert = item.getQuantity() == 0 ? "✗" : "⚠";
@@ -303,9 +305,9 @@ public class InventoryManagementView {
                     item.getQuantity(), item.getPrice());
         }
 
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  Total Low Stock Items: %d\n", lowStock.length);
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     private void viewByPriceRange() {
@@ -319,10 +321,10 @@ public class InventoryManagementView {
 
         Item[] results = inventoryController.filterByPriceRange(minPrice, maxPrice);
 
-        System.out.println("\n====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("|          ITEMS IN PRICE RANGE: $%.2f - $%.2f           |\n",
                 minPrice, maxPrice);
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         if (results.length == 0) {
             System.out.println("  No items found in this price range.");
@@ -331,6 +333,6 @@ public class InventoryManagementView {
 
         inventoryController.showItems(results);
         System.out.printf("\nFound %d item(s) in this price range\n", results.length);
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 }

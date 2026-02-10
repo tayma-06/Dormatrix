@@ -56,15 +56,16 @@ public class StoreLedgerView {
     }
 
     private void displayHeader(String studentId) {
-        System.out.println("\n====================================================================");
-        System.out.println("|                   STORE ACCOUNT & LEDGER                         |");
-        System.out.println("====================================================================");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                      STORE ACCOUNT & LEDGER                         |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  Student ID: %s\n", studentId);
 
         double balance = balanceController.getBalance(studentId);
         double dues = dueController.getDue(studentId);
 
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  Current Balance: $%.2f\n", balance);
         System.out.printf("  Outstanding Dues: $%.2f", dues);
 
@@ -73,7 +74,7 @@ public class StoreLedgerView {
         } else {
             System.out.println(" ✓");
         }
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     private void displayMenu() {
@@ -91,9 +92,9 @@ public class StoreLedgerView {
     private void viewBalance(String studentId) {
         double balance = balanceController.getBalance(studentId);
 
-        System.out.println("\n====================================================================");
-        System.out.println("|                      BALANCE DETAILS                             |");
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                         BALANCE DETAILS                             |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  Student ID: %s\n", studentId);
         System.out.printf("  Current Balance: $%.2f\n", balance);
 
@@ -102,7 +103,7 @@ public class StoreLedgerView {
         } else {
             System.out.println("  Status: ✓ Sufficient Balance");
         }
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     private void addBalance(String studentId) {
@@ -131,9 +132,10 @@ public class StoreLedgerView {
     private void viewDues(String studentId) {
         double dues = dueController.getDue(studentId);
 
-        System.out.println("\n====================================================================");
-        System.out.println("|                    OUTSTANDING DUES                              |");
-        System.out.println("====================================================================");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                       OUTSTANDING DUES                              |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  Student ID: %s\n", studentId);
         System.out.printf("  Total Dues: $%.2f\n", dues);
 
@@ -143,7 +145,7 @@ public class StoreLedgerView {
         } else {
             System.out.println("  Status: ✓ No Outstanding Dues");
         }
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     private void payDues(String studentId) {
@@ -181,14 +183,15 @@ public class StoreLedgerView {
 
             double newBalance = balanceController.getBalance(studentId);
 
-            System.out.println("\n====================================================================");
-            System.out.println("|                   PAYMENT SUCCESSFUL                             |");
-            System.out.println("====================================================================");
+            System.out.println();
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
+            System.out.println("|                      PAYMENT SUCCESSFUL                             |");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
             System.out.printf("  Amount Paid:      $%.2f\n", dues);
             System.out.printf("  Previous Balance: $%.2f\n", balance);
             System.out.printf("  New Balance:      $%.2f\n", newBalance);
             System.out.println("  Status:           ✓ All Dues Cleared");
-            System.out.println("====================================================================");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
         } else {
             System.out.println("✗ Payment failed! Please try again.");
         }
@@ -199,7 +202,11 @@ public class StoreLedgerView {
     }
 
     private void viewRecentPurchases(String studentId) {
-        System.out.println("\n--- Recent Purchases ---");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                          RECENT PURCHASES                           |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println();
         System.out.print("Enter number of days (default 7): ");
         String input = FastInput.readLine();
         int days = input.isEmpty() ? 7 : Integer.parseInt(input);

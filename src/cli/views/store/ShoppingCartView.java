@@ -66,9 +66,10 @@ public class ShoppingCartView {
     }
 
     private static void displayHeader(String studentId) {
-        System.out.println("\n====================================================================");
-        System.out.println("|                      SHOPPING CART                               |");
-        System.out.println("====================================================================");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                         SHOPPING CART                               |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  Student ID: %s\n", studentId);
 
         double balance = BalanceController.getBalance(studentId);
@@ -80,7 +81,7 @@ public class ShoppingCartView {
         } else {
             System.out.println();
         }
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     private static void displayCart(ShoppingCart cart) {
@@ -90,7 +91,7 @@ public class ShoppingCartView {
             System.out.printf("  🛒 Cart: %d item(s) | Total: $%.2f\n",
                     cart.getItemCount(), cart.getTotal());
         }
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     private static void displayMenu() {
@@ -165,26 +166,27 @@ public class ShoppingCartView {
     }
 
     private static void viewCartDetails(ShoppingCart cart) {
-        System.out.println("\n====================================================================");
-        System.out.println("|                       CART DETAILS                               |");
-        System.out.println("====================================================================");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                          CART DETAILS                               |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         if (cart.isEmpty()) {
             System.out.println("  Your cart is empty.");
-            System.out.println("====================================================================");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
             return;
         }
 
         System.out.println("  Item ID    Item Name            Qty x Price    = Subtotal");
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         for (CartItem item : cart.getItems()) {
             System.out.println("  " + item);
         }
 
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  TOTAL: $%.2f (%d items)\n", cart.getTotal(), cart.getItemCount());
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
     }
 
     private static void processCheckout(String studentId, ShoppingCart cart) {
@@ -193,19 +195,20 @@ public class ShoppingCartView {
             return;
         }
 
-        System.out.println("\n====================================================================");
-        System.out.println("|                         CHECKOUT                                 |");
-        System.out.println("====================================================================");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                            CHECKOUT                                 |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         // Display cart summary
         System.out.println("  Item ID    Item Name            Qty x Price    = Subtotal");
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         for (CartItem item : cart.getItems()) {
             System.out.println("  " + item);
         }
-        System.out.println("--------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.printf("  TOTAL AMOUNT: $%.2f\n", cart.getTotal());
-        System.out.println("====================================================================");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         // Display payment info
         double balance = BalanceController.getBalance(studentId);

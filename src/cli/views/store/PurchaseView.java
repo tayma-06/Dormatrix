@@ -19,9 +19,9 @@ public class PurchaseView {
     }
 
     public void show() {
-        System.out.println("--------------------------------------------");
-        System.out.println("|              Purchase Item               |");
-        System.out.println("--------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                            PURCHASE ITEM                            |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
 
         inventoryController.showInventory();
 

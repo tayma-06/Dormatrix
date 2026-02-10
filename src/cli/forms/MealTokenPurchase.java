@@ -25,12 +25,12 @@ public class MealTokenPurchase {
 
             // 2. Display Header
             System.out.println();
-            System.out.println("-----------------------------------------------------------------------");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
             System.out.println("|                      Meal Token Purchase                            |");
-            System.out.println("-----------------------------------------------------------------------" );
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
             System.out.println(" Date: " + todayDate + " | Time: " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             System.out.println(" Current Status: " + (currentSlot == MealType.NONE ? "CLOSED" : "ACTIVE - " + currentSlot));
-            System.out.println("-----------------------------------------------------------------------");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
             System.out.println();
 
             if (currentSlot != MealType.NONE) {
@@ -40,17 +40,17 @@ public class MealTokenPurchase {
             }
 
             System.out.println(" Your Balance: " + (balance != null ? balance.getBalance() : "N/A") + " BDT");
-            System.out.println("-----------------------------------------------------------------------");
-            System.out.println("| [1] Buy Current Meal Token                                          |");
-            System.out.println("| [2] View My Tokens                                                  |");
-            System.out.println("| [0] Back to Dashboard                                               |");
-            System.out.println("-----------------------------------------------------------------------");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
+            System.out.println("║ [1] Buy Current Meal Token                                          ║");
+            System.out.println("║ [2] View My Tokens                                                  ║");
+            System.out.println("║ [0] Back to Dashboard                                               ║");
+            System.out.println("═══════════════════════════════════════════════════════════════════════");
             System.out.println();
             System.out.print("Enter choice: ");
 
             int choice = FastInput.readInt();
             if (choice == 0) break;
-
+            System.out.println();
             switch (choice) {
                 case 1 -> {
                     if (currentSlot == MealType.NONE) {
@@ -61,9 +61,10 @@ public class MealTokenPurchase {
                     }
                 }
                 case 2 -> {
-                    // This calls the controller method we fixed to show all student tokens
                     var tokens = controller.getStudentTokens(username);
-                    System.out.println("\n--- Your Purchased Tokens ---");
+                    System.out.println("═══════════════════════════════════════════════════════════════════════");
+                    System.out.println("║                       YOUR PURCHASED TOKENS                         ║");
+                    System.out.println("═══════════════════════════════════════════════════════════════════════");
                     if(tokens.isEmpty()) System.out.println("No tokens found.");
                     else tokens.forEach(t -> System.out.println(t.getTokenId() + " | " + t.getType() + " | " + t.getStatus()));
                 }

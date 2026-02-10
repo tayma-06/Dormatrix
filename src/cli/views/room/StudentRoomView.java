@@ -13,9 +13,9 @@ public class StudentRoomView {
 
     public int show(String roomNumber, Room room) {
         System.out.println();
-        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("|                           MY ROOM STATUS                            |");
-        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         if (roomNumber.equals("UNASSIGNED") || roomNumber.equals("N/A")) {
             System.out.printf("| %-10s %-56s |\n", "Status:", "NOT ASSIGNED");
             System.out.printf("| %-10s %-56s |\n", "Action:", "Please contact Hall Office.");
@@ -31,10 +31,10 @@ public class StudentRoomView {
                 System.out.printf("| %-10s %-56s |\n", "Info:", "Room details not found.");
             }
         }
-        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("| [1] My Room Complaints                                              |");
         System.out.println("| [0] Exit                                                            |");
-        System.out.println("-----------------------------------------------------------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println();
         System.out.print("Enter choice: ");
 
