@@ -22,12 +22,12 @@ public class TokenListView {
         if (tokens.isEmpty()) {
             System.out.println(String.format("║ %-67s ║", "No tokens found. Go buy some delicious food! 🍽️"));
         } else {
-            System.out.println("║ TOKEN ID           │ MEAL       │ DATE       │ STATUS               ║");
-            System.out.println("╠════════════════════╪════════════╪════════════╪══════════════════════╣");
+            System.out.println("║ TOKEN ID           ║ MEAL       ║ DATE       ║ STATUS               ║");
+            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
 
             for (MealToken t : tokens) {
                 System.out.println(String.format(
-                        "║ %-18s │ %-10s │ %-10s │ %-20s ║",
+                        "║ %-18s ║ %-10s ║ %-10s ║ %-20s ║",
                         t.getTokenId(),
                         t.getType(),
                         t.getDate(),

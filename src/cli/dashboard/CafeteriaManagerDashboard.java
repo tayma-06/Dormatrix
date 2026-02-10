@@ -4,6 +4,7 @@ import controllers.food.*;
 import models.food.DailyMenu;
 import models.food.MealType;
 import utils.CafeteriaAsciiUI;
+import utils.ConsoleUtil;
 import utils.FastInput;
 import utils.TimeManager;
 
@@ -19,10 +20,11 @@ public class CafeteriaManagerDashboard implements Dashboard {
     @Override
     public void show(String username) {
         while (true) {
+            ConsoleUtil.clearScreen();
+
             String nowLine = "Now: " + TimeManager.nowDate() + " " + TimeManager.nowTime()
                     + " | Slot: " + TimeManager.getCurrentMealSlot()
-                    + " | Ramadan: " + TimeManager.isRamadanMode()
-                    + " | Demo: " + (TimeManager.isDemoMode() ? "ON" : "OFF");
+                    + " | Ramadan: " + TimeManager.isRamadanMode();
 
             System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
             System.out.println("║                     CAFETERIA MANAGER DASHBOARD                     ║");
@@ -45,7 +47,6 @@ public class CafeteriaManagerDashboard implements Dashboard {
             System.out.println("║ [2] Schedule Special Event                                          ║");
             System.out.println("║ [3] Verify Student Token                                            ║");
             System.out.println("║ [4] Toggle Ramadan Mode                                             ║");
-            System.out.println("║ [5] Toggle Demo Mode (Fast Day)                                     ║");
             System.out.println("║ [0] Logout                                                          ║");
             System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
 
@@ -64,7 +65,6 @@ public class CafeteriaManagerDashboard implements Dashboard {
                 case 2 -> scheduleCalendar();
                 case 3 -> verifyTokenLoop();
                 case 4 -> toggleRamadan();
-                case 5 -> toggleDemoMode();
                 default -> System.out.println("Invalid Selection!");
             }
 
@@ -128,11 +128,5 @@ public class CafeteriaManagerDashboard implements Dashboard {
         TimeManager.setRamadanMode(isRamadan);
         controller.setSystemMode(isRamadan);
         System.out.println("System Mode updated.");
-    }
-
-    private void toggleDemoMode() {
-        boolean newState = !TimeManager.isDemoMode();
-        TimeManager.setDemoMode(newState);
-        System.out.println("Demo Mode is now: " + (newState ? "ON" : "OFF"));
     }
 }
