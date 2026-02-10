@@ -24,22 +24,24 @@ public class MainDashboard {
             System.out.println();
             banner.printBannerOnTheme();
             System.out.println();
-            System.out.println(BOX + "═══════════════════════════════════════════════════════════════════════");
-            System.out.println(BOX + "║                   Welcome to IUT Female Dormitory                   ║");
-            System.out.println(BOX + "═══════════════════════════════════════════════════════════════════════");
+            System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
+            System.out.println("║                    WELCOME TO IUT FEMALE DORMITORY                  ║");
+            System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
             System.out.println();
-            System.out.println(BOX + "═══════════════════════════════════════════════════════════════════════");
-            System.out.println(BOX + "║                           Select Role                               ║");
-            System.out.println(BOX + "═══════════════════════════════════════════════════════════════════════");
-            System.out.println(BOX + "║ [1] Student                                                         ║");
-            System.out.println(BOX + "║ [2] Attendant                                                       ║");
-            System.out.println(BOX + "║ [3] Maintenance Worker                                              ║");
-            System.out.println(BOX + "║ [4] Store-in-Charge                                                 ║");
-            System.out.println(BOX + "║ [5] Hall Office                                                     ║");
-            System.out.println(BOX + "║ [6] Admin                                                           ║");
-            System.out.println(BOX + "║ [7] Cafeteria Manager                                               ║");
-            System.out.println(BOX + "║ [0] Exit                                                            ║");
-            System.out.println(BOX + "═══════════════════════════════════════════════════════════════════════");
+
+            System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
+            System.out.println("║                            SELECT ROLE                              ║");
+            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            System.out.println("║ [1] Student                                                         ║");
+            System.out.println("║ [2] Attendant                                                       ║");
+            System.out.println("║ [3] Maintenance Worker                                              ║");
+            System.out.println("║ [4] Store-in-Charge                                                 ║");
+            System.out.println("║ [5] Hall Office                                                     ║");
+            System.out.println("║ [6] Admin                                                           ║");
+            System.out.println("║ [7] Cafeteria Manager                                               ║");
+            System.out.println("║ [0] Exit                                                            ║");
+            System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+
             System.out.println();
             System.out.print(INPUT + "Enter your choice: ");
             int choice = FastInput.readInt();
@@ -48,9 +50,10 @@ public class MainDashboard {
                 ConsoleUtil.clearScreen();
                 BackgroundFiller.applyMainMenuTheme();
 
-                System.out.println(EXIT_BOX + "═══════════════════════════════════════════════════════════════════════");
-                System.out.println(EXIT_BOX + "║ Exiting Dormatrix. Goodbye!                                         ║");
-                System.out.println(EXIT_BOX + "═══════════════════════════════════════════════════════════════════════");
+                System.out.println(EXIT_BOX + "╔═════════════════════════════════════════════════════════════════════╗");
+                System.out.println(EXIT_BOX + "║                     Exiting Dormatrix. Goodbye!                     ║");
+                System.out.println(EXIT_BOX + "╚═════════════════════════════════════════════════════════════════════╝");
+
 
                 System.out.print(INPUT + "Press Enter 0 to close... ");
                 FastInput.readNonEmptyLine();

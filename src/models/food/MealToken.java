@@ -1,5 +1,6 @@
 package models.food;
 
+import utils.TimeManager;
 import java.time.LocalDate;
 
 public class MealToken {
@@ -17,9 +18,9 @@ public class MealToken {
         this.status = status;
     }
 
-    // Logic to auto-expire tokens if the date has passed
     public TokenStatus getStatus() {
-        if (status == TokenStatus.ACTIVE && date.isBefore(LocalDate.now())) {
+        LocalDate today = TimeManager.nowDate();
+        if (status == TokenStatus.ACTIVE && date.isBefore(today)) {
             return TokenStatus.EXPIRED;
         }
         return status;
@@ -31,7 +32,6 @@ public class MealToken {
 
     @Override
     public String toString() {
-        // We save the Status name (ACTIVE/USED/EXPIRED) instead of a boolean
         return tokenId + "|" + studentId + "|" + type + "|" + date + "|" + status;
     }
 
@@ -42,18 +42,16 @@ public class MealToken {
                 parts[1],
                 MealType.valueOf(parts[2]),
                 LocalDate.parse(parts[3]),
-                TokenStatus.valueOf(parts[4]) // Parses ACTIVE, USED, or EXPIRED
+                TokenStatus.valueOf(parts[4])
         );
     }
 
-    // Getters
     public String getTokenId() { return tokenId; }
     public LocalDate getDate() { return date; }
     public MealType getType() { return type; }
     public String getStudentId() { return studentId; }
 
-    // Compatibility helper for your controller
     public boolean isUsed() {
-        return this.status != TokenStatus.ACTIVE;
+        return getStatus() == TokenStatus.USED;
     }
 }

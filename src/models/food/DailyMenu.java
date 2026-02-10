@@ -3,9 +3,9 @@ package models.food;
 import java.io.Serializable;
 
 public class DailyMenu implements Serializable {
-    private String day; // Monday, Tuesday...
+    private String day;
     private MealType type;
-    private String items; // e.g., "Chicken Biryani, Salad, Coke"
+    private String items;
 
     public DailyMenu(String day, MealType type, String items) {
         this.day = day;
@@ -19,10 +19,9 @@ public class DailyMenu implements Serializable {
     }
 
     public static DailyMenu fromString(String line) {
-        String[] parts = line.split("\\|");
-        return new DailyMenu(parts[0], MealType.valueOf(parts[1]), parts[2]);
+        String[] parts = line.split("\\|", 3);
+        return new DailyMenu(parts[0], MealType.valueOf(parts[1]), parts.length > 2 ? parts[2] : "");
     }
 
-    // Getters
     public String getItems() { return items; }
 }

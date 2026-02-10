@@ -1,11 +1,10 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
-import cli.forms.MealTokenPurchase;
+import cli.forms.food.MealTokenPurchase;
 import cli.views.MessageView;
 
 import cli.views.store.*;
-import controllers.food.CafeteriaController;
 import controllers.room.RoomController;
 import cli.dashboard.FacilityDashboard;
 import controllers.facilities.*;

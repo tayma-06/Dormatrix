@@ -116,15 +116,16 @@ public class CreateAccount {
                 }
 
             } else if (roleStr.equals("MAINTENANCE_WORKER")) {
-                System.out.println("═══════════════════════════════════════════════════════════════════════");
-                System.out.println("║                           SELECT WORKER FIELD                       ║");
-                System.out.println("═══════════════════════════════════════════════════════════════════════");
-                System.out.println("║ 1. Electrician                                                      ║");
-                System.out.println("║ 2. Plumber                                                          ║");
-                System.out.println("║ 3. Internet Technician                                              ║");
-                System.out.println("║ 4. Cleaning Staff                                                   ║");
-                System.out.println("║ 5. Security                                                         ║");
-                System.out.println("═══════════════════════════════════════════════════════════════════════");
+                System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
+                System.out.println("║                        SELECT WORKER FIELD                          ║");
+                System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+                System.out.println("║ [1] Electrician                                                     ║");
+                System.out.println("║ [2] Plumber                                                         ║");
+                System.out.println("║ [3] Internet Technician                                             ║");
+                System.out.println("║ [4] Cleaning Staff                                                  ║");
+                System.out.println("║ [5] Security                                                        ║");
+                System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+
                 System.out.print("Enter Field Choice: ");
                 workerFieldChoice = FastInput.readInt();
 
