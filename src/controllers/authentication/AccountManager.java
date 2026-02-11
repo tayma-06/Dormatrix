@@ -65,7 +65,7 @@ public class AccountManager {
         MyString[] roles = {
                 new MyString("STUDENT"), new MyString("HALL_ATTENDANT"),
                 new MyString("MAINTENANCE_WORKER"), new MyString("STORE_IN_CHARGE"),
-                new MyString("HALL_OFFICER"), new MyString("ADMIN")
+                new MyString("HALL_OFFICER"), new MyString("ADMIN"), new MyString("CAFETERIA_MANAGER")
         };
         for (MyString role : roles) {
             MyString filename = getFilename(role);

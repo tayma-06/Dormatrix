@@ -1,48 +1,57 @@
 package models.food;
 
+import utils.TimeManager;
 import java.time.LocalDate;
 
 public class MealToken {
     private String tokenId;
     private String studentId;
+    private MealType type;
     private LocalDate date;
     private TokenStatus status;
 
-    public MealToken(String tokenId, String studentId) {
+    public MealToken(String tokenId, String studentId, MealType type, LocalDate date, TokenStatus status) {
         this.tokenId = tokenId;
         this.studentId = studentId;
-        this.date = LocalDate.now();
-        this.status = TokenStatus.ACTIVE;
+        this.type = type;
+        this.date = date;
+        this.status = status;
     }
 
-    public String getTokenID(){
-        return tokenId;
+    public TokenStatus getStatus() {
+        LocalDate today = TimeManager.nowDate();
+        if (status == TokenStatus.ACTIVE && date.isBefore(today)) {
+            return TokenStatus.EXPIRED;
+        }
+        return status;
     }
 
-
-    public boolean isExpired() {
-        return !date.equals(LocalDate.now());
-    }
-
-    public void expire() {
-        status = TokenStatus.EXPIRED;
+    public void setStatus(TokenStatus status) {
+        this.status = status;
     }
 
     @Override
     public String toString() {
-        return tokenId + "," + studentId + "," + date + "," + status;
+        return tokenId + "|" + studentId + "|" + type + "|" + date + "|" + status;
     }
 
     public static MealToken fromString(String line) {
-        String[] p = line.split(",");
-        MealToken t = new MealToken(p[0], p[1]);
-        t.date = LocalDate.parse(p[2]);
-        t.status = TokenStatus.valueOf(p[3]);
-        return t;
+        String[] parts = line.split("\\|");
+        return new MealToken(
+                parts[0],
+                parts[1],
+                MealType.valueOf(parts[2]),
+                LocalDate.parse(parts[3]),
+                TokenStatus.valueOf(parts[4])
+        );
     }
 
-    public String getTokenId() {
-        return tokenId;
+    public String getTokenId() { return tokenId; }
+    public LocalDate getDate() { return date; }
+    public MealType getType() { return type; }
+    public String getStudentId() { return studentId; }
+
+    public boolean isUsed() {
+        return getStatus() == TokenStatus.USED;
     }
 }
-

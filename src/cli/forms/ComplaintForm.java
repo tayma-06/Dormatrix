@@ -31,13 +31,20 @@ public class ComplaintForm {
     }
 
     public ComplaintCategory readCategory(){
-        System.out.println("\nSelect Complaint Category:");
-        System.out.println("1. ELECTRICITY");
-        System.out.println("2. PLUMBING");
-        System.out.println("3. INTERNET");
-        System.out.println("4. CLEANING");
-        System.out.println("5. SECURITY");
-        System.out.println("6. OTHER");
+        System.out.println();
+        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
+        System.out.println("║                    SELECT COMPLAINT CATEGORY                        ║");
+        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+        System.out.println("║ [1] Electricity                                                     ║");
+        System.out.println("║ [2] Plumbing                                                        ║");
+        System.out.println("║ [3] Internet                                                        ║");
+        System.out.println("║ [4] Cleaning                                                        ║");
+        System.out.println("║ [5] Security                                                        ║");
+        System.out.println("║ [6] Other                                                           ║");
+        System.out.println("║ [0] Back                                                            ║");
+        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+
+        System.out.println();
         System.out.print("Enter choice: ");
         int x = readInt();
 
@@ -48,6 +55,7 @@ public class ComplaintForm {
             case 4: return ComplaintCategory.CLEANING;
             case 5: return ComplaintCategory.SECURITY;
             case 6: return ComplaintCategory.OTHER;
+            case 0: return readCategory();
             default:
                 System.out.println("Invalid category.");
                 return readCategory();

@@ -1,36 +1,44 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
-import cli.views.*;
+import cli.views.store.*;
 
 public class StoreInChargeDashboardController {
     MainDashboard mainDashboard = new MainDashboard();
-    PurchaseView purchaseView = new PurchaseView(); 
-    InventoryListView inventoryList = new InventoryListView();
+    InventoryManagementView inventoryManagement = new InventoryManagementView();
+    ShoppingCartView purchaseView = new ShoppingCartView();
+    SalesSummaryView salesSummary = new SalesSummaryView();
 
-    public void handleInput(int choice, String username)
-    {
-        switch(choice)
-        {
-            case 1: 
-                inventoryList.show();
-
+    public void handleInput(int choice, String username) {
+        switch(choice) {
+            case 1:
+                // Inventory Management with full CRUD operations
+                inventoryManagement.show();
                 break;
-            case 2:
-                purchaseView.show();  
 
+            case 2:
+                // Purchase Item (can also be used by store-in-charge for walk-in purchases)
+                System.out.print("Enter Student ID for purchase: ");
+                String studentId = utils.FastInput.readLine();
+                purchaseView.show(studentId);
                 break;
 
             case 3:
-                System.out.println("Opening Sales Summary...");
-                // TODO: goes to sales summary class to generate and show sales summary
+                // Sales Summary with various report options
+                salesSummary.show();
                 break;
+
             case 0:
                 mainDashboard.show();
                 break;
+
             default:
                 System.out.println("Invalid choice. Please try again.");
-                
+        }
+
+        if (choice != 0) {
+            System.out.println("\nPress Enter to continue...");
+            utils.FastInput.readLine();
         }
     }
 }

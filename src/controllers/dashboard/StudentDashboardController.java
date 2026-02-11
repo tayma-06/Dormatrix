@@ -1,9 +1,10 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
+import cli.forms.food.MealTokenPurchase;
 import cli.views.MessageView;
-import cli.forms.MealTokenPurchase;
-import cli.views.StoreLedgerView;
+
+import cli.views.store.*;
 import controllers.room.RoomController;
 import cli.dashboard.FacilityDashboard;
 import controllers.facilities.*;
@@ -20,8 +21,8 @@ public class StudentDashboardController {
     private final FacilityDashboard facilityDashboard;
 
     public StudentDashboardController() {
-        this.mainDashboard = new MainDashboard();
         this.mealTokenPurchase = new MealTokenPurchase();
+        this.mainDashboard = new MainDashboard();
         this.storeLedgerView = new StoreLedgerView();
         this.roomController = new RoomController();
         this.msg = new MessageView();
@@ -55,10 +56,14 @@ public class StudentDashboardController {
             case 7:
                 System.out.println(">> Feature [Announcements] is under development.");
                 break;
+            case 8:
+                ShoppingCartView.show(username);
+                break;
             case 0:
                 mainDashboard.show();
                 break;
             default:
                 System.out.println("Invalid choice. Please try again.");
         }
-    }}
+    }
+}

@@ -5,6 +5,7 @@ import utils.InputHelper;
 import utils.FastInput;
 import utils.ConsoleUtil;
 import utils.ConsoleColors;
+import utils.BackgroundFiller;
 import controllers.dashboard.MainDashboardController;
 import libraries.collections.MyString;
 
@@ -12,53 +13,59 @@ public class MainDashboard {
     private final DormatrixBanner banner = new DormatrixBanner();
     private final MainDashboardController controller = new MainDashboardController();
 
-    private static final String BOX = ConsoleColors.LIGHT_PINK;
-    private static final String EXIT_BOX = ConsoleColors.HOT_PINK;
-    private static final String INPUT = ConsoleColors.BRIGHT_BLUE;
-    private static final String RESET = ConsoleColors.RESET;
+    private static final String BOX = ConsoleColors.Accent.BOX;
+    private static final String EXIT_BOX = ConsoleColors.Accent.EXIT;
+    private static final String INPUT = ConsoleColors.Accent.INPUT;
 
     public void show() {
         while (true) {
             ConsoleUtil.clearScreen();
-            banner.printBanner();
+            BackgroundFiller.applyMainMenuTheme();
+            System.out.println();
+            banner.printBannerOnTheme();
+            System.out.println();
+            System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
+            System.out.println("║                    WELCOME TO IUT FEMALE DORMITORY                  ║");
+            System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+            System.out.println();
 
-            System.out.println(BOX + "-----------------------------------------------------------------------" + RESET);
-            System.out.println(BOX + "|                   Welcome to IUT Female Dormitory                   |" + RESET);
-            System.out.println(BOX + "-----------------------------------------------------------------------" + RESET + "\n");
+            System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
+            System.out.println("║                            SELECT ROLE                              ║");
+            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            System.out.println("║ [1] Student                                                         ║");
+            System.out.println("║ [2] Attendant                                                       ║");
+            System.out.println("║ [3] Maintenance Worker                                              ║");
+            System.out.println("║ [4] Store-in-Charge                                                 ║");
+            System.out.println("║ [5] Hall Office                                                     ║");
+            System.out.println("║ [6] Admin                                                           ║");
+            System.out.println("║ [7] Cafeteria Manager                                               ║");
+            System.out.println("║ [0] Exit                                                            ║");
+            System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
 
-            System.out.println(BOX + "-----------------------------------------------------------------------" + RESET);
-            System.out.println(BOX + "|                           Select Role                               |" + RESET);
-            System.out.println(BOX + "-----------------------------------------------------------------------" + RESET);
-
-            System.out.println(BOX + "| 1. Student                                                          |" + RESET);
-            System.out.println(BOX + "| 2. Attendant                                                        |" + RESET);
-            System.out.println(BOX + "| 3. Maintenance Worker                                               |" + RESET);
-            System.out.println(BOX + "| 4. Store-in-Charge                                                  |" + RESET);
-            System.out.println(BOX + "| 5. Hall Office                                                      |" + RESET);
-            System.out.println(BOX + "| 6. Admin                                                            |" + RESET);
-            System.out.println(BOX + "| 0. Exit                                                             |" + RESET);
-            System.out.println(BOX + "-----------------------------------------------------------------------" + RESET);
-
-            System.out.print(INPUT + "Enter your choice: " + RESET);
+            System.out.println();
+            System.out.print(INPUT + "Enter your choice: ");
             int choice = FastInput.readInt();
 
             if (choice == 0) {
                 ConsoleUtil.clearScreen();
+                BackgroundFiller.applyMainMenuTheme();
 
-                System.out.println(EXIT_BOX + "-----------------------------------------------------------------------" + RESET);
-                System.out.println(EXIT_BOX + "| Exiting Dormatrix. Goodbye!                                         |" + RESET);
-                System.out.println(EXIT_BOX + "-----------------------------------------------------------------------" + RESET);
+                System.out.println(EXIT_BOX + "╔═════════════════════════════════════════════════════════════════════╗");
+                System.out.println(EXIT_BOX + "║                     Exiting Dormatrix. Goodbye!                     ║");
+                System.out.println(EXIT_BOX + "╚═════════════════════════════════════════════════════════════════════╝");
 
-                System.out.print(INPUT + "Press Enter 0 to close... " + RESET);
+
+                System.out.print(INPUT + "Press Enter 0 to close... ");
                 FastInput.readNonEmptyLine();
 
+                BackgroundFiller.resetTheme();
                 System.exit(0);
             }
 
-            System.out.print(INPUT + "Enter userID: " + RESET);
+            System.out.print(INPUT + "Enter userID: ");
             MyString username = new MyString(FastInput.readNonEmptyLine());
 
-            System.out.print(INPUT + "Enter password: " + RESET);
+            System.out.print(INPUT + "Enter password: ");
             MyString password = InputHelper.readPassword();
 
             controller.handleRoleInput(choice, username, password);

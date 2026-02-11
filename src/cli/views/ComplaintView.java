@@ -7,7 +7,10 @@ import models.complaints.Complaint;
 public class ComplaintView {
 
     public void studentMenu(){
-        System.out.println("\n------------------ COMPLAINTS (STUDENT) ------------------");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                      COMPLAINT(STUDENT)                             |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("1. File a Complaint");
         System.out.println("2. View My Complaints");
         System.out.println("3. Track Complaint by ID");
@@ -16,7 +19,10 @@ public class ComplaintView {
     }
 
     public void attendantMenu(){
-        System.out.println("\n------------------ COMPLAINTS (ATTENDANT) ------------------");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                      COMPLAINT(ATTENDANT)                           |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("1. View ALL complaints");
         System.out.println("2. View PENDING (unassigned/SUBMITTED)");
         System.out.println("3. View MISHAPS (unassigned / invalid worker / mismatch)");
@@ -29,11 +35,15 @@ public class ComplaintView {
     }
 
     public void workerMenu(){
-        System.out.println("\n------------------ TASK QUEUE (WORKER) ------------------");
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                        TASK QUEUE(WORKER)                           |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("1. View Assigned Tasks");
         System.out.println("2. Update Progress");
         System.out.println("3. Mark Completed");
         System.out.println("0. Back");
+        System.out.println();
         System.out.print("Enter choice: ");
     }
 
@@ -56,7 +66,9 @@ public class ComplaintView {
             return;
         }
 
-        System.out.println("\n------------------ LIST ------------------");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("|                              LIST                                   |");
+        System.out.println("═══════════════════════════════════════════════════════════════════════");
         for (int i = 0; i < list.size(); i++){
             Complaint c = list.get(i);
             String wid = c.getAssignedWorkerId();

@@ -9,15 +9,18 @@ public class FacilityDashboard {
 
     public void showMenu(String username, StudyRoomController study, FridgeController fridge, LaundryController laundry) {
         while (true) {
-            System.out.println("\n-----------------------------------------------------------------------");
-            System.out.println("|                       Facility Booking System                          |");
-            System.out.println("-------------------------------------------------------------------------");
-            System.out.println("| 1.Book Study Room Seat                                                 |");
-            System.out.println("| 2.Check-in to Study Room                                               |");
-            System.out.println("| 3.Book Fridge Slot                                                     |");
-            System.out.println("| 4.Schedule Laundry Machine                                             |");
-            System.out.println("| 0. Logout                                                              |");
-            System.out.println("-------------------------------------------------------------------------");
+            System.out.println();
+            System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
+            System.out.println("║                       FACILITY BOOKING SYSTEM                       ║");
+            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            System.out.println("║ [1] Book Study Room Seat                                            ║");
+            System.out.println("║ [2] Check-in to Study Room                                          ║");
+            System.out.println("║ [3] Book Fridge Slot                                                ║");
+            System.out.println("║ [4] Schedule Laundry Machine                                        ║");
+            System.out.println("║ [0] Logout                                                          ║");
+            System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+
+            System.out.println();
             System.out.print("Enter your choice: ");
             int choice = scanner.nextInt();
             if (choice == 0) break;

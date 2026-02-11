@@ -1,6 +1,6 @@
 package controllers.room;
 
-import cli.views.StudentRoomView;
+import cli.views.room.StudentRoomView;
 import models.room.Room;
 import java.io.*;
 import java.util.*;
