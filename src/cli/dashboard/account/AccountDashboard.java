@@ -1,7 +1,7 @@
 package cli.dashboard.account;
 
 import cli.dashboard.Dashboard;
-import controllers.dashboard.AccountDashboardController;
+import controllers.dashboard.account.AccountDashboardController;
 import utils.ConsoleUtil;
 import utils.FastInput;
 
