@@ -9,6 +9,7 @@
 230042110|Khadija Kubra|STUDENT|EEE|62afa2d2|01700000010|khadija@iut-dhaka.edu|310
 230042111|Zainab Ahmed|STUDENT|MPE|62afa2d2|01700000011|zainab@iut-dhaka.edu|311
 230042112|Laila Yasmin|STUDENT|BTM|62afa2d2|01700000012|laila@iut-dhaka.edu|312
+230042113|Humaira Himu|STUDENT|CSE|62afa2d2|01700000013|humaira@iut-dhaka.edu|313
 230042115|Rubina Khan|STUDENT|SWE|62afa2d2|01700000015|rubina@iut-dhaka.edu|315
 230042116|Parul Akhtar|STUDENT|CEE|62afa2d2|01700000016|parul@iut-dhaka.edu|316
 230042117|Shirin Akter|STUDENT|CSE|62afa2d2|01700000017|shirin@iut-dhaka.edu|317
@@ -19,7 +20,8 @@
 230042141|Ayman Binta Altaf Nondiny|STUDENT|CSE|4e179aec|01645544768|aimin@iut-dhaka.edu|301
 230042139|Sayma Tasnim|STUDENT|SWE|4e17f28c|01700000000|saymatasnim@iut-dhaka.edu|301
 230042101|Ayesha Siddiqua|STUDENT|CSE|62afa2d2|01700000001|ayesha@iut-dhaka.edu|318
+230042121|A|STUDENT|CSE|4e17ee20|0012891891239|dkndknadkn@iut-dhaka.edu|319
 230042114|Procheta Silvie|STUDENT|SWE|4e17e6e2|01700000000|prochetasilvie@iut-dhaka.edu|301
-230042122|Sayema Tabassum|STUDENT|EEE|62afa2d2|01763016648|sayema@iut-dhaka.edu|UNASSIGNED
-
-230042138|Maisha Rahman|STUDENT|EEE|62afa2d2|01763016648|maisha@iut-dhaka.edu|302
+230042122|K s|STUDENT|CSE|662ee786|01700000000|s@iut-dhaka.edu|302
+230042123|L A|STUDENT|CSE|7ef81234|01700000000|a@iut-dhaka.edu|302
+230042154|Aksan Anan Ria|STUDENT|CSE|4e179562|01700000000|aksanananriya@iut@iut-dhaka.edu|304
