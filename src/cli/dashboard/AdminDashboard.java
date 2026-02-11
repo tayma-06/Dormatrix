@@ -47,7 +47,6 @@ public class AdminDashboard implements Dashboard {
                 return;
             }
 
-            // Handle user input
             controller.handleInput(choice, username);
             ConsoleUtil.pause();
         }

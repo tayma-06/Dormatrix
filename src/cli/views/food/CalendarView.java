@@ -14,7 +14,6 @@ public class CalendarView {
     private final CafeteriaController controller = new CafeteriaController();
 
     public void showWeeklyMenuAndPurchaseTokens(String username, LocalDate today) {
-        // Calculate the Monday of the current week
         LocalDate startOfWeek = today.minusDays(today.getDayOfWeek().getValue() - 1);
 
         while (true) {
@@ -52,13 +51,12 @@ public class CalendarView {
     }
 
     public void renderWeeklyCalendar(LocalDate today, LocalDate startOfWeek) {
-        System.out.println("╔═══════════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                             WEEKLY MEAL PLAN                              ║");
-        System.out.println("╠══════════╦══════════╦══════════╦══════════╦══════════╦══════════╦═════════╣");
-        System.out.println("║  [1]Mon  ║  [2]Tue  ║  [3]Wed  ║  [4]Thu  ║  [5]Fri  ║  [6]Sat  ║  [7]Sun ║");
-        System.out.println("╠══════════╬══════════╬══════════╬══════════╬══════════╬══════════╬═════════╣");
+        System.out.println("╔════════════════════════════════════════════════════════════════════════════╗");
+        System.out.println("║                             WEEKLY MEAL PLAN                               ║");
+        System.out.println("╠══════════╦══════════╦══════════╦══════════╦══════════╦══════════╦══════════╣");
+        System.out.println("║  [1]Mon  ║  [2]Tue  ║  [3]Wed  ║  [4]Thu  ║  [5]Fri  ║  [6]Sat  ║  [7]Sun  ║");
+        System.out.println("╠══════════╬══════════╬══════════╬══════════╬══════════╬══════════╬══════════╣");
 
-        // Row for the actual dates or 'X'
         System.out.print("║");
         for (int i = 0; i < 7; i++) {
             LocalDate currentDay = startOfWeek.plusDays(i);
@@ -71,7 +69,7 @@ public class CalendarView {
             }
             System.out.print(dayDisplay + "║");
         }
-        System.out.println("\n╚══════════╩══════════╩══════════╩══════════╩══════════╩══════════╩═════════╝");
+        System.out.println("\n╚══════════╩══════════╩══════════╩══════════╩══════════╩══════════╩══════════╝");
     }
 
     private void handleSingleDayFlow(String username, LocalDate day) {
@@ -80,7 +78,6 @@ public class CalendarView {
         System.out.println("║ SETTINGS FOR: " + String.format("%-54s", day.getDayOfWeek() + " (" + day + ")") + "║");
         System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
 
-        // Show the current menu for that day
         DayOfWeek dow = day.getDayOfWeek();
         System.out.println("  Breakfast: " + controller.getMenuForTime(day, dow.toString(), MealType.BREAKFAST));
         System.out.println("  Lunch:     " + controller.getMenuForTime(day, dow.toString(), MealType.LUNCH));

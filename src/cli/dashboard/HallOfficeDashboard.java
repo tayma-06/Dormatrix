@@ -37,7 +37,6 @@ public class HallOfficeDashboard implements Dashboard {
 
             System.out.println();
             System.out.print("Enter your choice: ");
-
             int choice = FastInput.readInt();
 
             if (choice == 0) {

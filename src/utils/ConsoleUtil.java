@@ -3,7 +3,6 @@ package utils;
 public final class ConsoleUtil {
 
     private static final String ESC = "\u001b[";
-
     private static final String CLEAR_SCREEN = ESC + "2J";
     private static final String CURSOR_HOME = ESC + "H";
     private static final String RESET = ESC + "0m";
