@@ -19,9 +19,9 @@ public class CreateAccount {
     public void show() {
         ConsoleUtil.clearScreen();
 
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
         System.out.println("║                           CREATE NEW ACCOUNT                        ║");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
         System.out.println("║ [1] Student                                                         ║");
         System.out.println("║ [2] Attendant                                                       ║");
         System.out.println("║ [3] Maintenance Worker                                              ║");
@@ -30,7 +30,7 @@ public class CreateAccount {
         System.out.println("║ [6] Admin                                                           ║");
         System.out.println("║ [7] Cafeteria Manager                                               ║");
         System.out.println("║ [0] Back                                                            ║");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
         System.out.println();
         System.out.print("Enter choice: ");
 

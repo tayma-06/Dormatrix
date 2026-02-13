@@ -31,7 +31,7 @@ public class DeleteAccount {
         System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
 
         System.out.println();
-        System.out.print("Enter role choice (1-6): ");
+        System.out.print("Enter your choice: ");
 
         int roleChoice = FastInput.readInt();
         if (roleChoice == 0) return;
@@ -56,8 +56,8 @@ public class DeleteAccount {
                 adminPass
         );
 
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("║ " + result);
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
+        System.out.println("  " + result);
+        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
     }
 }
