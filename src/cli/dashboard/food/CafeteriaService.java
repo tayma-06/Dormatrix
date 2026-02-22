@@ -4,13 +4,18 @@ import controllers.food.CafeteriaController;
 import models.food.DailyMenu;
 import models.food.MealType;
 import utils.FastInput;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CafeteriaService {
-    private final CafeteriaController controller = new CafeteriaController();
+    private final CafeteriaController controller;
+
+    public CafeteriaService(CafeteriaController controller) {
+        this.controller = controller;
+    }
 
     public void updateWeeklyMenu() {
         String[] days = {"MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"};
@@ -27,7 +32,7 @@ public class CafeteriaService {
             }
         }
         controller.saveMenu(newMenu);
-        System.out.println("Success: Weekly menu updated!");
+        System.out.println("[Success] Weekly menu updated!");
     }
 
     public void scheduleSpecialEvent() {
@@ -44,9 +49,9 @@ public class CafeteriaService {
             String items = FastInput.readNonEmptyLine();
 
             controller.scheduleSpecialMeal(date, type, items);
-            System.out.println("Success: Event added to calendar.");
+            System.out.println("[Success] Event added to calendar.");
         } catch (DateTimeParseException e) {
-            System.out.println("Error: Invalid date format.");
+            System.out.println("[Error] Invalid date format. Please use YYYY-MM-DD.");
         }
     }
 }

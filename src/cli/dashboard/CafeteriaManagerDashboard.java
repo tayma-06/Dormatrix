@@ -1,10 +1,7 @@
 package cli.dashboard;
 
 import controllers.dashboard.CafeteriaDashboardController;
-import utils.CafeteriaAsciiUI;
-import utils.ConsoleUtil;
-import utils.FastInput;
-import utils.TimeManager;
+import utils.*;
 
 public class CafeteriaManagerDashboard implements Dashboard {
     private final CafeteriaDashboardController mainController = new CafeteriaDashboardController();
@@ -13,6 +10,7 @@ public class CafeteriaManagerDashboard implements Dashboard {
     public void show(String username) {
         while (true) {
             ConsoleUtil.clearScreen();
+            BackgroundFiller.applyCafeteriaManagerTheme();
             renderHeader(username);
             renderMenuOptions();
 
@@ -23,8 +21,6 @@ public class CafeteriaManagerDashboard implements Dashboard {
                 renderLogoutBox();
                 return;
             }
-
-            // Delegation to the Controller
             mainController.handleAction(choice);
 
             System.out.print("\nPress Enter to continue...");
@@ -36,7 +32,7 @@ public class CafeteriaManagerDashboard implements Dashboard {
         String nowLine = "Now: " + TimeManager.nowDate() + " " + TimeManager.nowTime()
                 + " | Slot: " + TimeManager.getCurrentMealSlot()
                 + " | Ramadan: " + TimeManager.isRamadanMode();
-
+        System.out.println();
         System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
         System.out.println("║                     CAFETERIA MANAGER DASHBOARD                     ║");
         System.out.println("╠═════════════════════════════════════════════════════════════════════╣");

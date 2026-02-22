@@ -1,4 +1,21 @@
-MONDAY|LUNCH|Rice, Chicken Curry, Dal
-MONDAY|DINNER|Rice, Fish Fry, Veg
-TUESDAY|LUNCH|Rice, Beef Bhuna, Salad
-TUESDAY|DINNER|Rice, Egg Curry, Spinach
+MONDAY|SUHOOR|Rice/Tanduri Roti, Egg Fry/Fish/Chicken Curry, Veg/Dal, Milk
+MONDAY|IFTAR|Dates(3), Guava, Muri, Milk Shake, Beet Biryani, Mutton Halim, Sweet Curd
+MONDAY|DINNER|Square Bread, Jam, Butter, Egg OR Khichuri with Egg
+TUESDAY|SUHOOR|Rice/Tanduri Roti, Egg Fry/Beef/Chicken Curry, Sweet Pumpkin fry/Dal, Milk
+TUESDAY|IFTAR|Dates(3), Orange, Muri, Chickpea, Soft Drink, Polao Chicken, Beef Halim, Payesh
+TUESDAY|DINNER|Square Bread, Jam, Butter, Egg OR Rice, Beef Curry
+WEDNESDAY|SUHOOR|Rice/Tanduri Roti, Potato Mash/Dal, Egg Fry/Chicken/Mutton Curry, Milk
+WEDNESDAY|IFTAR|Dates(3), Apple, Muri, Chickpea, Milk Shake, Chicken Biryani, Mutton Halim
+WEDNESDAY|DINNER|Square Bread, Jam, Butter, Egg OR Rice, Chicken Curry
+THURSDAY|SUHOOR|Rice/Tanduri Roti, Niramish/Dal, Egg Fry/Fish/Chicken Curry, Milk
+THURSDAY|IFTAR|Dates(3), Melon, Muri, Chickpea, Milk Shake, Beef Biryani, Chicken Fry, Sweet Curd
+THURSDAY|DINNER|Square Bread, Jam, Butter, Egg OR Khichuri with Egg/Curry
+FRIDAY|SUHOOR|Rice/Tanduri Roti, Vegetables/Dal, Egg Fry/Beef/Chicken Curry, Milk
+FRIDAY|IFTAR|Dates(3), Banana, Chira, Drinko/Litchi, Chicken Biryani, Chicken Fry
+FRIDAY|DINNER|Square Bread, Jam, Butter, Egg OR Rice, Beef Curry
+SATURDAY|SUHOOR|Boiled Rice/Tanduri Roti, Available Veg/Dal, Egg/Fish/Chicken Curry, Milk
+SATURDAY|IFTAR|Dates(3), Banana, Chira, Drinko/Litchi, Chicken Biryani, Chicken Fry
+SATURDAY|DINNER|Square Bread, Jam, Butter, Egg OR Rice, Beef Curry
+SUNDAY|SUHOOR|Rice/Tanduri Roti, Niramish/Dal, Egg/Chicken/Beef Curry, Milk
+SUNDAY|IFTAR|Dates(3), Banana, Muri, Chickpea, Fruiti/Grape, Chicken Biryani, Chicken Fry
+SUNDAY|DINNER|Square Bread, Jam, Butter, Egg OR Rice, Chicken Curry

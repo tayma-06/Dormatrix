@@ -58,6 +58,13 @@ public final class BackgroundFiller {
         clearWithCurrentBackground();
     }
 
+    public static void applyCafeteriaManagerTheme() {
+        System.out.print(ConsoleColors.RESET);
+        System.out.print(ConsoleColors.bgRGB(45, 25, 10));
+        System.out.print(ConsoleColors.ThemeText.CAFETERIA_TEXT);
+        clearWithCurrentBackground();
+    }
+
     public static void resetTheme() {
         System.out.print(ConsoleColors.RESET);
         System.out.flush();
