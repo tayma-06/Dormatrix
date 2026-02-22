@@ -22,6 +22,4 @@
 230042101|Ayesha Siddiqua|STUDENT|CSE|62afa2d2|01700000001|ayesha@iut-dhaka.edu|318
 230042121|A|STUDENT|CSE|4e17ee20|0012891891239|dkndknadkn@iut-dhaka.edu|319
 230042114|Procheta Silvie|STUDENT|SWE|4e17e6e2|01700000000|prochetasilvie@iut-dhaka.edu|301
-230042122|K s|STUDENT|CSE|662ee786|01700000000|s@iut-dhaka.edu|302
-230042123|L A|STUDENT|CSE|7ef81234|01700000000|a@iut-dhaka.edu|302
-230042154|Aksan Anan Ria|STUDENT|CSE|4e179562|01700000000|aksanananriya@iut@iut-dhaka.edu|304
+

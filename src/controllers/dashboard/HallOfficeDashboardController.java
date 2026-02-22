@@ -44,10 +44,15 @@ public class HallOfficeDashboardController {
 
     private void handleRoomAllocation() {
         while (true) {
-            System.out.println("\n=== Room Management Menu ===");
-            System.out.println("1. View All Rooms status");
-            System.out.println("2. Allocate/Change Student Room");
-            System.out.println("0. Back");
+            System.out.println();
+            System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
+            System.out.println("║                          ROOM MANAGEMENT MENU                       ║");
+            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            System.out.println("║ 1. View All Rooms status                                            ║");
+            System.out.println("║ 2. Allocate/Change Student Room                                     ║");
+            System.out.println("║ 0. Back                                                             ║");
+            System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+            System.out.println();
             System.out.print("Enter choice: ");
 
             if (sc.hasNextInt()) {

@@ -49,6 +49,7 @@ public final class ConsoleColors {
         public static final String STORE_TEXT = fgRGB(255, 239, 226);
         public static final String HALL_TEXT = fgRGB(238, 230, 248);
         public static final String ADMIN_TEXT = fgRGB(255, 232, 242);
+        public static final String CAFETERIA_TEXT = fgRGB(255, 243, 230);
 
         private ThemeText() {}
     }

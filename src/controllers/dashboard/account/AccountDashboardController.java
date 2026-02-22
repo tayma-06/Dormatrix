@@ -1,4 +1,4 @@
-package controllers.dashboard;
+package controllers.dashboard.account;
 
 import cli.views.account.SearchUser;
 import cli.views.account.ViewAccount;

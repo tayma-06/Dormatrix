@@ -85,7 +85,6 @@ public class MealTokenPurchase {
                     }
                 }
                 case 2 -> {
-                    // DELEGATION: Call the CalendarView to handle the complex UI and logic
                     calendarView.showWeeklyMenuAndPurchaseTokens(username, todayDate);
                     skipOuterPause = true;
                 }

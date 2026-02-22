@@ -1,5 +1,7 @@
 package utils;
 
+import java.io.IOException;
+
 public final class ConsoleUtil {
 
     private static final String ESC = "\u001b[";
@@ -9,11 +11,11 @@ public final class ConsoleUtil {
     private static final String SHOW_CURSOR = ESC + "?25h";
     private static final String HIDE_CURSOR = ESC + "?25l";
 
-    private ConsoleUtil() {}
+    private ConsoleUtil() {
+    }
 
     public static void clearScreen() {
-        System.out.print(CURSOR_HOME + CLEAR_SCREEN);
-        System.out.flush();
+        clearTerminal();
     }
 
     public static void clearAndReset() {
@@ -40,5 +42,18 @@ public final class ConsoleUtil {
         System.out.println();
         System.out.print("Press Enter to continue...");
         FastInput.readLine();
+    }
+
+    private static void clearTerminal() {
+        try {
+            if (System.getProperty("os.name").contains("Windows")) {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } else {
+                System.out.print("\033[H\033[2J");
+                System.out.flush();
+            }
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Failed to clear terminal.");
+        }
     }
 }

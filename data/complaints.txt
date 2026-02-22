@@ -8,3 +8,4 @@ C-7|230042110|Khadija Kubra|310|PLUMBING|The water tape is not working in my roo
 C-8|230042154|Aksan Anan Ria|304|CLEANING|My room is a mess for 5 days|RESOLVED|MW04|NORMAL|WORKER_PROGRESS:In Progress;WORKER_DONE:Completed
 C-9|230042151|Rabeya Khatun|304|ELECTRICITY|Electricity Line Fire Outbreak|RESOLVED|MW01|EMERGENCY|EMERGENCY;WORKER_DONE:Done
 C-10|230042114|Procheta Silvie|301|OTHER|food is disgusting|ASSIGNED|MW04|NORMAL|
+C-11|230042135|Khadiza Sultana|301|ELECTRICITY|Water Burst|ASSIGNED|MW01|NORMAL|

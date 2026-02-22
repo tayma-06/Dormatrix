@@ -14,6 +14,7 @@ import controllers.account.ViewAccountController;
 
 import controllers.authentication.AccountManager;
 
+import controllers.dashboard.account.AccountDashboardController;
 import controllers.dashboard.room.RoomDashboardController;
 import controllers.room.RoomService;
 

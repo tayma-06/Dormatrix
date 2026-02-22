@@ -6,8 +6,13 @@ import utils.FastInput;
 import utils.TimeManager;
 
 public class SystemOperationService {
-    private final MealTokenController tokenController = new MealTokenController();
-    private final CafeteriaController cafeteriaController = new CafeteriaController();
+    private final MealTokenController tokenController;
+    private final CafeteriaController cafeteriaController;
+
+    public SystemOperationService(MealTokenController tokenController, CafeteriaController cafeteriaController) {
+        this.tokenController = tokenController;
+        this.cafeteriaController = cafeteriaController;
+    }
 
     public void verifyTokenLoop() {
         while (true) {
@@ -24,6 +29,6 @@ public class SystemOperationService {
         boolean isRamadan = FastInput.readBoolean();
         TimeManager.setRamadanMode(isRamadan);
         cafeteriaController.setSystemMode(isRamadan);
-        System.out.println("System Mode updated.");
+        System.out.println("[System] Mode updated successfully.");
     }
 }
