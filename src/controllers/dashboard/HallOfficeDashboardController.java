@@ -1,8 +1,11 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
+import cli.dashboard.room.StudentRoomDashboard;
+import controllers.dashboard.room.StudentRoomDashboardController;
 import controllers.room.RoomController;
-import cli.views.ComplaintView;
+import cli.views.complaint.ComplaintView;
+import controllers.room.RoomService;
 import repo.file.FileComplaintRepository;
 import models.complaints.Complaint;
 import libraries.collections.MyArrayList;
@@ -179,7 +182,7 @@ public class HallOfficeDashboardController {
                     case 7:
                         System.out.print("Enter Room ID: ");
                         String rid = sc.nextLine().trim();
-                        roomController.showComplaintsForRoom(rid);
+                        new StudentRoomDashboard(new StudentRoomDashboardController(new RoomService())).showComplaints(rid);
                         break;
                     case 0:
                         return;

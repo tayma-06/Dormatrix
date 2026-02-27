@@ -1,8 +1,8 @@
 package cli.complaint;
 
 import cli.Input;
-import cli.forms.ComplaintForm;
-import cli.views.ComplaintView;
+import cli.forms.complaint.ComplaintForm;
+import cli.views.complaint.ComplaintView;
 
 import libraries.collections.MyOptional;
 

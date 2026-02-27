@@ -1,4 +1,4 @@
-package cli.forms;
+package cli.forms.complaint;
 
 import java.util.Scanner;
 import models.enums.ComplaintCategory;
@@ -12,7 +12,7 @@ public class ComplaintForm {
         while(true){
             String line = sc.nextLine();
             try { return Integer.parseInt(line.trim()); }
-            catch(Exception e){ System.out.print("Invalid input. Enter again: "); }
+            catch(Exception e){ System.out.println("Invalid input. Enter again: "); }
         }
     }
 
@@ -55,7 +55,7 @@ public class ComplaintForm {
             case 4: return ComplaintCategory.CLEANING;
             case 5: return ComplaintCategory.SECURITY;
             case 6: return ComplaintCategory.OTHER;
-            case 0: return readCategory();
+            case 0: return null;
             default:
                 System.out.println("Invalid category.");
                 return readCategory();

@@ -1,8 +1,8 @@
 package cli.complaint;
 
 import cli.Input;
-import cli.forms.ComplaintForm;
-import cli.views.ComplaintView;
+import cli.forms.complaint.ComplaintForm;
+import cli.views.complaint.ComplaintView;
 
 import libraries.collections.MyArrayList;
 import libraries.collections.MyOptional;
@@ -46,6 +46,11 @@ public class StudentComplaintCLI {
                 }
 
                 ComplaintCategory cat = form.readCategory();
+
+                if (cat == null){
+                    return;
+                }
+
                 String desc = form.readNonEmpty("Enter complaint description: ");
 
                 Complaint c = module.fileComplaint(infoOpt.get(), cat, desc);
@@ -60,12 +65,6 @@ public class StudentComplaintCLI {
 
                 MyArrayList<Complaint> mine = repo.findByStudentId(infoOpt.get().getStudentId());
                 view.list(mine);
-
-            } else if (ch == 3) {
-                String id = form.readNonEmpty("Enter complaint ID: ");
-                MyOptional<Complaint> c = repo.findById(id);
-                if (c.isEmpty()) view.error("No complaint found with ID: " + id);
-                else view.details(c.get());
 
             } else {
                 view.error("Invalid choice.");

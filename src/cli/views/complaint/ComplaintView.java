@@ -1,4 +1,4 @@
-package cli.views;
+package cli.views.complaint;
 
 import libraries.collections.MyArrayList;
 import libraries.collections.MyString;
@@ -13,7 +13,7 @@ public class ComplaintView {
         System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("1. File a Complaint");
         System.out.println("2. View My Complaints");
-        System.out.println("3. Track Complaint by ID");
+//        System.out.println("3. Track Complaint by ID");
         System.out.println("0. Back");
         System.out.print("Enter choice: ");
     }
@@ -25,20 +25,18 @@ public class ComplaintView {
         System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("1. View ALL complaints");
         System.out.println("2. View PENDING (unassigned/SUBMITTED)");
-        System.out.println("3. View MISHAPS (unassigned / invalid worker / mismatch)");
-        System.out.println("4. Reassign complaint (manual worker id)");
-        System.out.println("5. Retry AUTO-ASSIGN for a complaint");
-        System.out.println("6. Resolve complaint (attendant override)");
-        System.out.println("7. View complaints by ROOM");
+        System.out.println("3. Reassign complaint (manual worker id)");
+        System.out.println("4. Resolve complaint (attendant override)");
+        System.out.println("5. View complaints by ROOM");
         System.out.println("0. Back");
         System.out.print("Enter choice: ");
     }
 
     public void workerMenu(){
         System.out.println();
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("|                        TASK QUEUE(WORKER)                           |");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("════════════════════════════════════════════════════════════════════════");
+        System.out.println("|                        TASK QUEUE(WORKER)                            |");
+        System.out.println("════════════════════════════════════════════════════════════════════════");
         System.out.println("1. View Assigned Tasks");
         System.out.println("2. Update Progress");
         System.out.println("3. Mark Completed");
@@ -66,24 +64,24 @@ public class ComplaintView {
             return;
         }
 
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("|                              LIST                                   |");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        System.out.println("══════════════════════════════════════════════════════════════════════════");
+        System.out.println("|                                LIST                                    |");
+        System.out.println("══════════════════════════════════════════════════════════════════════════");
+        System.out.println("║ ID                 ║ Status     ║ Assigned Worker ║ Category           ║");
+        System.out.println("╠════════════════════╬════════════╬═════════════════╬════════════════════╣");
         for (int i = 0; i < list.size(); i++){
             Complaint c = list.get(i);
             String wid = c.getAssignedWorkerId();
             boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
             System.out.println(
-                    "ID: " + c.getComplaintId()
-                            + " | Student: " + c.getStudentId()
-                            + " | Room: " + c.getStudentRoomNo()
-                            + " | Cat: " + c.getCategory().name()
-                            + " | Status: " + c.getStatus().name()
-                            + " | Worker: " + (blank ? "(none)" : wid)
-                            + " | Priority: " + c.getPriority().name()
+                    String.format("║ %-18s ║ %-10s ║ %-15s ║ %-18s ║",
+                            c.getComplaintId(),
+                            c.getStatus().name(),
+                            (blank ? "(none)" : wid),
+                            c.getCategory().name())
             );
         }
-        System.out.println("------------------------------------------\n");
+        System.out.println("╚════════════════════╩════════════╩═════════════════╩════════════════════╝");
     }
 
     public void details(Complaint c){
