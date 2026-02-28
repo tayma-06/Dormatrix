@@ -31,8 +31,8 @@ public class AttendantComplaintCLI {
             int ch = form.readInt();
             if (ch == 0) return;
 
-            if (ch == 1) view.list(module.findAll());
-            else if (ch == 2) view.list(module.findPending());
+            if (ch == 1) view.attendantList(module.findAll());
+            else if (ch == 2) view.attendantList(module.findPending());
 //            else if (ch == 3) view.list(module.findMishaps());
             else if (ch == 3){
                 String cid = form.readNonEmpty("Complaint ID: ");
@@ -53,7 +53,7 @@ public class AttendantComplaintCLI {
                 for (int i = 0; i < all.size(); i++){
                     if (all.get(i).getStudentRoomNo().trim().equals(room.trim())) out.add(all.get(i));
                 }
-                view.list(out);
+                view.attendantList(out);
             } else {
                 view.error("Invalid choice.");
             }

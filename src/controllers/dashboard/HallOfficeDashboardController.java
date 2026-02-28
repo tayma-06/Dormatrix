@@ -173,11 +173,11 @@ public class HallOfficeDashboardController {
                 switch (choice) {
                     case 1:
                         MyArrayList<Complaint> all = complaintRepo.findAll();
-                        complaintView.list(all);
+                        complaintView.attendantList(all);
                         break;
                     case 2:
                         System.out.println(">> Filtering Pending... (To be implemented fully)");
-                        complaintView.list(complaintRepo.findAll());
+                        complaintView.attendantList(complaintRepo.findAll());
                         break;
                     case 7:
                         System.out.print("Enter Room ID: ");

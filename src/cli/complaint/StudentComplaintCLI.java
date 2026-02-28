@@ -64,7 +64,7 @@ public class StudentComplaintCLI {
                 }
 
                 MyArrayList<Complaint> mine = repo.findByStudentId(infoOpt.get().getStudentId());
-                view.list(mine);
+                view.studentList(mine);
 
             } else {
                 view.error("Invalid choice.");

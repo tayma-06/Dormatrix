@@ -35,7 +35,7 @@ public class WorkerComplaintCLI {
             }
 
             if (ch == 1){
-                view.list(repo.findByAssignedWorker(wid));
+                view.workerList(repo.findByAssignedWorker(wid));
 
             } else if (ch == 2){
                 String cid = form.readNonEmpty("Complaint ID: ");
