@@ -1,7 +1,6 @@
 package cli.dashboard;
 
 import controllers.facilities.*;
-import libraries.slots.SlotAllocator;
 import java.util.Scanner;
 
 public class FacilityDashboard {
