@@ -1,8 +1,11 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
+import cli.dashboard.room.StudentRoomDashboard;
+import controllers.dashboard.room.StudentRoomDashboardController;
 import controllers.room.RoomController;
-import cli.views.ComplaintView;
+import cli.views.complaint.ComplaintView;
+import controllers.room.RoomService;
 import repo.file.FileComplaintRepository;
 import models.complaints.Complaint;
 import libraries.collections.MyArrayList;
@@ -170,16 +173,16 @@ public class HallOfficeDashboardController {
                 switch (choice) {
                     case 1:
                         MyArrayList<Complaint> all = complaintRepo.findAll();
-                        complaintView.list(all);
+                        complaintView.attendantList(all);
                         break;
                     case 2:
                         System.out.println(">> Filtering Pending... (To be implemented fully)");
-                        complaintView.list(complaintRepo.findAll());
+                        complaintView.attendantList(complaintRepo.findAll());
                         break;
                     case 7:
                         System.out.print("Enter Room ID: ");
                         String rid = sc.nextLine().trim();
-                        roomController.showComplaintsForRoom(rid);
+                        new StudentRoomDashboard(new StudentRoomDashboardController(new RoomService())).showComplaints(rid);
                         break;
                     case 0:
                         return;
