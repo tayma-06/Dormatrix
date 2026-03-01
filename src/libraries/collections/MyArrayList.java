@@ -12,6 +12,8 @@ it was used in :
 // one duck follows after another in a perfectly indexed line
 
 
+import java.util.function.Consumer;
+
 public class MyArrayList<T> { //Now T has a magical way of checking my DUCK type dynamically...So why not use it?
     private static final int DEFAULT_CAPACITY = 10;
     private static final Object[] EMPTY_ELEMENTDATA = {};
@@ -269,6 +271,10 @@ public class MyArrayList<T> { //Now T has a magical way of checking my DUCK type
         }
     }
 
-
+    public void forEach(Consumer<? super T> action) {
+        for (int i = 0; i < size; i++) {
+            action.accept((T) elementData[i]);
+        }
+    }
 
 }

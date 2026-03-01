@@ -35,7 +35,7 @@ public class StudentDashboard implements Dashboard {
             System.out.println("║ [3] Meal Token Purchase                                             ║");
             System.out.println("║ [4] Store Account & Dues                                            ║");
             System.out.println("║ [5] Lost & Found                                                    ║");
-            System.out.println("║ [6] Submit Complaint                                                ║");
+            System.out.println("║ [6] Complaint Menu                                                ║");
             System.out.println("║ [7] View Announcements                                              ║");
             System.out.println("║ [8] Store Shopping Cart                                             ║");
             System.out.println("║ [0] Logout                                                          ║");
@@ -52,11 +52,6 @@ public class StudentDashboard implements Dashboard {
                 System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
                 BackgroundFiller.resetTheme();
                 return;
-            }
-
-            if (choice == 6) {
-                new StudentComplaintCLI().start(username);
-                continue;
             }
 
             controller.handleInput(choice, username);

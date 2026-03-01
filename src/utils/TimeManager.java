@@ -1,11 +1,13 @@
 package utils;
 
 import models.food.MealType;
-import exceptions.ConfigurationLoadException;
+import exceptions.config.ConfigurationLoadException;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.time.*;
 
@@ -53,6 +55,19 @@ public class TimeManager {
 
     public static void setRamadanMode(boolean active) {
         isRamadanMode = active;
+        saveConfiguration();
+    }
+
+    private static void saveConfiguration() {
+        try {
+            File file = new File(CONFIG_FILE);
+            file.getParentFile().mkdirs(); // Ensure directory exists
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
+                bw.write("RAMADAN=" + isRamadanMode);
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to save system configuration: " + e.getMessage());
+        }
     }
 
     public static boolean isRamadanMode() { return isRamadanMode; }

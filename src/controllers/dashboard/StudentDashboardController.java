@@ -1,8 +1,8 @@
 package controllers.dashboard;
 
+import cli.complaint.StudentComplaintCLI;
 import cli.dashboard.MainDashboard;
 import cli.forms.food.MealTokenPurchase;
-import cli.views.MessageView;
 
 import cli.views.store.*;
 import controllers.room.RoomController;
@@ -14,7 +14,6 @@ public class StudentDashboardController {
     private final MealTokenPurchase mealTokenPurchase;
     private final StoreLedgerView storeLedgerView;
     private final RoomController roomController;
-    private final MessageView msg;
     private final StudyRoomController studyRoomController;
     private final FridgeController fridgeController;
     private final LaundryController laundryController;
@@ -25,7 +24,6 @@ public class StudentDashboardController {
         this.mainDashboard = new MainDashboard();
         this.storeLedgerView = new StoreLedgerView();
         this.roomController = new RoomController();
-        this.msg = new MessageView();
         this.studyRoomController = new StudyRoomController();
         this.fridgeController = new FridgeController();
         this.laundryController = new LaundryController();
@@ -50,9 +48,9 @@ public class StudentDashboardController {
             case 5:
                 System.out.println(">> Feature [Lost & Found] is under development.");
                 break;
-//            case 6:
-//                studentComplaintMenu(username);
-//                break;
+            case 6:
+                new StudentComplaintCLI().start(username);
+                break;
             case 7:
                 System.out.println(">> Feature [Announcements] is under development.");
                 break;

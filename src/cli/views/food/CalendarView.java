@@ -103,11 +103,9 @@ public class CalendarView {
         FastInput.readLine();
     }
 
-    // --- NEW: Custom Text Wrapping Method ---
     private void printWrappedMenu(String mealName, String menuItems) {
-        // Sets up formatting: "Breakfast:  " (12 characters wide)
         String prefix = String.format("%-11s ", mealName + ":");
-        int maxLineLength = 67 - prefix.length(); // 55 characters available for food text per line
+        int maxLineLength = 67 - prefix.length();
 
         if (menuItems == null || menuItems.isEmpty()) {
             System.out.printf("║ %-67s ║%n", prefix);
@@ -119,14 +117,10 @@ public class CalendarView {
         boolean firstLine = true;
 
         for (String word : words) {
-            // Check if adding the next word pushes us past the boundary
             if (currentLine.length() + word.length() + (currentLine.length() > 0 ? 1 : 0) > maxLineLength) {
 
-                // If it's the 2nd/3rd line, we use blank spaces to align under the text above it!
                 String linePrefix = firstLine ? prefix : String.format("%" + prefix.length() + "s", "");
                 System.out.printf("║ %-67s ║%n", linePrefix + currentLine.toString());
-
-                // Start the new line with the current word
                 currentLine = new StringBuilder(word);
                 firstLine = false;
             } else {
@@ -134,8 +128,6 @@ public class CalendarView {
                 currentLine.append(word);
             }
         }
-
-        // Print the final chunk of text
         if (currentLine.length() > 0 || firstLine) {
             String linePrefix = firstLine ? prefix : String.format("%" + prefix.length() + "s", "");
             System.out.printf("║ %-67s ║%n", linePrefix + currentLine.toString());

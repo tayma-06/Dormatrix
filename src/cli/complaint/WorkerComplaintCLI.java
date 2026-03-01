@@ -1,8 +1,8 @@
 package cli.complaint;
 
 import cli.Input;
-import cli.forms.ComplaintForm;
-import cli.views.ComplaintView;
+import cli.forms.complaint.ComplaintForm;
+import cli.views.complaint.ComplaintView;
 
 import libraries.collections.MyOptional;
 
@@ -35,7 +35,7 @@ public class WorkerComplaintCLI {
             }
 
             if (ch == 1){
-                view.list(repo.findByAssignedWorker(wid));
+                view.workerList(repo.findByAssignedWorker(wid));
 
             } else if (ch == 2){
                 String cid = form.readNonEmpty("Complaint ID: ");

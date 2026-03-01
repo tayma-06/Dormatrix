@@ -1,6 +1,8 @@
 package controllers.room;
 
+import cli.dashboard.room.StudentRoomDashboard;
 import cli.views.room.StudentRoomView;
+import controllers.dashboard.room.StudentRoomDashboardController;
 import models.room.Room;
 import java.io.*;
 import java.util.*;
@@ -55,7 +57,7 @@ public class RoomController {
                 if (roomNumber.equals("UNASSIGNED") || roomNumber.equals("N/A")) {
                     System.out.println("\n>> You do not have a room assigned yet.");
                 } else {
-                    showComplaintsForRoom(roomNumber);
+                    new StudentRoomDashboard(new StudentRoomDashboardController(new RoomService())).showComplaints(roomNumber);
                 }
                 System.out.print("Press Enter to return...");
                 new Scanner(System.in).nextLine();
@@ -122,33 +124,33 @@ public class RoomController {
         }
     }
 
-    public void showComplaintsForRoom(String roomId) {
-        if (roomId == null || roomId.trim().isEmpty()) {
-            System.out.println("Invalid room.");
-            return;
-        }
-        MyArrayList<Complaint> all = complaintRepo.findAll();
-        boolean found = false;
-
-        System.out.println("\n------------------ COMPLAINTS FOR ROOM " + roomId + " ------------------");
-        for (int i = 0; i < all.size(); i++) {
-            Complaint c = all.get(i);
-            if (new MyString(c.getStudentRoomNo()).trim().equals(new MyString(roomId).trim())) {
-                found = true;
-                String wid = c.getAssignedWorkerId();
-                boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
-
-                System.out.println(
-                        "ID: " + c.getComplaintId()
-                                + " | Status: " + c.getStatus().name()
-                                + " | Worker: " + (blank ? "(none)" : wid)
-                                + " | Cat: " + c.getCategory().name()
-                );
-            }
-        }
-        if (!found) System.out.println("(No complaints found for this room)");
-        System.out.println("-----------------------------------------------------------------------\n");
-    }
+//    public void showComplaintsForRoom(String roomId) {
+//        if (roomId == null || roomId.trim().isEmpty()) {
+//            System.out.println("Invalid room.");
+//            return;
+//        }
+//        MyArrayList<Complaint> all = complaintRepo.findAll();
+//        boolean found = false;
+//
+//        System.out.println("\n------------------ COMPLAINTS FOR ROOM " + roomId + " ------------------");
+//        for (int i = 0; i < all.size(); i++) {
+//            Complaint c = all.get(i);
+//            if (new MyString(c.getStudentRoomNo()).trim().equals(new MyString(roomId).trim())) {
+//                found = true;
+//                String wid = c.getAssignedWorkerId();
+//                boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
+//
+//                System.out.println(
+//                        "ID: " + c.getComplaintId()
+//                                + " | Status: " + c.getStatus().name()
+//                                + " | Worker: " + (blank ? "(none)" : wid)
+//                                + " | Cat: " + c.getCategory().name()
+//                );
+//            }
+//        }
+//        if (!found) System.out.println("(No complaints found for this room)");
+//        System.out.println("-----------------------------------------------------------------------\n");
+//    }
     private String getStudentRoomNumber(String target) {
         File file = new File(STUDENT_FILE);
         if (!file.exists()) return "UNASSIGNED";

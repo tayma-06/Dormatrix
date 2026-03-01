@@ -1,18 +1,18 @@
 package controllers.dashboard;
 
-import controllers.food.MenuManagementController;
-import controllers.food.OperationController;
+import cli.dashboard.food.CafeteriaService;
+import cli.dashboard.food.SystemOperationService;
 
 public class CafeteriaDashboardController {
-    private final MenuManagementController menuController = new MenuManagementController();
-    private final OperationController operationController = new OperationController();
+    private final CafeteriaService menuUI = new CafeteriaService();
+    private final SystemOperationService opsUI = new SystemOperationService();
 
     public void handleAction(int choice) {
         switch (choice) {
-            case 1 -> menuController.manageWeeklyMenu();
-            case 2 -> menuController.manageSpecialEvent();
-            case 3 -> operationController.processTokenVerification();
-            case 4 -> operationController.manageRamadanMode();
+            case 1 -> menuUI.showWeeklyMenuUI();
+            case 2 -> menuUI.showSpecialEventUI();
+            case 3 -> opsUI.showTokenVerificationUI();
+            case 4 -> opsUI.showRamadanToggleUI();
             default -> System.out.println("Invalid Selection!");
         }
     }

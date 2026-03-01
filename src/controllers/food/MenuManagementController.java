@@ -1,50 +1,37 @@
 package controllers.food;
 
-import controllers.food.CafeteriaController;
 import models.food.DailyMenu;
 import models.food.MealType;
-import utils.FastInput;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class MenuManagementController {
     private final CafeteriaController cafeteriaData = new CafeteriaController();
 
-    public void manageWeeklyMenu() {
-        String[] days = {"MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"};
-        List<DailyMenu> newMenu = new ArrayList<>();
-
-        System.out.println("\n--- Set Weekly Menu ---");
-        for (String day : days) {
-            System.out.println(">> " + day);
-            for (MealType type : MealType.values()) {
-                System.out.print("   " + type + " items: ");
-                String items = FastInput.readNonEmptyLine();
-                newMenu.add(new DailyMenu(day, type, items));
-            }
-        }
-        cafeteriaData.saveMenu(newMenu);
-        System.out.println("Success: Weekly menu updated!");
+    public List<DailyMenu> getWeeklyMenuData() {
+        return cafeteriaData.getWeeklyMenu();
     }
-
-    public void manageSpecialEvent() {
+    public String processSingleMealUpdate(String day, MealType type, String items) {
+        if (items == null || items.trim().isEmpty()) {
+            return "[Error] Menu items cannot be empty.";
+        }
+        cafeteriaData.updateSingleMeal(day, type, items);
+        return "[Success] Updated " + day + " " + type + " successfully.";
+    }
+    public String processSpecialEvent(String dateStr, int typeChoice, String items) {
         try {
-            System.out.print("Enter Date (YYYY-MM-DD): ");
-            LocalDate date = LocalDate.parse(FastInput.readNonEmptyLine());
-            System.out.println("Select Meal Type: 1.LUNCH 2.DINNER");
-            System.out.print("Choice: ");
-            int typeChoice = FastInput.readInt();
+            LocalDate date = LocalDate.parse(dateStr);
             MealType type = (typeChoice == 2) ? MealType.DINNER : MealType.LUNCH;
 
-            System.out.print("Enter Special Menu Items: ");
-            String items = FastInput.readNonEmptyLine();
+            if (items == null || items.trim().isEmpty()) {
+                return "[Error] Special menu items cannot be empty.";
+            }
 
             cafeteriaData.scheduleSpecialMeal(date, type, items);
-            System.out.println("Success: Event added to calendar.");
+            return "[Success] Special event scheduled for " + date + ".";
         } catch (DateTimeParseException e) {
-            System.out.println("Error: Invalid date format.");
+            return "[Error] Invalid date format. Please use YYYY-MM-DD.";
         }
     }
 }
