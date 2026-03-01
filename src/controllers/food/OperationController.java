@@ -1,29 +1,22 @@
 package controllers.food;
 
-import controllers.food.CafeteriaController;
-import controllers.food.MealTokenController;
-import utils.FastInput;
 import utils.TimeManager;
 
 public class OperationController {
     private final MealTokenController tokenData = new MealTokenController();
     private final CafeteriaController cafeteriaData = new CafeteriaController();
 
-    public void processTokenVerification() {
-        while (true) {
-            System.out.print("Enter Token ID (or 0 to back): ");
-            String id = FastInput.readNonEmptyLine();
-            if (id.equals("0")) return;
-
-            System.out.println(">> " + tokenData.verifyAndUseToken(id));
+    public String processTokenVerification(String tokenId) {
+        if (tokenId == null || tokenId.trim().isEmpty()) {
+            return "[Error] Token ID cannot be empty.";
         }
+        return tokenData.verifyAndUseToken(tokenId);
     }
 
-    public void manageRamadanMode() {
-        System.out.print("Enable Ramadan Mode? (true/false): ");
-        boolean isRamadan = FastInput.readBoolean();
+
+    public String processRamadanModeToggle(boolean isRamadan) {
         TimeManager.setRamadanMode(isRamadan);
         cafeteriaData.setSystemMode(isRamadan);
-        System.out.println("System Mode updated.");
+        return "[System] Ramadan Mode successfully updated to: " + isRamadan;
     }
 }
