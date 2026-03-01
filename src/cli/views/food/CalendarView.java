@@ -1,6 +1,6 @@
 package cli.views.food;
 
-import controllers.food.CafeteriaController;
+import controllers.food.TokenPurchaseController;
 import models.food.MealType;
 import utils.FastInput;
 import utils.TimeManager;
@@ -11,7 +11,7 @@ import java.time.LocalDate;
 
 public class CalendarView {
 
-    private final CafeteriaController controller = new CafeteriaController();
+    private final TokenPurchaseController controller = new TokenPurchaseController();
 
     public void showWeeklyMenuAndPurchaseTokens(String username, LocalDate today) {
         LocalDate startOfWeek = today.minusDays(today.getDayOfWeek().getValue() - 1);
@@ -124,7 +124,9 @@ public class CalendarView {
                 currentLine = new StringBuilder(word);
                 firstLine = false;
             } else {
-                if (currentLine.length() > 0) currentLine.append(" ");
+                if (currentLine.length() > 0) {
+                    currentLine.append(" ");
+                }
                 currentLine.append(word);
             }
         }
@@ -156,7 +158,7 @@ public class CalendarView {
         for (MealType mt : meals) {
             System.out.print(">> Buy token for " + mt + "? (y/n): ");
             if (FastInput.readLine().trim().toLowerCase().startsWith("y")) {
-                String result = controller.purchaseTokenForDay(username, day, mt);
+                String result = controller.processTokenPurchaseForDay(username, day, mt);
                 System.out.println("   Status: " + result);
             }
         }
@@ -164,7 +166,7 @@ public class CalendarView {
 
     private void autoBuyAllMeals(String username, LocalDate day) {
         for (MealType mt : getAvailableMeals()) {
-            String res = controller.purchaseTokenForDay(username, day, mt);
+            String res = controller.processTokenPurchaseForDay(username, day, mt);
             System.out.println("   - " + mt + ": " + res);
         }
     }

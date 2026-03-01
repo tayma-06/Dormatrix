@@ -10,6 +10,9 @@ import java.util.*;
 
 public class CafeteriaController {
 
+    private static final Object TOKEN_LOCK = new Object();
+    private static final Object BALANCE_LOCK = new Object();
+
     private final String WEEKLY_MENU_FILE = "data/foods/weekly_menu.txt";
     private final String CALENDAR_FILE = "data/foods/calendar_schedule.txt";
     private final String CONFIG_FILE = "data/foods/config.txt";
@@ -28,8 +31,12 @@ public class CafeteriaController {
         try {
             File f = new File(path);
             File parent = f.getParentFile();
-            if (parent != null) parent.mkdirs();
-            if (!f.exists()) f.createNewFile();
+            if (parent != null) {
+                parent.mkdirs();
+            }
+            if (!f.exists()) {
+                f.createNewFile();
+            }
         } catch (IOException e) {
             System.err.println("File init error: " + path + " -> " + e.getMessage());
         }
@@ -45,9 +52,13 @@ public class CafeteriaController {
     }
 
     public String getMenuForTime(LocalDate date, String dayOfWeek, MealType type) {
-        if (type == MealType.NONE) return "Cafeteria Closed";
+        if (type == MealType.NONE) {
+            return "Cafeteria Closed";
+        }
         String special = findInFile(CALENDAR_FILE, date + "|" + type, 2);
-        if (special != null) return "[SPECIAL] " + special;
+        if (special != null) {
+            return "[SPECIAL] " + special;
+        }
         boolean isRamadan = TimeManager.isRamadanMode();
         String searchKey = dayOfWeek.toUpperCase() + "|" + type + "|" + isRamadan;
 
@@ -65,28 +76,50 @@ public class CafeteriaController {
                     return (parts.length > itemIndex) ? parts[itemIndex] : null;
                 }
             }
-        } catch (IOException ignored) { }
+        } catch (IOException ignored) {
+        }
         return null;
     }
 
     public String purchaseToken(String username) {
-        MealType currentSlot = TimeManager.getCurrentMealSlot();
-        if (currentSlot == MealType.NONE) return "Transaction Failed: Cafeteria is currently closed.";
-        LocalDate effectiveDate = TimeManager.nowDate();
-        if (hasActiveToken(username, currentSlot, effectiveDate)) return "Transaction Failed: You already have an ACTIVE token for " + currentSlot + " today.";
-        double price = getPriceForMeal(currentSlot);
-        StudentBalance student = loadBalance(username);
-        if (student == null) return "Transaction Failed: User '" + username + "' not found.";
-        if (!student.deductBalance(price)) return "Transaction Failed: Insufficient funds.";
-        String uniqueID = "MT-" + effectiveDate.getYear() + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        updateBalanceFile(student);
-        saveTokenToDatabase(new MealToken(uniqueID, username, currentSlot, effectiveDate, TokenStatus.ACTIVE));
-        return "Success! Token ID: " + uniqueID + " | Cost: " + price + " BDT";
+        synchronized (TOKEN_LOCK) {
+            MealType currentSlot = TimeManager.getCurrentMealSlot();
+            if (currentSlot == MealType.NONE) {
+                return "Transaction Failed: Cafeteria is currently closed.";
+            }
+            LocalDate effectiveDate = TimeManager.nowDate();
+            if (hasActiveToken(username, currentSlot, effectiveDate)) {
+                return "Transaction Failed: You already have an ACTIVE token for "
+                        + currentSlot + " today.";
+            }
+
+            double price = getPriceForMeal(currentSlot);
+            synchronized (BALANCE_LOCK) {
+                StudentBalance student = loadBalance(username);
+                if (student == null) {
+                    return "Transaction Failed: User '" + username + "' not found.";
+                }
+                if (!student.deductBalance(price)) {
+                    return "Transaction Failed: Insufficient funds.";
+                }
+                updateBalanceFile(student);
+            }
+
+            String uniqueID = "MT-" + effectiveDate.getYear() + "-"
+                    + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+
+            saveTokenToDatabase(new MealToken(
+                    uniqueID, username, currentSlot, effectiveDate, TokenStatus.ACTIVE));
+
+            return "Success! Token ID: " + uniqueID + " | Cost: " + price + " BDT";
+        }
     }
 
     private boolean hasActiveToken(String username, MealType type, LocalDate date) {
         for (MealToken t : getStudentTokens(username)) {
-            if (t.getType() == type && t.getDate().equals(date) && t.getStatus() == TokenStatus.ACTIVE) return true;
+            if (t.getType() == type && t.getDate().equals(date) && t.getStatus() == TokenStatus.ACTIVE) {
+                return true;
+            }
         }
         return false;
     }
@@ -96,10 +129,25 @@ public class CafeteriaController {
         try (BufferedReader br = new BufferedReader(new FileReader(BALANCE_FILE))) {
             String line;
             while ((line = br.readLine()) != null) {
-                if (line.startsWith(username + ",")) return StudentBalance.fromString(line);
+                if (line.startsWith(username + ",")) {
+                    return StudentBalance.fromString(line);
+                }
             }
-        } catch (IOException e) { System.out.println("Error reading balances: " + e.getMessage()); }
-        return null;
+        } catch (IOException e) {
+            System.out.println("Error reading balances: " + e.getMessage());
+        }
+
+        StudentBalance defaultBalance = new StudentBalance(username, 1000.0);
+        createBalanceEntry(defaultBalance);
+        return defaultBalance;
+    }
+
+    private void createBalanceEntry(StudentBalance balance) {
+        try (PrintWriter pw = new PrintWriter(new FileWriter(BALANCE_FILE, true))) {
+            pw.println(balance.toFileString());
+        } catch (IOException e) {
+            System.err.println("Error creating balance entry: " + e.getMessage());
+        }
     }
 
     private void updateBalanceFile(StudentBalance updatedStudent) {
@@ -109,19 +157,31 @@ public class CafeteriaController {
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
-                if (line.startsWith(updatedStudent.getStudentId() + ",")) lines.add(updatedStudent.toString());
-                else lines.add(line);
+                if (line.startsWith(updatedStudent.getStudentId() + ",")) {
+                    lines.add(updatedStudent.toFileString()); // Fixed: was toString()
+                } else {
+                    lines.add(line);
+                }
             }
-        } catch (IOException e) { return; }
+        } catch (IOException e) {
+            return;
+        }
         try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-            for (String l : lines) pw.println(l);
-        } catch (IOException e) { System.err.println("Critical Error writing balances!"); }
+            for (String l : lines) {
+                pw.println(l);
+            }
+        } catch (IOException e) {
+            System.err.println("Critical Error writing balances!");
+        }
     }
 
     private void saveTokenToDatabase(MealToken token) {
         ensureFile(TOKEN_FILE);
-        try (PrintWriter pw = new PrintWriter(new FileWriter(TOKEN_FILE, true))) { pw.println(token.toString()); }
-        catch (IOException e) { System.err.println("Error saving token: " + e.getMessage()); }
+        try (PrintWriter pw = new PrintWriter(new FileWriter(TOKEN_FILE, true))) {
+            pw.println(token.toString());
+        } catch (IOException e) {
+            System.err.println("Error saving token: " + e.getMessage());
+        }
     }
 
     public List<MealToken> getStudentTokens(String username) {
@@ -130,49 +190,85 @@ public class CafeteriaController {
         try (BufferedReader br = new BufferedReader(new FileReader(TOKEN_FILE))) {
             String line;
             while ((line = br.readLine()) != null) {
-                if (line.trim().isEmpty()) continue;
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
                 MealToken token = MealToken.fromString(line);
-                if (token.getStudentId().equals(username)) studentTokens.add(token);
+                if (token.getStudentId().equals(username)) {
+                    studentTokens.add(token);
+                }
             }
-        } catch (IOException e) { System.err.println("Token read error: " + e.getMessage()); }
+        } catch (IOException e) {
+            System.err.println("Token read error: " + e.getMessage());
+        }
         return studentTokens;
     }
 
-    public StudentBalance loadStudentBalance(String username) { return loadBalance(username); }
+    public StudentBalance loadStudentBalance(String username) {
+        return loadBalance(username);
+    }
 
     private double getPriceForMeal(MealType type) {
         return switch (type) {
-            case BREAKFAST -> 30.0;
-            case LUNCH, DINNER -> 60.0;
-            case SUHOOR -> 40.0;
-            case IFTAR -> 50.0;
-            default -> 0.0;
+            case BREAKFAST ->
+                30.0;
+            case LUNCH, DINNER ->
+                60.0;
+            case SUHOOR ->
+                40.0;
+            case IFTAR ->
+                50.0;
+            default ->
+                0.0;
         };
     }
 
     public void saveMenu(List<DailyMenu> weeklyMenu) {
         ensureFile(WEEKLY_MENU_FILE);
         try (PrintWriter pw = new PrintWriter(new FileWriter(WEEKLY_MENU_FILE))) {
-            for (DailyMenu menu : weeklyMenu) pw.println(menu.toString());
-        } catch (IOException e) { System.err.println("Error saving menu: " + e.getMessage()); }
+            for (DailyMenu menu : weeklyMenu) {
+                pw.println(menu.toString());
+            }
+        } catch (IOException e) {
+            System.err.println("Error saving menu: " + e.getMessage());
+        }
     }
 
     public void setSystemMode(boolean isRamadan) {
         ensureFile(CONFIG_FILE);
         try (PrintWriter pw = new PrintWriter(new FileWriter(CONFIG_FILE))) {
             pw.println("RAMADAN=" + isRamadan);
-        } catch (IOException e) { System.err.println("Error saving configuration: " + e.getMessage()); }
+        } catch (IOException e) {
+            System.err.println("Error saving configuration: " + e.getMessage());
+        }
     }
 
     public String purchaseTokenForDay(String username, LocalDate day, MealType mealType) {
-        if (hasActiveToken(username, mealType, day)) return "You already have an ACTIVE token for " + mealType + " on " + day;
-        double price = getPriceForMeal(mealType);
-        StudentBalance student = loadStudentBalance(username);
-        if (student == null) return "Transaction Failed: User '" + username + "' not found.";
-        if (!student.deductBalance(price)) return "Transaction Failed: Insufficient funds.";
-        String uniqueID = "MT-" + day.getYear() + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        saveTokenToDatabase(new MealToken(uniqueID, username, mealType, day, TokenStatus.ACTIVE));
-        return "Success! Token ID: " + uniqueID + " | Cost: " + price + " BDT";
+        synchronized (TOKEN_LOCK) {
+            if (hasActiveToken(username, mealType, day)) {
+                return "You already have an ACTIVE token for " + mealType + " on " + day;
+            }
+
+            double price = getPriceForMeal(mealType);
+            synchronized (BALANCE_LOCK) {
+                StudentBalance student = loadStudentBalance(username);
+                if (student == null) {
+                    return "Transaction Failed: User '" + username + "' not found.";
+                }
+                if (!student.deductBalance(price)) {
+                    return "Transaction Failed: Insufficient funds.";
+                }
+                updateBalanceFile(student);
+            }
+
+            String uniqueID = "MT-" + day.getYear() + "-"
+                    + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+
+            saveTokenToDatabase(new MealToken(
+                    uniqueID, username, mealType, day, TokenStatus.ACTIVE));
+
+            return "Success! Token ID: " + uniqueID + " | Cost: " + price + " BDT";
+        }
     }
 
     public List<DailyMenu> getWeeklyMenu() {
@@ -181,7 +277,7 @@ public class CafeteriaController {
         try (BufferedReader br = new BufferedReader(new FileReader(WEEKLY_MENU_FILE))) {
             String line;
             while ((line = br.readLine()) != null) {
-                if(!line.trim().isEmpty()){
+                if (!line.trim().isEmpty()) {
                     list.add(DailyMenu.fromString(line));
                 }
             }

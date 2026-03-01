@@ -44,7 +44,7 @@ public class MealTokenPurchase {
 
             if (currentSlot != MealType.NONE) {
                 String menuLine = "Today's Menu: " + menuItems;
-                System.out.printf("║ %-67s ║%n", menuLine);
+                ConsoleUtil.printWrappedInBox(menuLine, 67);
             } else {
                 System.out.printf("║ %-67s ║%n", "Cafeteria is currently closed.");
             }
@@ -89,7 +89,8 @@ public class MealTokenPurchase {
                     tokenListView.show(username);
                     skipOuterPause = true;
                 }
-                default -> System.out.println("Invalid choice.");
+                default ->
+                    System.out.println("Invalid choice.");
             }
 
             if (!skipOuterPause) {
