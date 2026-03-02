@@ -17,7 +17,7 @@ public class FacilityDashboard {
             System.out.println("║ [1] Book Study Room Seat                                            ║");
             System.out.println("║ [2] Check-in to Study Room                                          ║");
             System.out.println("║ [3] Book Fridge Slot                                                ║");
-            System.out.println("║ [4] Schedule Laundry Machine                                        ║");
+            System.out.println("║ [4] Book Laundry Machine                                            ║");
             System.out.println("║ [0] Logout                                                          ║");
             System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
 
@@ -65,10 +65,16 @@ public class FacilityDashboard {
             case 3:
                 f.handleFridgeBooking(user);
                 break;
-            case 4:
-                System.out.print("Enter slot index (1-6): ");
-                int slot = scanner.nextInt() - 1;
-                System.out.println(l.bookLaundry(slot, user));
+            case 4: // Schedule Laundry Machine
+                // First, show the current status of all 6 slots
+                l.displayLaundryStatus();
+
+                System.out.print("\nEnter Laundry slot index (1-6) to book: ");
+                int slot = scanner.nextInt() - 1; // Convert to 0-based index
+
+                // Attempt booking
+                String result = l.bookLaundry(slot, user);
+                System.out.println(result);
                 break;
             default:
                 System.out.println("Invalid option.");
