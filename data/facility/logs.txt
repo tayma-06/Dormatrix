@@ -1,0 +1,15 @@
+[2026/03/04 00:59:47] Seat 4 reserved by Sayma Tasnim
+[2026/03/04 01:00:17] AUTO-RELEASE: Seat 4 vacated (No-show by Sayma Tasnim)
+[2026/03/04 01:00:37] Seat 5 reserved by Sayma Tasnim
+[2026/03/04 01:00:43] Sayma Tasnim checked in to Seat 5
+[2026/03/04 01:02:59] Seat 4 reserved by Procheta Silvie
+[2026/03/04 01:03:03] Procheta Silvie checked in to Seat 4
+[2026/03/04 01:03:46] Seat 8 reserved by Sayma Tasnim
+[2026/03/04 01:04:16] AUTO-RELEASE: Seat 8 vacated (No-show by Sayma Tasnim)
+[2026/03/04 01:05:08] Seat 7 reserved by Sayma Tasnim
+[2026/03/04 01:05:21] Sayma Tasnim checked in to Seat 7
+[2026/03/04 01:17:00] Seat 6 reserved by Ayman Binta Altaf Nondiny
+[2026/03/04 01:17:30] AUTO-RELEASE: Seat 6 vacated (No-show by Ayman Binta Altaf Nondiny)
+[2026/03/04 01:18:19] Seat 6 reserved by Sayma Tasnim
+[2026/03/04 01:18:49] AUTO-RELEASE: Seat 6 vacated (No-show by Sayma Tasnim)
+[2026/03/04 01:18:55] Seat 6 reserved by Khadiza Sultana

@@ -7,7 +7,7 @@ import libraries.logs.Logger;
 
 public class StudyRoomController {
 
-    private static final String FILE_PATH = "data/studyRoomSlots.txt";
+    private static final String FILE_PATH = "data/facility/studyRoomSlots.txt";
 
     // STATIC arrays ensure all users share the exact same room data
     // Row = 6 Time Slots, Column = 10 physical seats

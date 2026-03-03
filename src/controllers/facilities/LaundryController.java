@@ -5,7 +5,7 @@ import java.io.*;
 import java.util.*;
 
 public class LaundryController {
-    private static final String FILE_PATH = "data/laundrySlots.txt";
+    private static final String FILE_PATH = "data/facility/laundrySlots.txt";
     // Static array ensures all students share the same 6 slots
     private static final String[] laundrySlots = new String[6];
     private static boolean dataLoaded = false;
