@@ -1,6 +1,0 @@
-0,3,Sayma Tasnim
-1,8,Ayman Binta Altaf Nondiny
-2,3,Sayma Tasnim
-3,2,Ayman Binta Altaf Nondiny
-4,0,Sayma Tasnim
-4,1,Procheta Silvie
