@@ -3,6 +3,9 @@ package controllers.facilities;
 import libraries.slots.SlotAllocator;
 import java.io.*;
 import java.util.*;
+import libraries.logs.Logger;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class LaundryController {
     private static final String FILE_PATH = "data/facility/laundrySlots.txt";
@@ -45,7 +48,28 @@ public class LaundryController {
         // Assign and Persist
         laundrySlots[slotIndex] = student;
         saveData();
+        Logger.log("Laundry Slot " + (slotIndex + 1) + " booked by " + student);
+
+        // 5. Start the 2-Minute Wash Cycle Timer
+        startWashCycleTimer(slotIndex, student);
         return "Success: Laundry Slot " + (slotIndex + 1) + " booked.";
+    }
+
+    // --- TIMER LOGIC ---
+    private void startWashCycleTimer(int slotIndex, String student) {
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                // Safety check: Ensure the student is still the one in this slot before clearing
+                if (student.equals(laundrySlots[slotIndex])) {
+                    laundrySlots[slotIndex] = null; // Empty the slot
+                    saveData(); // Update the text file
+
+                    System.out.println("\n[SYSTEM ALERT] Wash cycle complete for Slot " + (slotIndex + 1) + ". The machine is now available.");
+                    Logger.log("AUTO-RELEASE: Wash complete for Slot " + (slotIndex + 1) + " (Student: " + student + ")");
+                }
+            }
+        }, 120000); // 120,000 milliseconds = 2 minutes
     }
 
     // --- PERSISTENCE: SAVE ---

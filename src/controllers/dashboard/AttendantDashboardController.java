@@ -2,6 +2,7 @@ package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
 import cli.dashboard.room.StudentRoomDashboard;
+import cli.views.LostFoundView;
 import controllers.dashboard.room.StudentRoomDashboardController;
 import controllers.room.RoomService;
 import module.complaint.ComplaintModule;
@@ -35,6 +36,13 @@ public class AttendantDashboardController {
 //                break;
             case 2:
                 System.out.println("Handling Worker Schedule...");
+                break;
+            // Inside your handleInput(int choice, String username) method:
+
+            case 3: // Lost & Found
+                LostFoundView attendantLfView = new LostFoundView();
+                // Pass 'true' because the Hall Attendant IS allowed to add found items
+                attendantLfView.showMainBoard(username, true);
                 break;
             case 0:
                 mainDashboard.show();

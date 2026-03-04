@@ -31,7 +31,7 @@ public class StudyRoomController {
 
         // Check 1: Is the seat number valid?
         if (seatNumber < 0 || seatNumber >= 10) {
-            System.out.println("Invalid seat. Please choose 0-9.");
+            System.out.println("Invalid seat. Please choose 1-10.");
             return false;
         }
 

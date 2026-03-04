@@ -8,6 +8,8 @@ import cli.views.store.*;
 import controllers.room.RoomController;
 import cli.dashboard.FacilityDashboard;
 import controllers.facilities.*;
+import cli.views.LostFoundView;
+
 public class StudentDashboardController {
 
     private final MainDashboard mainDashboard;
@@ -46,7 +48,8 @@ public class StudentDashboardController {
                 storeLedgerView.show(username);
                 break;
             case 5:
-                System.out.println(">> Feature [Lost & Found] is under development.");
+                // Call the Lost & Found board, passing 'false' to restrict "Add Found Item"
+                new LostFoundView().showMainBoard(username, false);
                 break;
             case 6:
                 new StudentComplaintCLI().start(username);
