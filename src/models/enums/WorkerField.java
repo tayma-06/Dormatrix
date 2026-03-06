@@ -5,5 +5,5 @@ public enum WorkerField {
     PLUMBER,
     INTERNET_TECH,
     CLEANING,
-    SECURITY
+//    SECURITY
 }

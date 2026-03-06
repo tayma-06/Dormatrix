@@ -40,7 +40,7 @@ public class ComplaintView {
         System.out.println("════════════════════════════════════════════════════════════════════════");
         System.out.println("║                        TASK QUEUE(WORKER)                            ║");
         System.out.println("════════════════════════════════════════════════════════════════════════");
-        System.out.println("1. View Assigned Tasks");
+        System.out.println("1. View Tasks");
         System.out.println("2. Update Progress");
         System.out.println("3. Mark Completed");
         System.out.println("0. Back");
@@ -166,9 +166,10 @@ public class ComplaintView {
 
             // Display Complaint details (excluding student ID)
             System.out.println(String.format("║ Complaint ID: %-58s ║", c.getComplaintId()));
+            System.out.println(String.format("║ Room No     : %-58s ║", c.getStudentRoomNo()));
             System.out.println(String.format("║ Status      : %-58s ║", c.getStatus().name()));
-            System.out.println(String.format("║ Category    : %-58s ║", c.getCategory().name()));
-            System.out.println(String.format("║ Assigned Worker: %-55s ║", (blank ? "(none)" : wid)));
+            System.out.println(String.format("║ Priority    : %-58s ║", c.getPriority().name()));
+//            System.out.println(String.format("║ Assigned Worker: %-55s ║", (blank ? "(none)" : wid)));
 
             // Wrap the description into lines of max length
             String description = c.getDescription();

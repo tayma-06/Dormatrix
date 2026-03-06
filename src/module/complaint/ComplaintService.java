@@ -105,9 +105,9 @@ public class ComplaintService {
     }
 
     public MyOptional<Complaint> findById(String id){ return complaints.findById(id); }
-    public MyArrayList<Complaint> findByStudentId(String sid){ return complaints.findByStudentId(sid); }
-    public MyArrayList<Complaint> findByAssignedWorker(String wid){ return complaints.findByAssignedWorker(wid); }
-    public MyArrayList<Complaint> findUnassigned(){ return complaints.findUnassigned(); }
+//    public MyArrayList<Complaint> findByStudentId(String sid){ return complaints.findByStudentId(sid); }
+//    public MyArrayList<Complaint> findByAssignedWorker(String wid){ return complaints.findByAssignedWorker(wid); }
+//    public MyArrayList<Complaint> findUnassigned(){ return complaints.findUnassigned(); }
     public MyArrayList<Complaint> findAll(){ return complaints.findAll(); }
 
     public MyArrayList<Complaint> findPending(){

@@ -150,7 +150,7 @@ public class CreateAccountController {
             case 2 -> WorkerField.PLUMBER;
             case 3 -> WorkerField.INTERNET_TECH;
             case 4 -> WorkerField.CLEANING;
-            case 5 -> WorkerField.SECURITY;
+//            case 5 -> WorkerField.SECURITY;
             default -> WorkerField.ELECTRICIAN;
         };
     }

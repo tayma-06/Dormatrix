@@ -123,7 +123,7 @@ public class CreateAccount {
                 System.out.println("║ [2] Plumber                                                         ║");
                 System.out.println("║ [3] Internet Technician                                             ║");
                 System.out.println("║ [4] Cleaning Staff                                                  ║");
-                System.out.println("║ [5] Security                                                        ║");
+//                System.out.println("║ [5] Security                                                        ║");
                 System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
 
                 System.out.print("Enter Field Choice: ");

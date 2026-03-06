@@ -32,7 +32,6 @@ public class MaintenanceWorkerDashboard implements Dashboard {
             System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
             System.out.println("║ [1] Work Field                                                      ║");
             System.out.println("║ [2] View Task Queue                                                 ║");
-            System.out.println("║ [3] Update Student Complaint Status                                 ║");
             System.out.println("║ [0] Logout                                                          ║");
             System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
 
@@ -49,7 +48,19 @@ public class MaintenanceWorkerDashboard implements Dashboard {
                 return;
             }
 
-            if (choice == 2 || choice == 3) {
+            if (choice == 1) {
+                // Fetch the worker's field from the controller
+                String workerField = controller.getWorkerField(username);
+                System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
+                System.out.println("║                         YOUR WORK FIELD                             ║");
+                System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+                System.out.println(String.format("║ %-67s ║", "Work Field: " + workerField));
+                System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+                continue;
+            }
+
+
+            if (choice == 2) {
                 new WorkerComplaintCLI().start(username);
                 continue;
             }

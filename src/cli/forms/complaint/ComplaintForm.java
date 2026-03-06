@@ -39,8 +39,8 @@ public class ComplaintForm {
         System.out.println("║ [2] Plumbing                                                        ║");
         System.out.println("║ [3] Internet                                                        ║");
         System.out.println("║ [4] Cleaning                                                        ║");
-        System.out.println("║ [5] Security                                                        ║");
-        System.out.println("║ [6] Other                                                           ║");
+//        System.out.println("║ [5] Security                                                        ║");
+//        System.out.println("║ [6] Other                                                           ║");
         System.out.println("║ [0] Back                                                            ║");
         System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
 
@@ -53,8 +53,8 @@ public class ComplaintForm {
             case 2: return ComplaintCategory.PLUMBING;
             case 3: return ComplaintCategory.INTERNET;
             case 4: return ComplaintCategory.CLEANING;
-            case 5: return ComplaintCategory.SECURITY;
-            case 6: return ComplaintCategory.OTHER;
+//            case 5: return ComplaintCategory.SECURITY;
+//            case 6: return ComplaintCategory.OTHER;
             case 0: return null;
             default:
                 System.out.println("Invalid category.");
