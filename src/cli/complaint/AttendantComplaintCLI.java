@@ -54,7 +54,16 @@ public class AttendantComplaintCLI {
                     if (all.get(i).getStudentRoomNo().trim().equals(room.trim())) out.add(all.get(i));
                 }
                 view.attendantList(out);
-            } else {
+            } else if (ch == 6){
+                String cid = form.readNonEmpty("Complaint ID: ");
+                MyOptional<Complaint> cOpt = repo.findById(cid);
+                if (cOpt.isEmpty()) { view.error("Invalid complaint ID."); continue;}
+                Complaint c = cOpt.get();
+                MyArrayList<Complaint> out = new MyArrayList<>();
+                out.add(c);
+                view.attendantList(out);
+
+            }else {
                 view.error("Invalid choice.");
             }
         }

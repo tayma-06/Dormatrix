@@ -19,4 +19,5 @@ public interface ComplaintRepository {
     MyArrayList<Complaint> findByStudentId(String studentId);
     // returns complaints assigned to a worker
     MyArrayList<Complaint> findByAssignedWorker(String workerId);
+    MyArrayList<Complaint> findUnresolvedByAssignedWorker(String workerId);
 }

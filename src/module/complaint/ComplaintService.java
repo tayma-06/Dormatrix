@@ -116,8 +116,8 @@ public class ComplaintService {
 
         for (int i = 0; i < all.size(); i++){
             Complaint c = all.get(i);
-            boolean blankWorker = (c.getAssignedWorkerId() == null) || new MyString(c.getAssignedWorkerId()).trim().isEmpty();
-            if (c.getStatus() == ComplaintStatus.SUBMITTED || blankWorker) out.add(c);
+//            boolean blankWorker = (c.getAssignedWorkerId() == null) || new MyString(c.getAssignedWorkerId()).trim().isEmpty();
+            if (c.getStatus() != ComplaintStatus.RESOLVED) out.add(c);
         }
         return out;
     }

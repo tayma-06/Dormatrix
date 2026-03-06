@@ -27,10 +27,11 @@ public class ComplaintView {
         System.out.println("║                      COMPLAINT(ATTENDANT)                           ║");
         System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("1. View ALL complaints");
-        System.out.println("2. View PENDING (unassigned/SUBMITTED)");
+        System.out.println("2. View PENDING");
         System.out.println("3. Reassign complaint (manual worker id)");
-        System.out.println("4. Resolve complaint (attendant override)");
+        System.out.println("4. Resolve complaint");
         System.out.println("5. View complaints by ROOM");
+        System.out.println("6. View complaints by COMPLAINT ID");
         System.out.println("0. Back");
         System.out.print("Enter choice: ");
     }
@@ -38,11 +39,10 @@ public class ComplaintView {
     public void workerMenu(){
         System.out.println();
         System.out.println("════════════════════════════════════════════════════════════════════════");
-        System.out.println("║                        TASK QUEUE(WORKER)                            ║");
+        System.out.println("║                       TASK RELEVANT OPTIONS                          ║");
         System.out.println("════════════════════════════════════════════════════════════════════════");
-        System.out.println("1. View Tasks");
-        System.out.println("2. Update Progress");
-        System.out.println("3. Mark Completed");
+        System.out.println("1. Update Progress");
+//        System.out.println("3. Mark Completed");
         System.out.println("0. Back");
         System.out.println();
         System.out.print("Enter choice: ");
@@ -132,11 +132,28 @@ public class ComplaintView {
             if (description != null && !description.isEmpty()) {
                 // Split the description into multiple lines
                 String[] descriptionLines = wrapText(description, descriptionMaxLength);
-                for (String line : descriptionLines) {
-                    System.out.println(String.format("║ Description: %-59s ║", line));
+                for (int t = 0; t < descriptionLines.length; t++) {
+                    if (t == 0) System.out.println(String.format("║ Description: %-59s ║", descriptionLines[t]));
+                    else        System.out.println(String.format("║            : %-59s ║", descriptionLines[t])); // aligned continuation
                 }
             } else {
                 System.out.println("║ Description: (no description)                               ║");
+            }
+
+            // ---------------- TAGS ----------------
+            String tagsRaw = c.getTags();
+            if (tagsRaw != null) tagsRaw = tagsRaw.trim();
+
+            if (tagsRaw == null || tagsRaw.isEmpty()) {
+                System.out.println(String.format("║ Tags       : %-59s ║", "(none)"));
+            } else {
+                // supports both comma + semicolon in stored tags, but prints using ';'
+                String[] tagLines = wrapTags(tagsRaw, 59);
+
+                for (int t = 0; t < tagLines.length; t++) {
+                    if (t == 0) System.out.println(String.format("║ Tags       : %-59s ║", tagLines[t]));
+                    else        System.out.println(String.format("║            : %-59s ║", tagLines[t])); // aligned continuation
+                }
             }
 
             // End the double line for each complaint
@@ -177,7 +194,7 @@ public class ComplaintView {
                 // Split the description into multiple lines
                 String[] descriptionLines = wrapText(description, descriptionMaxLength);
                 for (String line : descriptionLines) {
-                    System.out.println(String.format("║ Description: %-59s ║", line));
+                    System.out.println(String.format("║ Description : %-58s ║", line));
                 }
             } else {
                 System.out.println("║ Description: (no description)                               ║");
@@ -200,6 +217,46 @@ public class ComplaintView {
             text = text.substring(spaceIndex).trim();
         }
         lines.add(text);  // Add the remaining part of the text
+        return lines.toArray(new String[0]);
+
+
+    }
+
+    private String[] wrapTags(String tags, int maxLength) {
+        // normalize: your policy sometimes uses ',' but notes use ';'
+        String normalized = tags.replace(',', ';');
+
+        // split by ';', trim, ignore empties
+        String[] rawParts = normalized.split(";");
+        List<String> parts = new ArrayList<>();
+        for (int i = 0; i < rawParts.length; i++) {
+            String p = rawParts[i].trim();
+            if (!p.isEmpty()) parts.add(p);
+        }
+
+        // pack tags into lines <= maxLength, joined by ';'
+        List<String> lines = new ArrayList<>();
+        StringBuilder cur = new StringBuilder();
+
+        for (int i = 0; i < parts.size(); i++) {
+            String tag = parts.get(i);
+
+            if (cur.length() == 0) {
+                cur.append(tag);
+            } else {
+                String candidate = cur.toString() + ";" + tag;
+                if (candidate.length() <= maxLength) {
+                    cur.append(";").append(tag);
+                } else {
+                    lines.add(cur.toString());
+                    cur.setLength(0);
+                    cur.append(tag);
+                }
+            }
+        }
+
+        if (cur.length() > 0) lines.add(cur.toString());
+
         return lines.toArray(new String[0]);
     }
 

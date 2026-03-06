@@ -123,6 +123,20 @@ public class FileComplaintRepository implements ComplaintRepository{
         return out;
     }
 
+    @Override
+    public MyArrayList<Complaint> findUnresolvedByAssignedWorker(String workerId){
+        MyArrayList<Complaint> out = new MyArrayList<>();
+        MyArrayList<Complaint> all = findAll();
+
+        for (int i = 0; i < all.size(); i++)
+        {
+            Complaint c = all.get(i);
+            if (msEquals(c.getAssignedWorkerId(), workerId) && !c.getStatus().equals(ComplaintStatus.RESOLVED)) out.add(c);
+        }
+
+        return out;
+    }
+
     private String toLine(Complaint c){
         return TextFile.join(
                 c.getComplaintId(),

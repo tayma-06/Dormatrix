@@ -18,7 +18,7 @@ public class ComplaintPolicy {
 
         PriorityLevel priority = priorityBase(category, emergency);
         String tags = "";
-        if (emergency) tags = addTags(tags,"EMERGENCY");
+//        if (emergency) tags = addTags(tags,"EMERGENCY");
         return new DormDecision(priority, emergency, tags);
     }
 
@@ -74,12 +74,12 @@ public class ComplaintPolicy {
 
     }
 
-    private String addTags(String tags, String tag){
-        MyString mtags = ms(tags);
-        if(mtags == null || mtags.isEmpty()) return tag;
-        if(mtags.contains(ms(tag))) return tags;
-        return tags + "," + tag;
-    }
+//    private String addTags(String tags, String tag){
+//        MyString mtags = ms(tags);
+//        if(mtags == null || mtags.isEmpty()) return tag;
+//        if(mtags.contains(ms(tag))) return tags;
+//        return tags + "," + tag;
+//    }
 
     // Nested Class
     public static class DormDecision{

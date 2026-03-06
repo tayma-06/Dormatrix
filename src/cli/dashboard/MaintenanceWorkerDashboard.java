@@ -31,7 +31,7 @@ public class MaintenanceWorkerDashboard implements Dashboard {
 
             System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
             System.out.println("║ [1] Work Field                                                      ║");
-            System.out.println("║ [2] View Task Queue                                                 ║");
+            System.out.println("║ [2] Task Queue                                                      ║");
             System.out.println("║ [0] Logout                                                          ║");
             System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
 

@@ -61,9 +61,9 @@ public class ComplaintModule {
         return complaintService.reassignComplaint(complaintId, workerId);
     }
 
-    public boolean retryAutoAssign(String complaintId){
-        return complaintService.retryAutoAssign(complaintId);
-    }
+//    public boolean retryAutoAssign(String complaintId){
+//        return complaintService.retryAutoAssign(complaintId);
+//    }
 
     public boolean resolveByAttendant(String complaintId, String note){
         return complaintService.resolveByAttendant(complaintId, note);
