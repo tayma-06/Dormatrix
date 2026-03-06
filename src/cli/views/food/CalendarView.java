@@ -1,6 +1,6 @@
 package cli.views.food;
 
-import controllers.food.CafeteriaController;
+import controllers.food.TokenPurchaseController;
 import models.food.MealType;
 import utils.FastInput;
 import utils.TimeManager;
@@ -11,7 +11,7 @@ import java.time.LocalDate;
 
 public class CalendarView {
 
-    private final CafeteriaController controller = new CafeteriaController();
+    private final TokenPurchaseController controller = new TokenPurchaseController();
 
     public void showWeeklyMenuAndPurchaseTokens(String username, LocalDate today) {
         LocalDate startOfWeek = today.minusDays(today.getDayOfWeek().getValue() - 1);
@@ -103,11 +103,9 @@ public class CalendarView {
         FastInput.readLine();
     }
 
-    // --- NEW: Custom Text Wrapping Method ---
     private void printWrappedMenu(String mealName, String menuItems) {
-        // Sets up formatting: "Breakfast:  " (12 characters wide)
         String prefix = String.format("%-11s ", mealName + ":");
-        int maxLineLength = 67 - prefix.length(); // 55 characters available for food text per line
+        int maxLineLength = 67 - prefix.length();
 
         if (menuItems == null || menuItems.isEmpty()) {
             System.out.printf("║ %-67s ║%n", prefix);
@@ -119,23 +117,19 @@ public class CalendarView {
         boolean firstLine = true;
 
         for (String word : words) {
-            // Check if adding the next word pushes us past the boundary
             if (currentLine.length() + word.length() + (currentLine.length() > 0 ? 1 : 0) > maxLineLength) {
 
-                // If it's the 2nd/3rd line, we use blank spaces to align under the text above it!
                 String linePrefix = firstLine ? prefix : String.format("%" + prefix.length() + "s", "");
                 System.out.printf("║ %-67s ║%n", linePrefix + currentLine.toString());
-
-                // Start the new line with the current word
                 currentLine = new StringBuilder(word);
                 firstLine = false;
             } else {
-                if (currentLine.length() > 0) currentLine.append(" ");
+                if (currentLine.length() > 0) {
+                    currentLine.append(" ");
+                }
                 currentLine.append(word);
             }
         }
-
-        // Print the final chunk of text
         if (currentLine.length() > 0 || firstLine) {
             String linePrefix = firstLine ? prefix : String.format("%" + prefix.length() + "s", "");
             System.out.printf("║ %-67s ║%n", linePrefix + currentLine.toString());
@@ -164,7 +158,7 @@ public class CalendarView {
         for (MealType mt : meals) {
             System.out.print(">> Buy token for " + mt + "? (y/n): ");
             if (FastInput.readLine().trim().toLowerCase().startsWith("y")) {
-                String result = controller.purchaseTokenForDay(username, day, mt);
+                String result = controller.processTokenPurchaseForDay(username, day, mt);
                 System.out.println("   Status: " + result);
             }
         }
@@ -172,7 +166,7 @@ public class CalendarView {
 
     private void autoBuyAllMeals(String username, LocalDate day) {
         for (MealType mt : getAvailableMeals()) {
-            String res = controller.purchaseTokenForDay(username, day, mt);
+            String res = controller.processTokenPurchaseForDay(username, day, mt);
             System.out.println("   - " + mt + ": " + res);
         }
     }

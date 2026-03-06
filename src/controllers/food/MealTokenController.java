@@ -11,7 +11,9 @@ import java.time.LocalDate;
 import java.util.*;
 
 public class MealTokenController {
+
     private final String TOKEN_FILE = "data/foods/tokens.txt";
+    private static final Object VERIFICATION_LOCK = new Object();
 
     public MealTokenController() {
         ensureFile();
@@ -21,41 +23,53 @@ public class MealTokenController {
         try {
             File f = new File(TOKEN_FILE);
             File parent = f.getParentFile();
-            if (parent != null) parent.mkdirs();
-            if (!f.exists()) f.createNewFile();
+            if (parent != null) {
+                parent.mkdirs();
+            }
+            if (!f.exists()) {
+                f.createNewFile();
+            }
         } catch (IOException e) {
             System.err.println("Token file init error: " + e.getMessage());
         }
     }
 
     public String verifyAndUseToken(String inputTokenId) {
-        String tokenId = (inputTokenId == null) ? "" : inputTokenId.trim();
-        if (tokenId.isEmpty()) return "Error: Token ID cannot be empty.";
-
-        List<MealToken> tokens = loadAllTokens();
-        boolean found = false;
-
-        for (MealToken t : tokens) {
-            if (t.getTokenId().equalsIgnoreCase(tokenId)) {
-
-                if (t.getStatus() == TokenStatus.USED) return "Error: This token has already been used!";
-                if (t.getStatus() == TokenStatus.EXPIRED) return "Error: This token has expired!";
-
-                if (!t.getDate().equals(TimeManager.nowDate())) {
-                    return "Error: This token was for a different date (" + t.getDate() + ").";
-                }
-
-                t.setStatus(TokenStatus.USED);
-                found = true;
-                break;
+        synchronized (VERIFICATION_LOCK) {
+            String tokenId = (inputTokenId == null) ? "" : inputTokenId.trim();
+            if (tokenId.isEmpty()) {
+                return "Error: Token ID cannot be empty.";
             }
-        }
 
-        if (found) {
-            saveAllTokens(tokens);
-            return "Success: Token verified! Enjoy your meal.";
+            List<MealToken> tokens = loadAllTokens();
+            boolean found = false;
+
+            for (MealToken t : tokens) {
+                if (t.getTokenId().equalsIgnoreCase(tokenId)) {
+
+                    if (t.getStatus() == TokenStatus.USED) {
+                        return "Error: This token has already been used!";
+                    }
+                    if (t.getStatus() == TokenStatus.EXPIRED) {
+                        return "Error: This token has expired!";
+                    }
+
+                    if (!t.getDate().equals(TimeManager.nowDate())) {
+                        return "Error: This token was for a different date (" + t.getDate() + ").";
+                    }
+
+                    t.setStatus(TokenStatus.USED);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found) {
+                saveAllTokens(tokens);
+                return "Success: Token verified! Enjoy your meal.";
+            }
+            return "Invalid Token ID.";
         }
-        return "Invalid Token ID.";
     }
 
     private List<MealToken> loadAllTokens() {
@@ -78,7 +92,9 @@ public class MealTokenController {
     private void saveAllTokens(List<MealToken> tokens) {
         ensureFile();
         try (PrintWriter pw = new PrintWriter(new FileWriter(TOKEN_FILE))) {
-            for (MealToken t : tokens) pw.println(t.toString());
+            for (MealToken t : tokens) {
+                pw.println(t.toString());
+            }
         } catch (IOException e) {
             System.err.println("Error writing tokens: " + e.getMessage());
         }
@@ -92,11 +108,15 @@ public class MealTokenController {
         double price = getPriceForMeal(mealType);
         StudentBalance student = loadStudentBalance(username);
 
-        if (student == null) return "Transaction Failed: User '" + username + "' not found.";
-        if (!student.deductBalance(price)) return "Transaction Failed: Insufficient funds.";
+        if (student == null) {
+            return "Transaction Failed: User '" + username + "' not found.";
+        }
+        if (!student.deductBalance(price)) {
+            return "Transaction Failed: Insufficient funds.";
+        }
 
-        String uniqueID = "MT-" + day.getYear() + "-" +
-                UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        String uniqueID = "MT-" + day.getYear() + "-"
+                + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
         saveTokenToDatabase(new MealToken(
                 uniqueID, username, mealType, day, TokenStatus.ACTIVE
         ));
@@ -133,7 +153,9 @@ public class MealTokenController {
         try (BufferedReader br = new BufferedReader(new FileReader(TOKEN_FILE))) {
             String line;
             while ((line = br.readLine()) != null) {
-                if (line.trim().isEmpty()) continue;
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
 
                 MealToken token = MealToken.fromString(line);
                 if (token.getStudentId().equals(username)) {
@@ -148,11 +170,16 @@ public class MealTokenController {
 
     private double getPriceForMeal(MealType type) {
         return switch (type) {
-            case BREAKFAST -> 30.0;
-            case LUNCH, DINNER -> 60.0;
-            case SUHOOR -> 40.0;
-            case IFTAR -> 50.0;
-            default -> 0.0;
+            case BREAKFAST ->
+                30.0;
+            case LUNCH, DINNER ->
+                60.0;
+            case SUHOOR ->
+                40.0;
+            case IFTAR ->
+                50.0;
+            default ->
+                0.0;
         };
     }
 }

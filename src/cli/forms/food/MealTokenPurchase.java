@@ -2,7 +2,7 @@ package cli.forms.food;
 
 import cli.views.food.CalendarView;
 import cli.views.food.TokenListView;
-import controllers.food.CafeteriaController;
+import controllers.food.TokenPurchaseController;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import models.food.MealType;
@@ -13,8 +13,8 @@ import utils.TimeManager;
 
 public class MealTokenPurchase {
 
-    private final CafeteriaController controller = new CafeteriaController();
-    private final CalendarView calendarView = new CalendarView(); // Instantiate the view
+    private final TokenPurchaseController purchaseController = new TokenPurchaseController();
+    private final CalendarView calendarView = new CalendarView();
 
     public void show(String username) {
         while (true) {
@@ -22,11 +22,8 @@ public class MealTokenPurchase {
             LocalDate todayDate = TimeManager.nowDate();
             MealType currentSlot = TimeManager.getCurrentMealSlot();
             String dayOfWeek = TimeManager.nowDay().toString();
-
-            String menuItems = controller.getMenuForTime(todayDate, dayOfWeek, currentSlot);
-            StudentBalance balance = controller.loadStudentBalance(username);
-
-            // --- Header & Status Rendering ---
+            String menuItems = purchaseController.getMenuForTime(todayDate, dayOfWeek, currentSlot);
+            StudentBalance balance = purchaseController.getStudentBalance(username);
             System.out.println();
             System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
             System.out.println("║                          MEAL TOKEN PURCHASE                        ║");
@@ -34,29 +31,28 @@ public class MealTokenPurchase {
 
             String dateTimeLine = "Date: " + todayDate
                     + " | Time: " + TimeManager.nowTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-            System.out.println(String.format("║ %-67s ║", dateTimeLine));
+            System.out.printf("║ %-67s ║%n", dateTimeLine);
 
             String statusLine = "Current Status: "
                     + (currentSlot == MealType.NONE ? "CLOSED" : "ACTIVE - " + currentSlot);
-            System.out.println(String.format("║ %-67s ║", statusLine));
+            System.out.printf("║ %-67s ║%n", statusLine);
 
             String progressLine = utils.CafeteriaAsciiUI.renderSlotProgress(currentSlot);
-            System.out.println(String.format("║ %-67s ║", progressLine));
+            System.out.printf("║ %-67s ║%n", progressLine);
 
             System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
 
             if (currentSlot != MealType.NONE) {
                 String menuLine = "Today's Menu: " + menuItems;
-                System.out.println(String.format("║ %-67s ║", menuLine));
+                ConsoleUtil.printWrappedInBox(menuLine, 67);
             } else {
-                System.out.println(String.format("║ %-67s ║", "Cafeteria is currently closed."));
+                System.out.printf("║ %-67s ║%n", "Cafeteria is currently closed.");
             }
 
             String balanceLine = "Your Balance: "
                     + (balance != null ? balance.getBalance() : "N/A") + " BDT";
-            System.out.println(String.format("║ %-67s ║", balanceLine));
+            System.out.printf("║ %-67s ║%n", balanceLine);
 
-            // --- Menu Options ---
             System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
             System.out.println("║ [1] Buy Current Meal Token                                          ║");
             System.out.println("║ [2] Buy Tokens for the Week (Monday-Sunday)                         ║");
@@ -80,7 +76,7 @@ public class MealTokenPurchase {
                     if (currentSlot == MealType.NONE) {
                         System.out.println(">> No active meal to buy right now!");
                     } else {
-                        String result = controller.purchaseToken(username);
+                        String result = purchaseController.processTokenPurchase(username);
                         System.out.println(">> " + result);
                     }
                 }
@@ -93,7 +89,8 @@ public class MealTokenPurchase {
                     tokenListView.show(username);
                     skipOuterPause = true;
                 }
-                default -> System.out.println("Invalid choice.");
+                default ->
+                    System.out.println("Invalid choice.");
             }
 
             if (!skipOuterPause) {

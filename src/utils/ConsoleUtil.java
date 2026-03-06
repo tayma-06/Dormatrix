@@ -44,6 +44,57 @@ public final class ConsoleUtil {
         FastInput.readLine();
     }
 
+    public static String[] wrapText(String text, int maxWidth) {
+        if (text == null || text.isEmpty()) {
+            return new String[]{""};
+        }
+
+        if (text.length() <= maxWidth) {
+            return new String[]{text};
+        }
+
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        String[] words = text.split(" ");
+        StringBuilder currentLine = new StringBuilder();
+
+        for (String word : words) {
+            if (currentLine.length() + word.length() + 1 > maxWidth) {
+                if (currentLine.length() > 0) {
+                    lines.add(currentLine.toString());
+                    currentLine = new StringBuilder();
+                }
+                if (word.length() > maxWidth) {
+                    while (word.length() > maxWidth) {
+                        lines.add(word.substring(0, maxWidth));
+                        word = word.substring(maxWidth);
+                    }
+                    if (!word.isEmpty()) {
+                        currentLine.append(word);
+                    }
+                } else {
+                    currentLine.append(word);
+                }
+            } else {
+                if (currentLine.length() > 0) {
+                    currentLine.append(" ");
+                }
+                currentLine.append(word);
+            }
+        }
+        if (currentLine.length() > 0) {
+            lines.add(currentLine.toString());
+        }
+
+        return lines.toArray(new String[0]);
+    }
+
+    public static void printWrappedInBox(String text, int width) {
+        String[] lines = wrapText(text, width);
+        for (String line : lines) {
+            System.out.printf("║ %-" + width + "s ║%n", line);
+        }
+    }
+
     private static void clearTerminal() {
         try {
             if (System.getProperty("os.name").contains("Windows")) {

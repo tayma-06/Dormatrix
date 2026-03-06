@@ -1,4 +1,4 @@
-package exceptions;
+package exceptions.config;
 
 public class ConfigurationLoadException extends RuntimeException {
   public ConfigurationLoadException(String message) {
