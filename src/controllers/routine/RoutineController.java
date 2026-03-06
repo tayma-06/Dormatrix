@@ -29,7 +29,7 @@ public class RoutineController {
 
     private static final int TIME_WIDTH = 10;
     private static final int CELL_WIDTH = 12;
-    private static final String MASK_FILLED = "████"; // change to "BUSY" if your console handles it well
+    private static final String MASK_FILLED = "████"; // change to "" if your console handles it well
 
     private final FileRoutineRepository repository = new FileRoutineRepository();
 

@@ -3,7 +3,7 @@ package controllers.dashboard;
 import cli.complaint.StudentComplaintCLI;
 import cli.dashboard.MainDashboard;
 import cli.forms.food.MealTokenPurchase;
-
+import cli.routine.StudentRoutineCLI;
 import cli.views.store.*;
 import controllers.room.RoomController;
 import cli.dashboard.FacilityDashboard;
@@ -20,6 +20,7 @@ public class StudentDashboardController {
     private final FridgeController fridgeController;
     private final LaundryController laundryController;
     private final FacilityDashboard facilityDashboard;
+    private final StudentRoutineCLI studentRoutineCLI;
 
     public StudentDashboardController() {
         this.mealTokenPurchase = new MealTokenPurchase();
@@ -30,6 +31,7 @@ public class StudentDashboardController {
         this.fridgeController = new FridgeController();
         this.laundryController = new LaundryController();
         this.facilityDashboard = new FacilityDashboard();
+        this.studentRoutineCLI = new StudentRoutineCLI();
     }
 
     public void handleInput(int choice, String username) {
@@ -55,9 +57,12 @@ public class StudentDashboardController {
                 new StudentComplaintCLI().start(username);
                 break;
             case 7:
-                System.out.println(">> Feature [Announcements] is under development.");
+                studentRoutineCLI.show(username);
                 break;
             case 8:
+                System.out.println(">> Feature [Announcements] is under development.");
+                break;
+            case 9:
                 ShoppingCartView.show(username);
                 break;
             case 0:
