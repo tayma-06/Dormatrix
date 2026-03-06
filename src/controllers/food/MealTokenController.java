@@ -35,7 +35,6 @@ public class MealTokenController {
     }
 
     public String verifyAndUseToken(String inputTokenId) {
-        // Synchronize to prevent double-usage of the same token
         synchronized (VERIFICATION_LOCK) {
             String tokenId = (inputTokenId == null) ? "" : inputTokenId.trim();
             if (tokenId.isEmpty()) {

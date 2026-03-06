@@ -9,7 +9,7 @@ public class HashFunction {
         }
         char[] chars = input.toCharArray();
         int length = input.length();
-        int hash1 = 5381;
+        int hash1 = 5381; // DJB2 Algorithm
         int hash2 = 0;
         int hash3 = length;
         for (int i = 0; i < length; i++) {
