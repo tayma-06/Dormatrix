@@ -1,16 +1,10 @@
 package cli.views.room;
 
 import models.room.Room;
-import java.util.Scanner;
+import utils.FastInput;
 import utils.TerminalUI;
 
 public class StudentRoomView {
-
-    private final Scanner scanner;
-
-    public StudentRoomView() {
-        this.scanner = new Scanner(System.in);
-    }
 
     public int show(String roomNumber, Room room) {
         TerminalUI.tEmpty();
@@ -31,15 +25,13 @@ public class StudentRoomView {
                 TerminalUI.tBoxLine("Info: Room details not found.");
             }
         }
-        TerminalUI.tBoxSep();
-        TerminalUI.tBoxLine("[1] My Room Complaints");
-        TerminalUI.tBoxLine("[0] Exit", utils.ConsoleColors.Accent.EXIT);
-        TerminalUI.tBoxBottom();
-        TerminalUI.tEmpty();
-        TerminalUI.tPrompt("Enter choice: ");
+        TerminalUI.tSubDashboard("MY ROOM STATUS", new String[]{
+            "[1] My Room Complaints",
+            "[0] Exit"
+        });
 
         while (true) {
-            String input = scanner.nextLine().trim();
+            String input = FastInput.readLine().trim();
             if (input.equals("0")) {
                 return 0;
             } else if (input.equals("1")) {

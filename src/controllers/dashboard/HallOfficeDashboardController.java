@@ -12,11 +12,12 @@ import libraries.collections.MyArrayList;
 import models.complaints.Complaint;
 import repo.file.FileComplaintRepository;
 import utils.ConsoleUtil;
+import utils.FastInput;
 import utils.TerminalUI;
+
 
 public class HallOfficeDashboardController {
 
-    private final Scanner sc = new Scanner(System.in);
     private final String STUDENT_FILE = "data/users/students.txt";
 
     private final MainDashboard mainDashboard = new MainDashboard();
@@ -57,9 +58,7 @@ public class HallOfficeDashboardController {
                 "[0] Back"
             });
 
-            if (sc.hasNextInt()) {
-                int subChoice = sc.nextInt();
-                sc.nextLine();
+            int subChoice = FastInput.readInt();
 
                 if (subChoice == 1) {
                     for (models.room.Room r : roomController.getAllRooms()) {
@@ -72,19 +71,14 @@ public class HallOfficeDashboardController {
                 } else if (subChoice == 0) {
                     ConsoleUtil.clearScreen();
                     return;
-                } else {
-                    TerminalUI.tPrint("Invalid sub-choice.");
-                    TerminalUI.tPause();
                 }
-            } else {
-                sc.nextLine();
             }
         }
     }
 
     private void updateStudentRoom() {
-        System.out.print("Enter Student ID: ");
-        String targetId = sc.nextLine().trim();
+        TerminalUI.tPrompt("Enter Student ID: ");
+        String targetId = FastInput.readLine().trim();
 
         List<String> lines = new ArrayList<>();
         boolean found = false;
@@ -129,8 +123,8 @@ public class HallOfficeDashboardController {
         System.out.println("Student found. Current Room: " + oldRoom);
         roomController.showAvailableRooms();
 
-        System.out.print("Enter New Room Number (or type '0' to cancel): ");
-        String newRoom = sc.nextLine().trim();
+        TerminalUI.tPrompt("Enter New Room Number (or type '0' to cancel): ");
+        String newRoom = FastInput.readLine().trim();
 
         if (newRoom.equals("0")) {
             return;
@@ -176,9 +170,7 @@ public class HallOfficeDashboardController {
         while (true) {
             ConsoleUtil.clearScreen();
             complaintView.attendantMenu();
-            if (sc.hasNextInt()) {
-                int choice = sc.nextInt();
-                sc.nextLine();
+            int choice = FastInput.readInt();
 
                 switch (choice) {
                     case 1:
@@ -192,8 +184,8 @@ public class HallOfficeDashboardController {
                         ConsoleUtil.pause();
                         break;
                     case 7:
-                        System.out.print("Enter Room ID: ");
-                        String rid = sc.nextLine().trim();
+                        TerminalUI.tPrompt("Enter Room ID: ");
+                        String rid = FastInput.readLine().trim();
                         new StudentRoomDashboard(new StudentRoomDashboardController(new RoomService())).showComplaints(rid);
                         ConsoleUtil.pause();
                         break;
@@ -201,11 +193,9 @@ public class HallOfficeDashboardController {
                         ConsoleUtil.clearScreen();
                         return;
                     default:
-                        System.out.println("Option " + choice + " is coming soon.");
+                        TerminalUI.tPrint("Option " + choice + " is coming soon.");
                         ConsoleUtil.pause();
                 }
-            } else {
-                sc.nextLine();
             }
         }
     }

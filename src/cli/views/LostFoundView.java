@@ -2,14 +2,13 @@ package cli.views;
 
 import controllers.miscellaneous.LostFoundController;
 import java.util.List;
-import java.util.Scanner;
 import utils.ConsoleUtil;
+import utils.FastInput;
 import utils.TerminalUI;
 
 public class LostFoundView {
 
     private LostFoundController controller = new LostFoundController();
-    private Scanner scanner = new Scanner(System.in);
 
     public void showMainBoard(String userId, boolean canAddFoundItem) {
         boolean back = false;
@@ -39,8 +38,7 @@ public class LostFoundView {
             }
             TerminalUI.tSubDashboard("LOST & FOUND BOARD", items);
 
-            int choice = scanner.nextInt();
-            scanner.nextLine();
+            int choice = FastInput.readInt();
 
             switch (choice) {
                 case 1 -> {
@@ -126,9 +124,9 @@ public class LostFoundView {
     private void reportLost(String userId) {
         TerminalUI.tEmpty();
         TerminalUI.tPrompt("Enter Item Name: ");
-        String name = scanner.nextLine();
+        String name = FastInput.readLine();
         TerminalUI.tPrompt("Enter Description (color, brand, etc.): ");
-        String desc = scanner.nextLine();
+        String desc = FastInput.readLine();
 
         controller.reportLostItem(name, desc, userId);
         TerminalUI.tSuccess("Item reported. The Hall Office will notify you if it is found.");
@@ -137,11 +135,11 @@ public class LostFoundView {
     private void addFound() {
         TerminalUI.tEmpty();
         TerminalUI.tPrompt("Enter Item Name: ");
-        String name = scanner.nextLine();
+        String name = FastInput.readLine();
         TerminalUI.tPrompt("Enter Description: ");
-        String desc = scanner.nextLine();
+        String desc = FastInput.readLine();
         TerminalUI.tPrompt("Location Found (e.g., Study Room, Cafeteria): ");
-        String loc = scanner.nextLine();
+        String loc = FastInput.readLine();
 
         controller.addFoundItem(name, desc, loc);
         TerminalUI.tSuccess("Item added to the Found database.");
@@ -150,7 +148,7 @@ public class LostFoundView {
     private void claimItem(String userId) {
         TerminalUI.tEmpty();
         TerminalUI.tPrompt("Enter the ID of the Found Item (e.g., FID-123456): ");
-        String id = scanner.nextLine().trim();
+        String id = FastInput.readLine().trim();
 
         if (controller.verifyAndClaim(id, userId)) {
             TerminalUI.tSuccess("Claim processed! Visit Hall Office with your Student ID.");
