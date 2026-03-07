@@ -2,6 +2,7 @@ package controllers.account;
 
 import controllers.authentication.AccountManager;
 import libraries.collections.MyString;
+import utils.TerminalUI;
 
 import java.io.*;
 
@@ -23,21 +24,21 @@ public class ViewAccountController {
 
     private void viewRole(MyString role) {
         if (role.getValue().equals("UNKNOWN")) {
-            System.out.println("Invalid role choice!");
+            TerminalUI.tError("Invalid role choice!");
             return;
         }
 
         MyString filename = manager.getFilename(role);
         File file = new File(filename.getValue());
 
-        System.out.println();
-        System.out.println("-----------------------------------------------------------------------");
-        System.out.println("                          " + role.getValue());
-        System.out.println("-----------------------------------------------------------------------");
+        TerminalUI.tEmpty();
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle(role.getValue());
+        TerminalUI.tBoxSep();
 
         if (!file.exists()) {
-            System.out.println("(No records found)");
-            System.out.println("-----------------------------------------------------------------------");
+            TerminalUI.tBoxLine("(No records found)");
+            TerminalUI.tBoxBottom();
             return;
         }
 
@@ -46,15 +47,16 @@ public class ViewAccountController {
             while ((line = reader.readLine()) != null) {
                 MyString[] parts = new MyString(line).split('|');
                 if (parts.length >= 2) {
-                    System.out.println("ID: " + parts[0].getValue() +
+                    TerminalUI.tBoxLine("ID: " + parts[0].getValue() +
                             " | Name: " + parts[1].getValue());
                 }
             }
         } catch (IOException e) {
-            System.out.println("Error reading file.");
+            TerminalUI.tError("Error reading file.");
+            return;
         }
 
-        System.out.println("-----------------------------------------------------------------------");
+        TerminalUI.tBoxBottom();
     }
 
     private void viewAll() {

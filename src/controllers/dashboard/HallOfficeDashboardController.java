@@ -2,17 +2,17 @@ package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
 import cli.dashboard.room.StudentRoomDashboard;
+import cli.views.complaint.ComplaintView;
 import controllers.dashboard.room.StudentRoomDashboardController;
 import controllers.room.RoomController;
-import cli.views.complaint.ComplaintView;
 import controllers.room.RoomService;
-import repo.file.FileComplaintRepository;
-import models.complaints.Complaint;
-import libraries.collections.MyArrayList;
-import utils.ConsoleUtil;
-
 import java.io.*;
 import java.util.*;
+import libraries.collections.MyArrayList;
+import models.complaints.Complaint;
+import repo.file.FileComplaintRepository;
+import utils.ConsoleUtil;
+import utils.TerminalUI;
 
 public class HallOfficeDashboardController {
 
@@ -33,32 +33,29 @@ public class HallOfficeDashboardController {
                 handleComplaintManagement();
                 break;
             case 3:
-                System.out.println(">> Feature [Worker Schedule] is under development.");
+                TerminalUI.tPrint(">> Feature [Worker Schedule] is under development.");
                 break;
             case 4:
-                System.out.println(">> Feature [Attendant Task] is under development.");
+                TerminalUI.tPrint(">> Feature [Attendant Task] is under development.");
                 break;
             case 0:
                 mainDashboard.show();
                 break;
             default:
-                System.out.println("Invalid Choice.");
+                TerminalUI.tPrint("Invalid Choice.");
         }
     }
 
     private void handleRoomAllocation() {
         while (true) {
             ConsoleUtil.clearScreen();
-            System.out.println();
-            System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-            System.out.println("║                          ROOM MANAGEMENT MENU                       ║");
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
-            System.out.println("║ 1. View All Rooms status                                            ║");
-            System.out.println("║ 2. Allocate/Change Student Room                                     ║");
-            System.out.println("║ 0. Back                                                             ║");
-            System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-            System.out.println();
-            System.out.print("Enter choice: ");
+            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+            TerminalUI.at(2, 1);
+            TerminalUI.tSubDashboard("ROOM MANAGEMENT MENU", new String[]{
+                "[1] View All Rooms status",
+                "[2] Allocate/Change Student Room",
+                "[0] Back"
+            });
 
             if (sc.hasNextInt()) {
                 int subChoice = sc.nextInt();
@@ -66,18 +63,18 @@ public class HallOfficeDashboardController {
 
                 if (subChoice == 1) {
                     for (models.room.Room r : roomController.getAllRooms()) {
-                        System.out.println(r);
+                        TerminalUI.tBoxLine(r.toString());
                     }
-                    ConsoleUtil.pause();
+                    TerminalUI.tPause();
                 } else if (subChoice == 2) {
                     updateStudentRoom();
-                    ConsoleUtil.pause();
+                    TerminalUI.tPause();
                 } else if (subChoice == 0) {
                     ConsoleUtil.clearScreen();
                     return;
                 } else {
-                    System.out.println("Invalid sub-choice.");
-                    ConsoleUtil.pause();
+                    TerminalUI.tPrint("Invalid sub-choice.");
+                    TerminalUI.tPause();
                 }
             } else {
                 sc.nextLine();

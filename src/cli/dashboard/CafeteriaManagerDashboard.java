@@ -2,67 +2,79 @@ package cli.dashboard;
 
 import controllers.dashboard.CafeteriaDashboardController;
 import utils.*;
+import static utils.TerminalUI.*;
 
 public class CafeteriaManagerDashboard implements Dashboard {
 
     private final CafeteriaDashboardController mainController = new CafeteriaDashboardController();
+    private boolean firstShow = true;
+
+    private static final String BOX = ConsoleColors.Accent.BOX;
+    private static final String TEXT = ConsoleColors.ThemeText.CAFETERIA_TEXT;
+    private static final String BG = ConsoleColors.bgRGB(45, 25, 10);
+    private static final String MUTED = ConsoleColors.Accent.MUTED;
+
+    private static final MenuItem[] MENU = {
+        new MenuItem(1, "Update Weekly Menu"),
+        new MenuItem(2, "Schedule Special Event"),
+        new MenuItem(3, "Verify Student Token"),
+        new MenuItem(4, "Toggle Ramadan Mode"),
+        new MenuItem(0, "Logout"),};
 
     @Override
     public void show(String username) {
-        while (true) {
-            ConsoleUtil.clearScreen();
-            BackgroundFiller.applyCafeteriaManagerTheme();
-            renderHeader(username);
-            renderMenuOptions();
-
-            System.out.print("\n" + "Enter your choice: ");
-            int choice = FastInput.readInt();
-
-            if (choice == 0) {
-                ConsoleUtil.clearScreen();
-                renderLogoutBox();
-                return;
+        if (firstShow) {
+            try {
+                quickMatrixRain();
+            } catch (InterruptedException ignored) {
             }
-            mainController.handleAction(choice);
-
-            System.out.print("\nPress Enter to continue...");
-            FastInput.readLine();
+            firstShow = false;
         }
-    }
 
-    private void renderHeader(String username) {
-        String nowLine = "Now: " + TimeManager.nowDate() + " " + TimeManager.nowTime()
-                + " | Slot: " + TimeManager.getCurrentMealSlot()
-                + " | Ramadan: " + TimeManager.isRamadanMode();
-        System.out.println();
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                     CAFETERIA MANAGER DASHBOARD                     ║");
-        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+        while (true) {
+            try {
+                BackgroundFiller.applyCafeteriaManagerTheme();
+                setActiveTheme(BOX, TEXT, BG);
+                System.out.print(HIDE_CUR);
 
-        String welcomeMessage = "Welcome, " + username;
-        int totalWidth = 69;
-        int paddingLeft = (totalWidth - welcomeMessage.length()) / 2;
-        int paddingRight = totalWidth - welcomeMessage.length() - paddingLeft;
+                String nowLine = "Now: " + TimeManager.nowDate() + " " + TimeManager.nowTime()
+                        + " | Slot: " + TimeManager.getCurrentMealSlot()
+                        + " | Ramadan: " + TimeManager.isRamadanMode();
+                String[] extraHeader = {
+                    nowLine,
+                    CafeteriaAsciiUI.renderSlotProgress(TimeManager.getCurrentMealSlot())
+                };
 
-        System.out.printf("║%" + paddingLeft + "s%s%" + paddingRight + "s║%n", "", welcomeMessage, "");
-        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
-        System.out.printf("║ %-67s ║%n", nowLine);
-        System.out.printf("║ %-67s ║%n", CafeteriaAsciiUI.renderSlotProgress(TimeManager.getCurrentMealSlot()));
-        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
-    }
+                int menuStartRow = 3;
+                int promptRow = drawDashboard(
+                        "CAFETERIA MANAGER DASHBOARD",
+                        "Welcome, " + username,
+                        MENU, TEXT, BOX,
+                        extraHeader,
+                        menuStartRow
+                );
 
-    private void renderMenuOptions() {
-        System.out.println("║ [1] Update Weekly Menu                                              ║");
-        System.out.println("║ [2] Schedule Special Event                                          ║");
-        System.out.println("║ [3] Verify Student Token                                            ║");
-        System.out.println("║ [4] Toggle Ramadan Mode                                             ║");
-        System.out.println("║ [0] Logout                                                          ║");
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-    }
+                System.out.print(SHOW_CUR);
+                int choice = FastInput.readInt();
+                System.out.print(RESET);
 
-    private void renderLogoutBox() {
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                         Logging Out....                             ║");
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+                if (choice == 0) {
+                    BackgroundFiller.applyCafeteriaManagerTheme();
+                    showLogout();
+                    BackgroundFiller.resetTheme();
+                    return;
+                }
+
+                mainController.handleAction(choice);
+
+                System.out.println();
+                drawInputPrompt("Press Enter to continue...", TEXT, BG);
+                FastInput.readLine();
+
+            } catch (Exception e) {
+                cleanup();
+                System.err.println("[CafeteriaManagerDashboard] " + e.getMessage());
+            }
+        }
     }
 }

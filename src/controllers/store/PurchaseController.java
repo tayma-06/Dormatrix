@@ -3,18 +3,12 @@ package controllers.store;
 import controllers.balance.BalanceController;
 import models.store.Item;
 import models.store.CartItem;
+import utils.TerminalUI;
 
 public class PurchaseController {
-    private final InventoryController inventoryController;
-    private static BalanceController balanceController = new BalanceController();
-    private static DueController dueController = new DueController();
-    private static SalesController salesController = new SalesController();
+    private static final SalesController salesController = new SalesController();
 
     public PurchaseController(InventoryController inventoryController) {
-        this.inventoryController = inventoryController;
-        this.balanceController = new BalanceController();
-        this.dueController = new DueController();
-        this.salesController = new SalesController();
     }
 
     /**
@@ -23,20 +17,20 @@ public class PurchaseController {
     public boolean purchase(String studentId, String itemId, int qty, boolean useCredit) {
         // Validate inputs
         if (studentId == null || itemId == null || qty <= 0) {
-            System.out.println("✗ Invalid purchase data");
+            TerminalUI.tError("Invalid purchase data");
             return false;
         }
 
         // Get item details
         Item item = InventoryController.getItem(itemId);
         if (item == null) {
-            System.out.println("✗ Item not found: " + itemId);
+            TerminalUI.tError("Item not found: " + itemId);
             return false;
         }
 
         // Check stock availability
         if (item.getQuantity() < qty) {
-            System.out.println("✗ Insufficient stock! Available: " + item.getQuantity() + ", Requested: " + qty);
+            TerminalUI.tError("Insufficient stock! Available: " + item.getQuantity() + ", Requested: " + qty);
             return false;
         }
 
@@ -48,13 +42,13 @@ public class PurchaseController {
             // Pay with balance
             double balance = BalanceController.getBalance(studentId);
             if (balance < totalPrice) {
-                System.out.printf("✗ Insufficient balance! Required: $%.2f, Available: $%.2f\n",
-                        totalPrice, balance);
+                TerminalUI.tError(String.format("Insufficient balance! Required: $%.2f, Available: $%.2f",
+                        totalPrice, balance));
                 return false;
             }
 
             if (!BalanceController.deductBalance(studentId, totalPrice)) {
-                System.out.println("✗ Failed to deduct balance");
+                TerminalUI.tError("Failed to deduct balance");
                 return false;
             }
         } else {
@@ -67,17 +61,21 @@ public class PurchaseController {
 
         // Record the sale
         if (!salesController.recordSale(studentId, itemId, qty, totalPrice)) {
-            System.out.println("⚠ Warning: Sale completed but not recorded in history");
+            TerminalUI.tPrint("Warning: Sale completed but not recorded in history");
         }
 
-        System.out.printf("✓ Purchase successful! Item: %s, Qty: %d, Total: $%.2f\n",
-                item.getName(), qty, totalPrice);
+        TerminalUI.tSuccess(String.format("Purchase successful! Item: %s, Qty: %d, Total: $%.2f",
+                item.getName(), qty, totalPrice));
 
         if (useCredit) {
-            System.out.printf("  Added to dues: $%.2f\n", totalPrice);
+            TerminalUI.tBoxTop();
+            TerminalUI.tBoxLine(String.format("Added to dues: $%.2f", totalPrice));
+            TerminalUI.tBoxBottom();
         } else {
             double newBalance = BalanceController.getBalance(studentId);
-            System.out.printf("  Remaining balance: $%.2f\n", newBalance);
+            TerminalUI.tBoxTop();
+            TerminalUI.tBoxLine(String.format("Remaining balance: $%.2f", newBalance));
+            TerminalUI.tBoxBottom();
         }
 
         return true;
@@ -88,7 +86,7 @@ public class PurchaseController {
      */
     public static boolean purchaseCart(String studentId, CartItem[] cartItems, boolean useCredit) {
         if (studentId == null || cartItems == null || cartItems.length == 0) {
-            System.out.println("✗ Cart is empty");
+            TerminalUI.tError("Cart is empty");
             return false;
         }
 
@@ -97,13 +95,13 @@ public class PurchaseController {
         for (CartItem cartItem : cartItems) {
             Item item = InventoryController.getItem(cartItem.getItemId());
             if (item == null) {
-                System.out.println("✗ Item not found: " + cartItem.getItemId());
+                TerminalUI.tError("Item not found: " + cartItem.getItemId());
                 return false;
             }
 
             if (item.getQuantity() < cartItem.getQuantity()) {
-                System.out.printf("✗ Insufficient stock for %s! Available: %d, Requested: %d\n",
-                        item.getName(), item.getQuantity(), cartItem.getQuantity());
+                TerminalUI.tError(String.format("Insufficient stock for %s! Available: %d, Requested: %d",
+                        item.getName(), item.getQuantity(), cartItem.getQuantity()));
                 return false;
             }
 
@@ -114,8 +112,8 @@ public class PurchaseController {
         if (!useCredit) {
             double balance = BalanceController.getBalance(studentId);
             if (balance < grandTotal) {
-                System.out.printf("✗ Insufficient balance! Required: $%.2f, Available: $%.2f\n",
-                        grandTotal, balance);
+                TerminalUI.tError(String.format("Insufficient balance! Required: $%.2f, Available: $%.2f",
+                        grandTotal, balance));
                 return false;
             }
         }
@@ -123,7 +121,7 @@ public class PurchaseController {
         // Process payment
         if (!useCredit) {
             if (!BalanceController.deductBalance(studentId, grandTotal)) {
-                System.out.println("✗ Failed to deduct balance");
+                TerminalUI.tError("Failed to deduct balance");
                 return false;
             }
         } else {
@@ -137,26 +135,26 @@ public class PurchaseController {
             // Record each sale
             if (!salesController.recordSale(studentId, cartItem.getItemId(),
                     cartItem.getQuantity(), cartItem.getSubtotal())) {
-                System.out.println("⚠ Warning: Failed to record sale for item: " + cartItem.getItemId());
+                TerminalUI.tPrint("Warning: Failed to record sale for item: " + cartItem.getItemId());
             }
         }
 
-        System.out.println("\n====================================================================");
-        System.out.println("|                   PURCHASE COMPLETED                             |");
-        System.out.println("====================================================================");
-        System.out.printf("  Total Items:  %d\n", cartItems.length);
-        System.out.printf("  Total Amount: $%.2f\n", grandTotal);
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("PURCHASE COMPLETED");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Total Items:  " + cartItems.length);
+        TerminalUI.tBoxLine(String.format("Total Amount: $%.2f", grandTotal));
 
         if (useCredit) {
             double totalDue = DueController.getDue(studentId);
-            System.out.printf("  Payment:      On Credit\n");
-            System.out.printf("  Total Dues:   $%.2f\n", totalDue);
+            TerminalUI.tBoxLine("Payment:      On Credit");
+            TerminalUI.tBoxLine(String.format("Total Dues:   $%.2f", totalDue));
         } else {
             double newBalance = BalanceController.getBalance(studentId);
-            System.out.printf("  Payment:      Cash (Balance)\n");
-            System.out.printf("  Remaining:    $%.2f\n", newBalance);
+            TerminalUI.tBoxLine("Payment:      Cash (Balance)");
+            TerminalUI.tBoxLine(String.format("Remaining:    $%.2f", newBalance));
         }
-        System.out.println("====================================================================");
+        TerminalUI.tBoxBottom();
 
         return true;
     }

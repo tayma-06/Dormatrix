@@ -9,6 +9,7 @@ import models.food.MealType;
 import models.store.StudentBalance;
 import utils.ConsoleUtil;
 import utils.FastInput;
+import utils.TerminalUI;
 import utils.TimeManager;
 
 public class MealTokenPurchase {
@@ -19,49 +20,51 @@ public class MealTokenPurchase {
     public void show(String username) {
         while (true) {
             ConsoleUtil.clearScreen();
+            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+            TerminalUI.at(2, 1);
             LocalDate todayDate = TimeManager.nowDate();
             MealType currentSlot = TimeManager.getCurrentMealSlot();
             String dayOfWeek = TimeManager.nowDay().toString();
             String menuItems = purchaseController.getMenuForTime(todayDate, dayOfWeek, currentSlot);
             StudentBalance balance = purchaseController.getStudentBalance(username);
-            System.out.println();
-            System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-            System.out.println("║                          MEAL TOKEN PURCHASE                        ║");
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            TerminalUI.tBoxTop();
+            TerminalUI.tBoxTitle("MEAL TOKEN PURCHASE");
+            TerminalUI.tBoxSep();
 
             String dateTimeLine = "Date: " + todayDate
                     + " | Time: " + TimeManager.nowTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-            System.out.printf("║ %-67s ║%n", dateTimeLine);
+            TerminalUI.tBoxLine(dateTimeLine);
 
             String statusLine = "Current Status: "
                     + (currentSlot == MealType.NONE ? "CLOSED" : "ACTIVE - " + currentSlot);
-            System.out.printf("║ %-67s ║%n", statusLine);
+            TerminalUI.tBoxLine(statusLine);
 
             String progressLine = utils.CafeteriaAsciiUI.renderSlotProgress(currentSlot);
-            System.out.printf("║ %-67s ║%n", progressLine);
+            TerminalUI.tBoxLine(progressLine);
 
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            TerminalUI.tBoxSep();
 
             if (currentSlot != MealType.NONE) {
                 String menuLine = "Today's Menu: " + menuItems;
-                ConsoleUtil.printWrappedInBox(menuLine, 67);
+                for (String line : ConsoleUtil.wrapText(menuLine, 67)) {
+                    TerminalUI.tBoxLine(line);
+                }
             } else {
-                System.out.printf("║ %-67s ║%n", "Cafeteria is currently closed.");
+                TerminalUI.tBoxLine("Cafeteria is currently closed.");
             }
 
             String balanceLine = "Your Balance: "
                     + (balance != null ? balance.getBalance() : "N/A") + " BDT";
-            System.out.printf("║ %-67s ║%n", balanceLine);
+            TerminalUI.tBoxLine(balanceLine);
 
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
-            System.out.println("║ [1] Buy Current Meal Token                                          ║");
-            System.out.println("║ [2] Buy Tokens for the Week (Monday-Sunday)                         ║");
-            System.out.println("║ [3] View My Tokens                                                  ║");
-            System.out.println("║ [0] Back to Dashboard                                               ║");
-            System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-
-            System.out.println();
-            System.out.print("Enter choice: ");
+            TerminalUI.tBoxSep();
+            TerminalUI.tBoxLine("[1] Buy Current Meal Token");
+            TerminalUI.tBoxLine("[2] Buy Tokens for the Week (Monday-Sunday)");
+            TerminalUI.tBoxLine("[3] View My Tokens");
+            TerminalUI.tBoxLine("[0] Back to Dashboard", utils.ConsoleColors.Accent.EXIT);
+            TerminalUI.tBoxBottom();
+            TerminalUI.tEmpty();
+            TerminalUI.tPrompt("Enter choice: ");
 
             int choice = FastInput.readInt();
             if (choice == 0) {
@@ -71,14 +74,13 @@ public class MealTokenPurchase {
 
             boolean skipOuterPause = false;
 
-            System.out.println();
             switch (choice) {
                 case 1 -> {
                     if (currentSlot == MealType.NONE) {
-                        System.out.println(">> No active meal to buy right now!");
+                        TerminalUI.tError("No active meal to buy right now!");
                     } else {
                         String result = purchaseController.processTokenPurchase(username);
-                        System.out.println(">> " + result);
+                        TerminalUI.tSuccess(result);
                     }
                 }
                 case 2 -> {
@@ -91,13 +93,11 @@ public class MealTokenPurchase {
                     skipOuterPause = true;
                 }
                 default ->
-                    System.out.println("Invalid choice.");
+                    TerminalUI.tError("Invalid choice.");
             }
 
             if (!skipOuterPause) {
-                System.out.println();
-                System.out.print("Press Enter to continue...");
-                FastInput.readLine();
+                TerminalUI.tPause();
             }
         }
     }

@@ -2,6 +2,7 @@ package cli.views.room;
 
 import models.room.Room;
 import java.util.Scanner;
+import utils.TerminalUI;
 
 public class StudentRoomView {
 
@@ -12,31 +13,30 @@ public class StudentRoomView {
     }
 
     public int show(String roomNumber, Room room) {
-        System.out.println();
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                           MY ROOM STATUS                            ║");
-        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+        TerminalUI.tEmpty();
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("MY ROOM STATUS");
+        TerminalUI.tBoxSep();
         if (roomNumber.equals("UNASSIGNED") || roomNumber.equals("N/A")) {
-            System.out.printf("║ %-10s %-56s ║\n", "Status:", "NOT ASSIGNED");
-            System.out.printf("║ %-10s %-56s ║\n", "Action:", "Please contact Hall Office.");
+            TerminalUI.tBoxLine("Status: NOT ASSIGNED");
+            TerminalUI.tBoxLine("Action: Please contact Hall Office.");
         } else {
-            System.out.printf("║ %-10s %-56s ║\n", "Room No:", roomNumber);
+            TerminalUI.tBoxLine("Room No: " + roomNumber);
 
             if (room != null) {
                 String status = room.isAvailable() ? "AVAILABLE" : "FULL";
-                System.out.printf("║ %-10s %-56s ║\n", "Occupancy:",
-                        room.getCurrentOccupancy() + "/" + room.getCapacity());
-                System.out.printf("║ %-10s %-56s ║\n", "Status:", status);
+                TerminalUI.tBoxLine("Occupancy: " + room.getCurrentOccupancy() + "/" + room.getCapacity());
+                TerminalUI.tBoxLine("Status: " + status);
             } else {
-                System.out.printf("| %-10s %-56s |\n", "Info:", "Room details not found.");
+                TerminalUI.tBoxLine("Info: Room details not found.");
             }
         }
-        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
-        System.out.println("║ [1] My Room Complaints                                              ║");
-        System.out.println("║ [0] Exit                                                            ║");
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-        System.out.println();
-        System.out.print("Enter choice: ");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("[1] My Room Complaints");
+        TerminalUI.tBoxLine("[0] Exit", utils.ConsoleColors.Accent.EXIT);
+        TerminalUI.tBoxBottom();
+        TerminalUI.tEmpty();
+        TerminalUI.tPrompt("Enter choice: ");
 
         while (true) {
             String input = scanner.nextLine().trim();
@@ -45,7 +45,7 @@ public class StudentRoomView {
             } else if (input.equals("1")) {
                 return 1;
             } else {
-                System.out.print("Invalid choice. Enter 0 or 1: ");
+                TerminalUI.tPrompt("Invalid choice. Enter 0 or 1: ");
             }
         }
     }

@@ -4,6 +4,7 @@ import controllers.miscellaneous.LostFoundController;
 import java.util.List;
 import java.util.Scanner;
 import utils.ConsoleUtil;
+import utils.TerminalUI;
 
 public class LostFoundView {
 
@@ -14,47 +15,57 @@ public class LostFoundView {
         boolean back = false;
         while (!back) {
             ConsoleUtil.clearScreen();
-            System.out.println("\n--------------------------------------------------");
-            System.out.println("|              LOST & FOUND BOARD                |");
-            System.out.println("--------------------------------------------------");
-            System.out.println("1. View Found Items");
-            System.out.println("2. View Lost Items");
-            System.out.println("3. Report Lost Item");
-            System.out.println("4. Claim an Item");
-            if (canAddFoundItem) {
-                System.out.println("5. Add Found Item (Hall Attendant Only)");
-            }
-            System.out.println("0. Back to Dashboard");
-            System.out.println("--------------------------------------------------");
+            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+            TerminalUI.at(2, 1);
 
-            System.out.print("Enter choice: ");
+            String[] items;
+            if (canAddFoundItem) {
+                items = new String[]{
+                    "[1] View Found Items",
+                    "[2] View Lost Items",
+                    "[3] Report Lost Item",
+                    "[4] Claim an Item",
+                    "[5] Add Found Item (Hall Attendant Only)",
+                    "[0] Back to Dashboard"
+                };
+            } else {
+                items = new String[]{
+                    "[1] View Found Items",
+                    "[2] View Lost Items",
+                    "[3] Report Lost Item",
+                    "[4] Claim an Item",
+                    "[0] Back to Dashboard"
+                };
+            }
+            TerminalUI.tSubDashboard("LOST & FOUND BOARD", items);
+
             int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume the leftover newline from nextInt()
+            scanner.nextLine();
 
             switch (choice) {
                 case 1 -> {
                     viewFoundItems();
-                    ConsoleUtil.pause();
+                    TerminalUI.tPause();
                 }
                 case 2 -> {
                     viewLostItems();
-                    ConsoleUtil.pause();
+                    TerminalUI.tPause();
                 }
                 case 3 -> {
                     reportLost(userId);
-                    ConsoleUtil.pause();
+                    TerminalUI.tPause();
                 }
                 case 4 -> {
                     claimItem(userId);
-                    ConsoleUtil.pause();
+                    TerminalUI.tPause();
                 }
                 case 5 -> {
                     if (canAddFoundItem) {
                         addFound();
-                        ConsoleUtil.pause();
+                        TerminalUI.tPause();
                     } else {
-                        System.out.println("Invalid option. You do not have permission.");
-                        ConsoleUtil.pause();
+                        TerminalUI.tError("You do not have permission.");
+                        TerminalUI.tPause();
                     }
                 }
                 case 0 -> {
@@ -62,8 +73,8 @@ public class LostFoundView {
                     back = true;
                 }
                 default -> {
-                    System.out.println("Invalid choice. Please try again.");
-                    ConsoleUtil.pause();
+                    TerminalUI.tError("Invalid choice. Please try again.");
+                    TerminalUI.tPause();
                 }
             }
         }
@@ -71,71 +82,80 @@ public class LostFoundView {
 
     private void viewFoundItems() {
         List<String> items = controller.getFoundItems();
+        TerminalUI.tEmpty();
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("FOUND ITEMS");
+        TerminalUI.tBoxSep();
         if (items.isEmpty()) {
-            System.out.println("\nNo found items reported at this time.");
-            return;
-        }
-
-        System.out.println("\nID            | Name       | Description                  | Location        | Status");
-        System.out.println("---------------------------------------------------------------------------------------------");
-        for (String item : items) {
-            String[] p = item.split(",");
-            if (p.length == 6) {
-                String status = p[4].equals("true") ? "Claimed by " + p[5] : "Available";
-                // Using printf for clean column formatting
-                System.out.printf("%-13s | %-10s | %-28s | %-15s | %s\n", p[0], p[1], p[2], p[3], status);
+            TerminalUI.tBoxLine("No found items reported at this time.");
+        } else {
+            TerminalUI.tBoxLine("ID            | Name       | Description          | Location   | Status");
+            TerminalUI.tBoxSep();
+            for (String item : items) {
+                String[] p = item.split(",");
+                if (p.length == 6) {
+                    String status = p[4].equals("true") ? "Claimed by " + p[5] : "Available";
+                    TerminalUI.tBoxLine(String.format("%-13s | %-10s | %-20s | %-10s | %s", p[0], p[1], p[2], p[3], status));
+                }
             }
         }
+        TerminalUI.tBoxBottom();
     }
 
     private void viewLostItems() {
         List<String> items = controller.getLostItems();
+        TerminalUI.tEmpty();
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("LOST ITEMS");
+        TerminalUI.tBoxSep();
         if (items.isEmpty()) {
-            System.out.println("\nNo lost items reported at this time.");
-            return;
-        }
-
-        System.out.println("\nID            | Name       | Description                  | Reporter ID     | Date Reported");
-        System.out.println("---------------------------------------------------------------------------------------------");
-        for (String item : items) {
-            String[] p = item.split(",");
-            // LostItem format: id, name, description, reporterId, date
-            if (p.length == 5) {
-                System.out.printf("%-13s | %-10s | %-28s | %-15s | %s\n", p[0], p[1], p[2], p[3], p[4]);
+            TerminalUI.tBoxLine("No lost items reported at this time.");
+        } else {
+            TerminalUI.tBoxLine("ID            | Name       | Description          | Reporter   | Date");
+            TerminalUI.tBoxSep();
+            for (String item : items) {
+                String[] p = item.split(",");
+                if (p.length == 5) {
+                    TerminalUI.tBoxLine(String.format("%-13s | %-10s | %-20s | %-10s | %s", p[0], p[1], p[2], p[3], p[4]));
+                }
             }
         }
+        TerminalUI.tBoxBottom();
     }
 
     private void reportLost(String userId) {
-        System.out.print("Enter Item Name: ");
+        TerminalUI.tEmpty();
+        TerminalUI.tPrompt("Enter Item Name: ");
         String name = scanner.nextLine();
-        System.out.print("Enter Description (color, brand, etc.): ");
+        TerminalUI.tPrompt("Enter Description (color, brand, etc.): ");
         String desc = scanner.nextLine();
 
         controller.reportLostItem(name, desc, userId);
-        System.out.println("\n[SUCCESS] Item reported. The Hall Office will notify you if it is found.");
+        TerminalUI.tSuccess("Item reported. The Hall Office will notify you if it is found.");
     }
 
     private void addFound() {
-        System.out.print("Enter Item Name: ");
+        TerminalUI.tEmpty();
+        TerminalUI.tPrompt("Enter Item Name: ");
         String name = scanner.nextLine();
-        System.out.print("Enter Description: ");
+        TerminalUI.tPrompt("Enter Description: ");
         String desc = scanner.nextLine();
-        System.out.print("Location Found (e.g., Study Room, Cafeteria): ");
+        TerminalUI.tPrompt("Location Found (e.g., Study Room, Cafeteria): ");
         String loc = scanner.nextLine();
 
         controller.addFoundItem(name, desc, loc);
-        System.out.println("\n[SUCCESS] Item added to the Found database.");
+        TerminalUI.tSuccess("Item added to the Found database.");
     }
 
     private void claimItem(String userId) {
-        System.out.print("Enter the ID of the Found Item you wish to claim (e.g., FID-123456): ");
+        TerminalUI.tEmpty();
+        TerminalUI.tPrompt("Enter the ID of the Found Item (e.g., FID-123456): ");
         String id = scanner.nextLine().trim();
 
         if (controller.verifyAndClaim(id, userId)) {
-            System.out.println("\n[SUCCESS] Claim processed! Please visit the Hall Office with your Student ID to pick it up.");
+            TerminalUI.tSuccess("Claim processed! Visit Hall Office with your Student ID.");
         } else {
-            System.out.println("\n[ERROR] Invalid ID, or the item has already been claimed.");
+            TerminalUI.tError("Invalid ID, or the item has already been claimed.");
         }
     }
 }

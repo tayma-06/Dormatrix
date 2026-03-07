@@ -5,6 +5,7 @@ import models.food.MealType;
 import utils.FastInput;
 import utils.TimeManager;
 import utils.ConsoleUtil;
+import utils.TerminalUI;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -18,14 +19,16 @@ public class CalendarView {
 
         while (true) {
             ConsoleUtil.clearScreen();
+            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+            TerminalUI.at(2, 1);
             renderWeeklyCalendar(today, startOfWeek);
 
-            System.out.println("\n[Action Selection]");
-            System.out.println(">> Enter 1-7 to select a specific day");
-            System.out.println(">> Enter 8 to buy ALL meals for the rest of the week");
-            System.out.println(">> Enter 0 to go back");
-
-            System.out.print("\nChoice: ");
+            TerminalUI.tEmpty();
+            TerminalUI.tSubDashboard("ACTION SELECTION", new String[]{
+                "[1-7] Select a specific day",
+                "[8] Buy ALL meals for the rest of the week",
+                "[0] Go back"
+            });
             int choice = FastInput.readInt();
 
             if (choice == 0) {
@@ -36,29 +39,28 @@ public class CalendarView {
                 LocalDate selectedDay = startOfWeek.plusDays(choice - 1);
 
                 if (selectedDay.isBefore(today)) {
-                    System.out.println("\n[!] Error: Cannot select a past day (marked with X).");
-                    System.out.print("Press Enter to continue...");
-                    FastInput.readLine();
+                    TerminalUI.tError("Cannot select a past day (marked with X).");
+                    TerminalUI.tPause();
                 } else {
                     handleSingleDayFlow(username, selectedDay);
                 }
             } else if (choice == 8) {
                 handleBulkPurchase(username, today, startOfWeek);
             } else {
-                System.out.println("Invalid choice. Try again.");
+                TerminalUI.tError("Invalid choice. Try again.");
             }
         }
     }
 
     public void renderWeeklyCalendar(LocalDate today, LocalDate startOfWeek) {
-        System.out.println();
-        System.out.println("╔════════════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                             WEEKLY MEAL PLAN                               ║");
-        System.out.println("╠══════════╦══════════╦══════════╦══════════╦══════════╦══════════╦══════════╣");
-        System.out.println("║  [1]Mon  ║  [2]Tue  ║  [3]Wed  ║  [4]Thu  ║  [5]Fri  ║  [6]Sat  ║  [7]Sun  ║");
-        System.out.println("╠══════════╬══════════╬══════════╬══════════╬══════════╬══════════╬══════════╣");
+        TerminalUI.tEmpty();
+        TerminalUI.tPanelCenter("╔════════════════════════════════════════════════════════════════════════════╗", TerminalUI.getActiveBoxColor());
+        TerminalUI.tPanelCenter("║                             WEEKLY MEAL PLAN                               ║", TerminalUI.getActiveBoxColor());
+        TerminalUI.tPanelCenter("╠══════════╦══════════╦══════════╦══════════╦══════════╦══════════╦══════════╣", TerminalUI.getActiveBoxColor());
+        TerminalUI.tPanelCenter("║  [1]Mon  ║  [2]Tue  ║  [3]Wed  ║  [4]Thu  ║  [5]Fri  ║  [6]Sat  ║  [7]Sun  ║", TerminalUI.getActiveBoxColor());
+        TerminalUI.tPanelCenter("╠══════════╬══════════╬══════════╬══════════╬══════════╬══════════╬══════════╣", TerminalUI.getActiveBoxColor());
 
-        System.out.print("║");
+        StringBuilder row = new StringBuilder("║");
         for (int i = 0; i < 7; i++) {
             LocalDate currentDay = startOfWeek.plusDays(i);
             String dayDisplay;
@@ -68,39 +70,40 @@ public class CalendarView {
             } else {
                 dayDisplay = String.format("    %02d    ", currentDay.getDayOfMonth());
             }
-            System.out.print(dayDisplay + "║");
+            row.append(dayDisplay).append("║");
         }
-        System.out.println("\n╚══════════╩══════════╩══════════╩══════════╩══════════╩══════════╩══════════╝");
+        TerminalUI.tPanelCenter(row.toString(), TerminalUI.getActiveBoxColor());
+        TerminalUI.tPanelCenter("╚══════════╩══════════╩══════════╩══════════╩══════════╩══════════╩══════════╝", TerminalUI.getActiveBoxColor());
     }
 
     private void handleSingleDayFlow(String username, LocalDate day) {
         ConsoleUtil.clearScreen();
-        System.out.println();
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║ SETTINGS FOR: " + String.format("%-54s", day.getDayOfWeek() + " (" + day + ")") + "║");
-        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("SETTINGS FOR: " + day.getDayOfWeek() + " (" + day + ")");
+        TerminalUI.tBoxSep();
 
         DayOfWeek dow = day.getDayOfWeek();
 
         if (TimeManager.isRamadanMode()) {
             printWrappedMenu("Suhoor", controller.getMenuForTime(day, dow.toString(), MealType.SUHOOR));
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            TerminalUI.tBoxSep();
             printWrappedMenu("Iftar", controller.getMenuForTime(day, dow.toString(), MealType.IFTAR));
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            TerminalUI.tBoxSep();
             printWrappedMenu("Dinner", controller.getMenuForTime(day, dow.toString(), MealType.DINNER));
         } else {
             printWrappedMenu("Breakfast", controller.getMenuForTime(day, dow.toString(), MealType.BREAKFAST));
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            TerminalUI.tBoxSep();
             printWrappedMenu("Lunch", controller.getMenuForTime(day, dow.toString(), MealType.LUNCH));
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            TerminalUI.tBoxSep();
             printWrappedMenu("Dinner", controller.getMenuForTime(day, dow.toString(), MealType.DINNER));
         }
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+        TerminalUI.tBoxBottom();
 
         buyDayToken(username, day);
 
-        System.out.println("\nDone! Press Enter to continue...");
-        FastInput.readLine();
+        TerminalUI.tPause();
     }
 
     private void printWrappedMenu(String mealName, String menuItems) {
@@ -108,7 +111,7 @@ public class CalendarView {
         int maxLineLength = 67 - prefix.length();
 
         if (menuItems == null || menuItems.isEmpty()) {
-            System.out.printf("║ %-67s ║%n", prefix);
+            TerminalUI.tBoxLine(prefix);
             return;
         }
 
@@ -120,7 +123,7 @@ public class CalendarView {
             if (currentLine.length() + word.length() + (currentLine.length() > 0 ? 1 : 0) > maxLineLength) {
 
                 String linePrefix = firstLine ? prefix : String.format("%" + prefix.length() + "s", "");
-                System.out.printf("║ %-67s ║%n", linePrefix + currentLine.toString());
+                TerminalUI.tBoxLine(linePrefix + currentLine.toString());
                 currentLine = new StringBuilder(word);
                 firstLine = false;
             } else {
@@ -132,34 +135,36 @@ public class CalendarView {
         }
         if (currentLine.length() > 0 || firstLine) {
             String linePrefix = firstLine ? prefix : String.format("%" + prefix.length() + "s", "");
-            System.out.printf("║ %-67s ║%n", linePrefix + currentLine.toString());
+            TerminalUI.tBoxLine(linePrefix + currentLine.toString());
         }
     }
 
     private void handleBulkPurchase(String username, LocalDate today, LocalDate startOfWeek) {
-        System.out.println("\n[Bulk Purchase Mode]");
-        System.out.print("Confirm buying all meals for all remaining days? (y/n): ");
+        TerminalUI.tEmpty();
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("BULK PURCHASE MODE");
+        TerminalUI.tBoxBottom();
+        TerminalUI.tPrompt("Confirm buying all meals for all remaining days? (y/n): ");
         if (FastInput.readLine().trim().toLowerCase().equals("y")) {
             for (int i = 0; i < 7; i++) {
                 LocalDate day = startOfWeek.plusDays(i);
                 if (!day.isBefore(today)) {
-                    System.out.println("\n>> " + day.getDayOfWeek() + " (" + day + "):");
+                    TerminalUI.tPrint(day.getDayOfWeek() + " (" + day + "):");
                     autoBuyAllMeals(username, day);
                 }
             }
-            System.out.println("\nBulk purchase complete!");
-            System.out.print("Press Enter...");
-            FastInput.readLine();
+            TerminalUI.tSuccess("Bulk purchase complete!");
+            TerminalUI.tPause();
         }
     }
 
     private void buyDayToken(String username, LocalDate day) {
         MealType[] meals = getAvailableMeals();
         for (MealType mt : meals) {
-            System.out.print(">> Buy token for " + mt + "? (y/n): ");
+            TerminalUI.tPrompt("Buy token for " + mt + "? (y/n): ");
             if (FastInput.readLine().trim().toLowerCase().startsWith("y")) {
                 String result = controller.processTokenPurchaseForDay(username, day, mt);
-                System.out.println("   Status: " + result);
+                TerminalUI.tPrint("Status: " + result);
             }
         }
     }
@@ -167,7 +172,7 @@ public class CalendarView {
     private void autoBuyAllMeals(String username, LocalDate day) {
         for (MealType mt : getAvailableMeals()) {
             String res = controller.processTokenPurchaseForDay(username, day, mt);
-            System.out.println("   - " + mt + ": " + res);
+            TerminalUI.tPrint(mt + ": " + res);
         }
     }
 

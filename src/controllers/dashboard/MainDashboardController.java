@@ -2,11 +2,13 @@ package controllers.dashboard;
 
 import cli.dashboard.*;
 import controllers.authentication.AuthController;
-import models.users.User;
 import libraries.collections.MyString;
+import models.users.User;
 import utils.ConsoleUtil;
+import utils.TerminalUI;
 
 public class MainDashboardController {
+
     private final AuthController authController = new AuthController();
 
     public MainDashboardController() {
@@ -18,22 +20,18 @@ public class MainDashboardController {
         boolean authenticated = authController.authenticateUser(username, password, role);
 
         if (!authenticated) {
-            System.out.println();
-            System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-            System.out.println("║ Invalid username or password!                                       ║");
-            System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-            System.out.println();
-            ConsoleUtil.pause();
+            TerminalUI.tEmpty();
+            TerminalUI.tError("Invalid username or password!");
+            TerminalUI.tEmpty();
+            TerminalUI.tPause();
             return;
         }
 
-        System.out.println();
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║ Login successful!                                                   ║");
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-        System.out.println();
+        TerminalUI.tEmpty();
+        TerminalUI.tSuccess("Login successful!");
+        TerminalUI.tEmpty();
 
-        ConsoleUtil.pause();
+        TerminalUI.tPause();
 
         User loggedInUser = authController.getUserByUsername(username, role);
         Dashboard dashboard = getDashboardForRole(choice);
@@ -52,27 +50,43 @@ public class MainDashboardController {
 
     private Dashboard getDashboardForRole(int choice) {
         return switch (choice) {
-            case 1 -> new StudentDashboard();
-            case 2 -> new AttendantDashboard();
-            case 3 -> new MaintenanceWorkerDashboard();
-            case 4 -> new StoreInChargeDashboard();
-            case 5 -> new HallOfficeDashboard();
-            case 6 -> new AdminDashboard();
-            case 7 -> new CafeteriaManagerDashboard();
-            default -> null;
+            case 1 ->
+                new StudentDashboard();
+            case 2 ->
+                new AttendantDashboard();
+            case 3 ->
+                new MaintenanceWorkerDashboard();
+            case 4 ->
+                new StoreInChargeDashboard();
+            case 5 ->
+                new HallOfficeDashboard();
+            case 6 ->
+                new AdminDashboard();
+            case 7 ->
+                new CafeteriaManagerDashboard();
+            default ->
+                null;
         };
     }
 
     private MyString getRoleFromChoice(int choice) {
         return switch (choice) {
-            case 1 -> new MyString("STUDENT");
-            case 2 -> new MyString("HALL_ATTENDANT");
-            case 3 -> new MyString("MAINTENANCE_WORKER");
-            case 4 -> new MyString("STORE_IN_CHARGE");
-            case 5 -> new MyString("HALL_OFFICER");
-            case 6 -> new MyString("ADMIN");
-            case 7 -> new MyString("CAFETERIA_MANAGER");
-            default -> new MyString("UNKNOWN");
+            case 1 ->
+                new MyString("STUDENT");
+            case 2 ->
+                new MyString("HALL_ATTENDANT");
+            case 3 ->
+                new MyString("MAINTENANCE_WORKER");
+            case 4 ->
+                new MyString("STORE_IN_CHARGE");
+            case 5 ->
+                new MyString("HALL_OFFICER");
+            case 6 ->
+                new MyString("ADMIN");
+            case 7 ->
+                new MyString("CAFETERIA_MANAGER");
+            default ->
+                new MyString("UNKNOWN");
         };
     }
 }

@@ -3,6 +3,7 @@ package cli.views.account;
 import controllers.account.ViewAccountController;
 import utils.ConsoleUtil;
 import utils.FastInput;
+import utils.TerminalUI;
 
 public class ViewAccount {
 
@@ -14,21 +15,18 @@ public class ViewAccount {
 
     public void show() {
         ConsoleUtil.clearScreen();
-        System.out.println();
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("|                          VIEW ACCOUNTS                              |");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("| [1] Student                                                         |");
-        System.out.println("| [2] Attendant                                                       |");
-        System.out.println("| [3] Maintenance Worker                                              |");
-        System.out.println("| [4] Store-in-Charge                                                 |");
-        System.out.println("| [5] Hall Office                                                     |");
-        System.out.println("| [6] Admin                                                           |");
-        System.out.println("| [7] View All Accounts                                               |");
-        System.out.println("| [0] Back                                                            |");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println();
-        System.out.print("Enter choice: ");
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+        TerminalUI.tSubDashboard("VIEW ACCOUNTS", new String[]{
+            "[1] Student",
+            "[2] Attendant",
+            "[3] Maintenance Worker",
+            "[4] Store-in-Charge",
+            "[5] Hall Office",
+            "[6] Admin",
+            "[7] View All Accounts",
+            "[0] Back"
+        });
 
         int choice = FastInput.readInt();
         if (choice == 0) return;

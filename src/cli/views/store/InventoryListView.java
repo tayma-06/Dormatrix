@@ -4,6 +4,7 @@ import controllers.store.InventoryController;
 import models.store.Item;
 import models.store.ShoppingCart;
 import utils.FastInput;
+import utils.TerminalUI;
 
 public class InventoryListView {
 
@@ -14,275 +15,211 @@ public class InventoryListView {
         this.inventoryController = new InventoryController();
     }
 
-    // Constructor with cart for shopping integration
     public InventoryListView(ShoppingCart cart) {
         this.inventoryController = new InventoryController();
         this.cart = cart;
     }
 
-    // Simple display (original functionality)
     public void show() {
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("|                           INVENTORY LIST                            |");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("INVENTORY LIST");
+        TerminalUI.tBoxSep();
         inventoryController.showInventory();
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        TerminalUI.tBoxBottom();
     }
 
-    // Enhanced display with cart integration
     public void showWithCartOptions() {
-        if (cart == null) {
-            show(); // Fall back to simple display
-            return;
-        }
+        if (cart == null) { show(); return; }
 
         while (true) {
-            System.out.println();
-            System.out.println("═══════════════════════════════════════════════════════════════════════");
-            System.out.println("|                      BROWSE STORE INVENTORY                         |");
-            System.out.println("═══════════════════════════════════════════════════════════════════════");
+            TerminalUI.tEmpty();
+            TerminalUI.tBoxTop();
+            TerminalUI.tBoxTitle("BROWSE STORE INVENTORY");
+            TerminalUI.tBoxSep();
 
-            // Show current cart summary
             if (!cart.isEmpty()) {
-                System.out.printf("  🛒 Cart: %d item(s) | Total: $%.2f\n",
-                        cart.getItemCount(), cart.getTotal());
-                System.out.println("═══════════════════════════════════════════════════════════════════════");
+                TerminalUI.tBoxLine(String.format("Cart: %d item(s) | Total: $%.2f", cart.getItemCount(), cart.getTotal()));
+                TerminalUI.tBoxSep();
             }
 
-            inventoryController.showInventory();
-
-            if (inventoryController.getItemCount() == 0) {
-                System.out.println("  No items available for purchase.");
+            Item[] items = inventoryController.getAllItems();
+            if (items.length == 0) {
+                TerminalUI.tBoxLine("No items available for purchase.");
+                TerminalUI.tBoxBottom();
                 return;
             }
+            for (Item item : items) {
+                String status = item.getQuantity() == 0 ? "[OUT]" : item.getQuantity() <= 5 ? "[LOW]" : "";
+                TerminalUI.tBoxLine(String.format("%-10s %-20s $%8.2f  Qty: %d %s",
+                        item.getItemId(), item.getName(), item.getPrice(), item.getQuantity(), status));
+            }
 
-            System.out.println("═══════════════════════════════════════════════════════════════════════");
-            System.out.println("Options:");
-            System.out.println("  [A] Quick Add to Cart");
-            System.out.println("  [V] View Item Details");
-            System.out.println("  [S] Search Items");
-            System.out.println("  [C] View Cart");
-            System.out.println("  [B] Back");
-            System.out.println("═══════════════════════════════════════════════════════════════════════");
-            System.out.println();
-            System.out.print("Enter your choice: ");
+            TerminalUI.tBoxSep();
+            TerminalUI.tBoxLine("[A] Quick Add to Cart");
+            TerminalUI.tBoxLine("[V] View Item Details");
+            TerminalUI.tBoxLine("[S] Search Items");
+            TerminalUI.tBoxLine("[C] View Cart");
+            TerminalUI.tBoxLine("[B] Back", utils.ConsoleColors.Accent.EXIT);
+            TerminalUI.tBoxBottom();
+            TerminalUI.tEmpty();
+            TerminalUI.tPrompt("Enter your choice: ");
 
             String choice = FastInput.readLine().toUpperCase();
 
             switch (choice) {
-                case "A":
-                    quickAddToCart();
-                    break;
-                case "V":
-                    viewItemDetails();
-                    break;
-                case "S":
-                    searchAndAdd();
-                    break;
-                case "C":
-                    viewCart();
-                    break;
-                case "B":
-                    return;
-                default:
-                    System.out.println("Invalid choice!");
+                case "A": quickAddToCart(); break;
+                case "V": viewItemDetails(); break;
+                case "S": searchAndAdd(); break;
+                case "C": viewCart(); break;
+                case "B": return;
+                default: TerminalUI.tError("Invalid choice!");
             }
         }
     }
 
-    // Quick add item to cart
     private void quickAddToCart() {
-        System.out.println();
-        System.out.print("Enter Item ID to add: ");
+        TerminalUI.tPrompt("Enter Item ID to add: ");
         String itemId = FastInput.readLine();
+        Item item = InventoryController.getItem(itemId);
+        if (item == null) { TerminalUI.tError("Item not found!"); return; }
+        if (item.getQuantity() <= 0) { TerminalUI.tError("Item out of stock!"); return; }
 
-        Item item = inventoryController.getItem(itemId);
-        if (item == null) {
-            System.out.println("✗ Item not found!");
-            return;
-        }
-
-        if (item.getQuantity() <= 0) {
-            System.out.println("✗ Item out of stock!");
-            return;
-        }
-
-        System.out.printf("Adding: %s - $%.2f (Available: %d)\n",
-                item.getName(), item.getPrice(), item.getQuantity());
-
-        System.out.print("Enter Quantity: ");
+        TerminalUI.tBoxLine(String.format("Adding: %s - $%.2f (Available: %d)", item.getName(), item.getPrice(), item.getQuantity()));
+        TerminalUI.tPrompt("Enter Quantity: ");
         int qty = FastInput.readInt();
-
-        if (qty <= 0) {
-            System.out.println("✗ Invalid quantity!");
-            return;
-        }
-
-        if (qty > item.getQuantity()) {
-            System.out.println("✗ Insufficient stock! Available: " + item.getQuantity());
-            return;
-        }
+        if (qty <= 0) { TerminalUI.tError("Invalid quantity!"); return; }
+        if (qty > item.getQuantity()) { TerminalUI.tError("Insufficient stock! Available: " + item.getQuantity()); return; }
 
         cart.addItem(itemId, item.getName(), qty, item.getPrice());
-        System.out.println("✓ Added to cart!");
-        System.out.printf("  Cart Total: $%.2f\n", cart.getTotal());
+        TerminalUI.tSuccess("Added to cart!");
+        TerminalUI.tBoxLine(String.format("Cart Total: $%.2f", cart.getTotal()));
     }
 
-    // View detailed item information
     private void viewItemDetails() {
-        System.out.print("\nEnter Item ID: ");
+        TerminalUI.tPrompt("Enter Item ID: ");
         String itemId = FastInput.readLine();
+        Item item = InventoryController.getItem(itemId);
+        if (item == null) { TerminalUI.tError("Item not found!"); return; }
 
-        Item item = inventoryController.getItem(itemId);
-        if (item == null) {
-            System.out.println("✗ Item not found!");
-            return;
-        }
-
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("|                          ITEM DETAILS                               |");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.printf("  Item ID:    %s\n", item.getItemId());
-        System.out.printf("  Name:       %s\n", item.getName());
-        System.out.printf("  Price:      $%.2f\n", item.getPrice());
-        System.out.printf("  Stock:      %d units\n", item.getQuantity());
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("ITEM DETAILS");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Item ID:  " + item.getItemId());
+        TerminalUI.tBoxLine("Name:     " + item.getName());
+        TerminalUI.tBoxLine(String.format("Price:    $%.2f", item.getPrice()));
+        TerminalUI.tBoxLine("Stock:    " + item.getQuantity() + " units");
+        TerminalUI.tBoxLine("Status:   " + (item.getQuantity() > 0 ? "In Stock" : "Out of Stock"));
+        TerminalUI.tBoxBottom();
 
         if (item.getQuantity() > 0) {
-            System.out.println("  Status:     ✓ In Stock");
-        } else {
-            System.out.println("  Status:     ✗ Out of Stock");
-        }
-
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-
-        if (item.getQuantity() > 0) {
-            System.out.print("\nAdd to cart? (y/n): ");
+            TerminalUI.tPrompt("Add to cart? (y/n): ");
             String confirm = FastInput.readLine();
-
             if (confirm.equalsIgnoreCase("y")) {
-                System.out.print("Enter Quantity: ");
+                TerminalUI.tPrompt("Enter Quantity: ");
                 int qty = FastInput.readInt();
-
                 if (qty > 0 && qty <= item.getQuantity()) {
                     cart.addItem(itemId, item.getName(), qty, item.getPrice());
-                    System.out.println("✓ Added to cart!");
+                    TerminalUI.tSuccess("Added to cart!");
                 } else {
-                    System.out.println("✗ Invalid quantity!");
+                    TerminalUI.tError("Invalid quantity!");
                 }
             }
         }
     }
 
-    // Search items and add to cart
     private void searchAndAdd() {
-        System.out.print("\nEnter search term: ");
+        TerminalUI.tPrompt("Enter search term: ");
         String searchTerm = FastInput.readLine();
-
         Item[] results = inventoryController.searchByName(searchTerm);
 
-        System.out.println();
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("|                         SEARCH RESULTS                              |");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("SEARCH RESULTS");
+        TerminalUI.tBoxSep();
         if (results.length == 0) {
-            System.out.println("  No items found matching '" + searchTerm + "'");
-            return;
+            TerminalUI.tBoxLine("No items found matching '" + searchTerm + "'");
+        } else {
+            for (Item item : results) {
+                TerminalUI.tBoxLine(String.format("%-10s %-20s $%8.2f  Qty: %d",
+                        item.getItemId(), item.getName(), item.getPrice(), item.getQuantity()));
+            }
+            TerminalUI.tBoxSep();
+            TerminalUI.tBoxLine("Found " + results.length + " item(s)");
         }
+        TerminalUI.tBoxBottom();
 
-        inventoryController.showItems(results);
-        System.out.printf("\nFound %d item(s)\n", results.length);
-
-        System.out.print("\nAdd item to cart? (Enter Item ID or press Enter to skip): ");
-        String itemId = FastInput.readLine();
-
-        if (!itemId.isEmpty()) {
-            Item item = inventoryController.getItem(itemId);
-            if (item != null && item.getQuantity() > 0) {
-                System.out.print("Enter Quantity: ");
-                int qty = FastInput.readInt();
-
-                if (qty > 0 && qty <= item.getQuantity()) {
-                    cart.addItem(itemId, item.getName(), qty, item.getPrice());
-                    System.out.println("✓ Added to cart!");
-                } else {
-                    System.out.println("✗ Invalid quantity!");
-                }
-            } else {
-                System.out.println("✗ Item not available!");
+        if (results.length > 0) {
+            TerminalUI.tPrompt("Add item to cart? (Enter Item ID or Enter to skip): ");
+            String itemId = FastInput.readLine();
+            if (!itemId.isEmpty()) {
+                Item item = InventoryController.getItem(itemId);
+                if (item != null && item.getQuantity() > 0) {
+                    TerminalUI.tPrompt("Enter Quantity: ");
+                    int qty = FastInput.readInt();
+                    if (qty > 0 && qty <= item.getQuantity()) {
+                        cart.addItem(itemId, item.getName(), qty, item.getPrice());
+                        TerminalUI.tSuccess("Added to cart!");
+                    } else { TerminalUI.tError("Invalid quantity!"); }
+                } else { TerminalUI.tError("Item not available!"); }
             }
         }
     }
 
-    // View current cart
     private void viewCart() {
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("|                          YOUR CART                                  |");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("YOUR CART");
+        TerminalUI.tBoxSep();
         if (cart.isEmpty()) {
-            System.out.println("  Your cart is empty.");
-            return;
+            TerminalUI.tBoxLine("Your cart is empty.");
+        } else {
+            for (models.store.CartItem item : cart.getItems()) {
+                TerminalUI.tBoxLine(item.toString());
+            }
+            TerminalUI.tBoxSep();
+            TerminalUI.tBoxLine(String.format("TOTAL: $%.2f (%d items)", cart.getTotal(), cart.getItemCount()));
         }
-
-        System.out.println("  Item ID    Item Name            Qty x Price    = Subtotal");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-
-        for (models.store.CartItem item : cart.getItems()) {
-            System.out.println("  " + item);
-        }
-
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.printf("  TOTAL: $%.2f (%d items)\n", cart.getTotal(), cart.getItemCount());
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        TerminalUI.tBoxBottom();
     }
 
-    // Display items with stock indicators
     public void showWithStockIndicators() {
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("|                   INVENTORY WITH STOCK STATUS                    |");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("INVENTORY WITH STOCK STATUS");
+        TerminalUI.tBoxSep();
 
         Item[] items = inventoryController.getAllItems();
-
         if (items.length == 0) {
-            System.out.println("  No items in inventory.");
+            TerminalUI.tBoxLine("No items in inventory.");
+            TerminalUI.tBoxBottom();
             return;
         }
 
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.printf("  %-10s %-25s %10s %10s %8s\n",
-                "Item ID", "Name", "Price", "Stock", "Status");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        TerminalUI.tBoxLine(String.format("%-10s %-20s %10s %8s %6s", "ID", "Name", "Price", "Stock", "Status"));
+        TerminalUI.tBoxSep();
 
         for (Item item : items) {
-            String status;
-            if (item.getQuantity() == 0) {
-                status = "✗ OUT";
-            } else if (item.getQuantity() <= 5) {
-                status = "⚠ LOW";
-            } else {
-                status = "✓ OK";
-            }
-
-            System.out.printf("  %-10s %-25s $%9.2f %10d %8s\n",
-                    item.getItemId(), item.getName(), item.getPrice(),
-                    item.getQuantity(), status);
+            String status = item.getQuantity() == 0 ? "OUT" : item.getQuantity() <= 5 ? "LOW" : "OK";
+            TerminalUI.tBoxLine(String.format("%-10s %-20s $%8.2f %8d %6s",
+                    item.getItemId(), item.getName(), item.getPrice(), item.getQuantity(), status));
         }
 
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        TerminalUI.tBoxBottom();
     }
 
     // Show items by category (if you want to add categories later)
     public void showByPriceRange(double min, double max) {
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.printf("|          ITEMS IN PRICE RANGE: $%.2f - $%.2f           |\n", min, max);
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle(String.format("ITEMS IN PRICE RANGE: $%.2f - $%.2f", min, max));
+        TerminalUI.tBoxSep();
         Item[] results = inventoryController.filterByPriceRange(min, max);
-        inventoryController.showItems(results);
-
-        System.out.printf("\nFound %d item(s) in this price range\n", results.length);
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        if (results.length == 0) {
+            TerminalUI.tBoxLine("No items found in this price range.");
+        } else {
+            for (Item item : results) {
+                TerminalUI.tBoxLine(String.format("%-10s %-20s $%8.2f Qty: %d",
+                        item.getItemId(), item.getName(), item.getPrice(), item.getQuantity()));
+            }
+            TerminalUI.tBoxSep();
+            TerminalUI.tBoxLine("Found " + results.length + " item(s) in this price range");
+        }
+        TerminalUI.tBoxBottom();
     }
 }

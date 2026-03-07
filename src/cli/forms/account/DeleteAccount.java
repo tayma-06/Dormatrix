@@ -4,6 +4,7 @@ import controllers.account.DeleteAccountController;
 import utils.ConsoleUtil;
 import utils.FastInput;
 import utils.InputHelper;
+import utils.TerminalUI;
 
 public class DeleteAccount {
 
@@ -15,38 +16,37 @@ public class DeleteAccount {
 
     public void show() {
         ConsoleUtil.clearScreen();
-
-        System.out.println();
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                           DELETE ACCOUNT                            ║");
-        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
-        System.out.println("║ [1] Student                                                         ║");
-        System.out.println("║ [2] Attendant                                                       ║");
-        System.out.println("║ [3] Maintenance Worker                                              ║");
-        System.out.println("║ [4] Store-in-Charge                                                 ║");
-        System.out.println("║ [5] Hall Office                                                     ║");
-        System.out.println("║ [6] Admin                                                           ║");
-        System.out.println("║ [7] Cafeteria Manager                                               ║");
-        System.out.println("║ [0] Back                                                            ║");
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-
-        System.out.println();
-        System.out.print("Enter your choice: ");
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+        TerminalUI.tSubDashboard("DELETE ACCOUNT", new String[]{
+            "[1] Student",
+            "[2] Attendant",
+            "[3] Maintenance Worker",
+            "[4] Store-in-Charge",
+            "[5] Hall Office",
+            "[6] Admin",
+            "[7] Cafeteria Manager",
+            "[0] Back"
+        });
 
         int roleChoice = FastInput.readInt();
         if (roleChoice == 0) return;
 
-        System.out.print("Enter User ID to delete: ");
+        TerminalUI.tPrompt("Enter User ID to delete: ");
         String idToDelete = FastInput.readNonEmptyLine();
 
-        System.out.println();
-        System.out.println("SECURITY WARNING: You are about to delete a user.");
-        System.out.println("Please re-enter your ADMIN credentials to confirm.");
+        TerminalUI.tEmpty();
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("SECURITY WARNING");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("You are about to delete a user.");
+        TerminalUI.tBoxLine("Please re-enter your ADMIN credentials to confirm.");
+        TerminalUI.tBoxBottom();
 
-        System.out.print("Admin Username: ");
+        TerminalUI.tPrompt("Admin Username: ");
         String adminUser = FastInput.readNonEmptyLine();
 
-        System.out.print("Admin Password: ");
+        TerminalUI.tPrompt("Admin Password: ");
         String adminPass = InputHelper.readPassword().getValue();
 
         String result = controller.deleteUserWithAdminConfirmation(
@@ -56,8 +56,11 @@ public class DeleteAccount {
                 adminPass
         );
 
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("  " + result);
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+        TerminalUI.tEmpty();
+        if (result.toLowerCase().contains("success") || result.toLowerCase().contains("deleted")) {
+            TerminalUI.tSuccess(result);
+        } else {
+            TerminalUI.tError(result);
+        }
     }
 }

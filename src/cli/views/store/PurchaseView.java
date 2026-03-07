@@ -2,9 +2,8 @@ package cli.views.store;
 
 import controllers.store.InventoryController;
 import controllers.store.PurchaseController;
-import exceptions.InsufficientInventoryException;
-
 import java.util.Scanner;
+import utils.TerminalUI;
 
 public class PurchaseView {
 
@@ -19,27 +18,29 @@ public class PurchaseView {
     }
 
     public void show() {
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("|                            PURCHASE ITEM                            |");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("PURCHASE ITEM");
+        TerminalUI.tBoxSep();
 
         inventoryController.showInventory();
 
-        System.out.print("\nEnter Student ID: ");
+        TerminalUI.tBoxBottom();
+        TerminalUI.tEmpty();
+        TerminalUI.tPrompt("Enter Student ID: ");
         String studentId = scanner.nextLine();
 
-        System.out.print("Enter Item ID: ");
+        TerminalUI.tPrompt("Enter Item ID: ");
         String itemId = scanner.nextLine();
 
-        System.out.print("Enter Quantity: ");
+        TerminalUI.tPrompt("Enter Quantity: ");
         int qty = scanner.nextInt();
         scanner.nextLine();
 
-        System.out.print("Credit purchase? (y/n): ");
+        TerminalUI.tPrompt("Credit purchase? (y/n): ");
         boolean credit = scanner.nextLine().equalsIgnoreCase("y");
 
         purchaseController.purchase(studentId, itemId, qty, credit);
-        System.out.println("Purchase successful!");
+        TerminalUI.tSuccess("Purchase successful!");
     }
 }
 

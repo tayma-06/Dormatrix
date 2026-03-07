@@ -1,10 +1,12 @@
 package cli.views.store;
 
 import controllers.store.SalesSummaryController;
-import utils.FastInput;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import utils.ConsoleUtil;
+import utils.FastInput;
+import utils.TerminalUI;
 
 public class SalesSummaryView {
     private final String SALES_FILE = "data/store/sales.txt";
@@ -17,6 +19,9 @@ public class SalesSummaryView {
 
     public void show() {
         while (true) {
+            ConsoleUtil.clearScreen();
+            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+            TerminalUI.at(2, 1);
             displayHeader();
             displayMenu();
 
@@ -38,61 +43,64 @@ public class SalesSummaryView {
                 case "0":
                     return;
                 default:
-                    System.out.println("✗ Invalid choice!");
+                    TerminalUI.tError("Invalid choice!");
             }
 
             if (!choice.equals("0")) {
-                System.out.println("\nPress Enter to continue...");
-                FastInput.readLine();
+                TerminalUI.tPause();
             }
         }
     }
 
     private void displayHeader() {
-        System.out.println();
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("|                         SALES REPORTS                               |");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("SALES REPORTS");
+        TerminalUI.tBoxSep();
     }
 
     private void displayMenu() {
-        System.out.println("\nReport Options:");
-        System.out.println("  [1] Daily Summary (Today)");
-        System.out.println("  [2] Weekly Summary (Last 7 Days)");
-        System.out.println("  [3] Monthly Summary (Last 30 Days)");
-        System.out.println("  [4] Custom Date Range");
-        System.out.println("  [0] Back");
-        System.out.print("\nEnter your choice: ");
+        TerminalUI.tBoxLine("[1] Daily Summary (Today)");
+        TerminalUI.tBoxLine("[2] Weekly Summary (Last 7 Days)");
+        TerminalUI.tBoxLine("[3] Monthly Summary (Last 30 Days)");
+        TerminalUI.tBoxLine("[4] Custom Date Range");
+        TerminalUI.tBoxLine("[0] Back", utils.ConsoleColors.Accent.EXIT);
+        TerminalUI.tBoxBottom();
+        TerminalUI.tEmpty();
+        TerminalUI.tPrompt("Enter your choice: ");
     }
 
     private void showCustomDateRange() {
-        System.out.println("\n--- Custom Date Range Report ---");
-        System.out.println("Date format: dd-MM-yyyy (e.g., 25-01-2025)");
+        TerminalUI.tEmpty();
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("CUSTOM DATE RANGE REPORT");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Date format: dd-MM-yyyy (e.g., 25-01-2025)");
+        TerminalUI.tBoxBottom();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         LocalDate startDate = null;
         LocalDate endDate = null;
 
         try {
-            System.out.print("Enter start date: ");
+            TerminalUI.tPrompt("Enter start date: ");
             String startInput = FastInput.readLine();
             startDate = LocalDate.parse(startInput, formatter);
 
-            System.out.print("Enter end date: ");
+            TerminalUI.tPrompt("Enter end date: ");
             String endInput = FastInput.readLine();
             endDate = LocalDate.parse(endInput, formatter);
 
             if (startDate.isAfter(endDate)) {
-                System.out.println("✗ Start date cannot be after end date!");
+                TerminalUI.tError("Start date cannot be after end date!");
                 return;
             }
 
             salesController.showCustomSummary(startDate, endDate);
 
         } catch (DateTimeParseException e) {
-            System.out.println("✗ Invalid date format! Please use dd-MM-yyyy");
+            TerminalUI.tError("Invalid date format! Please use dd-MM-yyyy");
         } catch (Exception e) {
-            System.out.println("✗ Error processing date range: " + e.getMessage());
+            TerminalUI.tError("Error processing date range: " + e.getMessage());
         }
     }
 }

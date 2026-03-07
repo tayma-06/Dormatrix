@@ -9,6 +9,7 @@ import models.complaints.Complaint;
 import models.room.Room;
 import utils.ConsoleUtil;
 import utils.FastInput;
+import utils.TerminalUI;
 
 public class StudentRoomDashboard implements Dashboard {
 
@@ -34,7 +35,7 @@ public class StudentRoomDashboard implements Dashboard {
             }
             if (choice == 1) {
                 if (roomNumber.equals("UNASSIGNED") || roomNumber.equals("N/A")) {
-                    System.out.println("\n>> You do not have a room assigned yet.");
+                    TerminalUI.tError("You do not have a room assigned yet.");
                 } else {
                     showComplaints(roomNumber);
                 }
@@ -46,21 +47,21 @@ public class StudentRoomDashboard implements Dashboard {
     public void showComplaints(String roomNumber) {
         MyArrayList<Complaint> list = controller.getComplaints(roomNumber);
 
-        System.out.println("╔════════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                          COMPLAINTS FOR ROOM " + roomNumber + "                       ║");
-        System.out.println("╠════════════════════╦════════════╦═════════════════╦════════════════════╣");
-        System.out.println("║ ID                 ║ Status     ║ Assigned Worker ║ Category           ║");
-        System.out.println("╠════════════════════╬════════════╬═════════════════╬════════════════════╣");
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("COMPLAINTS FOR ROOM " + roomNumber);
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("ID                 | Status     | Assigned Worker | Category");
+        TerminalUI.tBoxSep();
         if (list.size() == 0) {
-            System.out.println(String.format("║ %-18s ║ %-10s ║ %-15s ║ %-18s ║", "(none)", "(none)", "(none)", "(none)"));
+            TerminalUI.tBoxLine(String.format("%-18s | %-10s | %-15s | %-18s", "(none)", "(none)", "(none)", "(none)"));
         } else {
             for (int i = 0; i < list.size(); i++) {
                 Complaint c = list.get(i);
                 String wid = c.getAssignedWorkerId();
                 boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
 
-                System.out.println(String.format(
-                        "║ %-18s ║ %-10s ║ %-15s ║ %-18s ║",
+                TerminalUI.tBoxLine(String.format(
+                        "%-18s | %-10s | %-15s | %-18s",
                         c.getComplaintId(),
                         c.getStatus().name(),
                         (blank ? "(none)" : wid),
@@ -69,9 +70,9 @@ public class StudentRoomDashboard implements Dashboard {
             }
         }
 
-        System.out.println("╠════════════════════╩════════════╩═════════════════╩════════════════════╣");
-        System.out.println("║ Press Enter to continue...                                             ║");
-        System.out.println("╚════════════════════════════════════════════════════════════════════════╝");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Press Enter to continue...");
+        TerminalUI.tBoxBottom();
 
         FastInput.readLine();
     }

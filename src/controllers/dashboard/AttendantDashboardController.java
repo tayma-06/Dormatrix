@@ -1,32 +1,15 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
-import cli.dashboard.room.StudentRoomDashboard;
 import cli.routine.AttendantRoutineCLI;
 import cli.views.LostFoundView;
-import controllers.dashboard.room.StudentRoomDashboardController;
-import controllers.room.RoomService;
-import module.complaint.ComplaintModule;
-import repo.file.FileComplaintRepository;
-import repo.file.FileMaintenanceWorkerRepository;
 import libraries.collections.MyArrayList;
 import libraries.collections.MyString;
 import models.complaints.Complaint;
-import controllers.room.RoomController;
-
-
-import java.util.Scanner;
+import utils.TerminalUI;
 
 public class AttendantDashboardController {
     private final MainDashboard mainDashboard = new MainDashboard();
-
-    // complaint system
-    private final ComplaintModule complaints =
-            new ComplaintModule(new FileComplaintRepository(), new FileMaintenanceWorkerRepository());
-
-    private final RoomController roomController = new RoomController();
-
-    private final Scanner sc = new Scanner(System.in);
 
     public void handleInput(int choice, String username){
         switch (choice)
@@ -36,7 +19,7 @@ public class AttendantDashboardController {
 //                complaintsMenu();
 //                break;
             case 2:
-                System.out.println("Handling Worker Schedule...");
+                TerminalUI.tPrint("Handling Worker Schedule...");
                 break;
             // Inside your handleInput(int choice, String username) method:
 
@@ -52,31 +35,35 @@ public class AttendantDashboardController {
                 mainDashboard.show();
                 break;
             default:
-                System.out.println("Invalid choice. Please try again.");
+                TerminalUI.tError("Invalid choice. Please try again.");
         }
     }
 
     private void printList(MyArrayList<Complaint> list){
         if (list.size() == 0){
-            System.out.println("\n(No complaints found)\n");
+            TerminalUI.tEmpty();
+            TerminalUI.tPrint("(No complaints found)");
+            TerminalUI.tEmpty();
             return;
         }
 
-        System.out.println("\n------------------ LIST ------------------");
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("LIST");
+        TerminalUI.tBoxSep();
         for (int i = 0; i < list.size(); i++){
             Complaint c = list.get(i);
             String wid = c.getAssignedWorkerId();
             boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
-            System.out.println(
+            TerminalUI.tBoxLine(
                     "ID: " + c.getComplaintId()
                             + " | Student: " + c.getStudentId()
                             + " | Room: " + c.getStudentRoomNo()
                             + " | Cat: " + c.getCategory().name()
                             + " | Status: " + c.getStatus().name()
                             + " | Worker: " + (blank ? "(none)" : wid)
-                            + " | Priority: " + c.getPriority().name()
-            );
+                            + " | Priority: " + c.getPriority().name());
         }
-        System.out.println("------------------------------------------\n");
+        TerminalUI.tBoxBottom();
+        TerminalUI.tEmpty();
     }
 }

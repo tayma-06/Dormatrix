@@ -6,12 +6,8 @@ import controllers.dashboard.room.StudentRoomDashboardController;
 import models.room.Room;
 import java.io.*;
 import java.util.*;
-
-import repo.file.FileComplaintRepository;
-import libraries.collections.MyArrayList;
-import libraries.collections.MyString;
-import models.complaints.Complaint;
 import utils.ConsoleUtil;
+import utils.TerminalUI;
 
 public class RoomController {
 
@@ -19,12 +15,10 @@ public class RoomController {
     private final String STUDENT_FILE = "data/users/students.txt";
     private final StudentRoomView studentRoomView;
     private List<Room> rooms;
-    private final FileComplaintRepository complaintRepo;
 
     public RoomController() {
         this.rooms = loadRooms();
         this.studentRoomView = new StudentRoomView();
-        this.complaintRepo = new FileComplaintRepository();
     }
 
     public List<Room> getAllRooms() {
@@ -57,7 +51,7 @@ public class RoomController {
 
             if (choice == 1) {
                 if (roomNumber.equals("UNASSIGNED") || roomNumber.equals("N/A")) {
-                    System.out.println("\n>> You do not have a room assigned yet.");
+                    TerminalUI.tError("You do not have a room assigned yet.");
                 } else {
                     new StudentRoomDashboard(new StudentRoomDashboardController(new RoomService())).showComplaints(roomNumber);
                 }
@@ -72,31 +66,35 @@ public class RoomController {
     public boolean addRoom(String roomId, int capacity) {
         for (Room r : rooms) {
             if (r.getRoomId().equals(roomId)) {
-                System.out.println("Error: Room " + roomId + " already exists.");
+                TerminalUI.tError("Room " + roomId + " already exists.");
                 return false;
             }
         }
         Room newRoom = new Room(roomId, capacity, 0);
         rooms.add(newRoom);
         saveRooms();
-        System.out.println("Success: Room " + roomId + " added.");
+        TerminalUI.tSuccess("Room " + roomId + " added.");
         return true;
     }
 
     public void showAvailableRooms() {
         this.rooms = loadRooms();
 
-        System.out.println("\n--- Available Rooms ---");
+        TerminalUI.tEmpty();
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("AVAILABLE ROOMS");
+        TerminalUI.tBoxSep();
         boolean found = false;
         for (Room r : rooms) {
             if (r.isAvailable()) {
-                System.out.println(r);
+                TerminalUI.tBoxLine(r.toString());
                 found = true;
             }
         }
         if (!found) {
-            System.out.println("No rooms available.");
+            TerminalUI.tBoxLine("No rooms available.");
         }
+        TerminalUI.tBoxBottom();
     }
 
     public boolean allocateRoom(String roomId) {
@@ -107,12 +105,12 @@ public class RoomController {
                     saveRooms();
                     return true;
                 } else {
-                    System.out.println("Error: Room " + roomId + " is full.");
+                    TerminalUI.tError("Room " + roomId + " is full.");
                     return false;
                 }
             }
         }
-        System.out.println("Error: Room ID not found.");
+        TerminalUI.tError("Room ID not found.");
         return false;
     }
 
@@ -178,7 +176,7 @@ public class RoomController {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            TerminalUI.tError("Failed to read student room assignments.");
         }
         return "UNASSIGNED";
     }
@@ -207,7 +205,7 @@ public class RoomController {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            TerminalUI.tError("Failed to count room occupancy.");
         }
 
         return count;
@@ -219,7 +217,7 @@ public class RoomController {
                 pw.println(r.toFileString());
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            TerminalUI.tError("Failed to save room data.");
         }
     }
 
@@ -238,7 +236,7 @@ public class RoomController {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            TerminalUI.tError("Failed to load rooms.");
         }
         return list;
     }

@@ -6,6 +6,7 @@ import models.food.DailyMenu;
 import models.food.MealType;
 import utils.ConsoleUtil;
 import utils.FastInput;
+import utils.TerminalUI;
 import utils.TimeManager;
 
 public class CafeteriaService {
@@ -16,23 +17,17 @@ public class CafeteriaService {
     public void showWeeklyMenuUI() {
         while (true) {
             ConsoleUtil.clearScreen();
+            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+            TerminalUI.at(2, 1);
+
             List<DailyMenu> currentMenu = menuController.getWeeklyMenuData();
             renderWeeklyBoxes(currentMenu);
 
-            System.out.println();
-            System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-            System.out.println("║                          SELECT DAY TO EDIT                         ║");
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
-            System.out.println("║ [1] Monday                                                          ║");
-            System.out.println("║ [2] Tuesday                                                         ║");
-            System.out.println("║ [3] Wednesday                                                       ║");
-            System.out.println("║ [4] Thursday                                                        ║");
-            System.out.println("║ [5] Friday                                                          ║");
-            System.out.println("║ [6] Saturday                                                        ║");
-            System.out.println("║ [7] Sunday                                                          ║");
-            System.out.println("║ [0] Back                                                            ║");
-            System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-            System.out.print("Choice: ");
+            TerminalUI.tEmpty();
+            TerminalUI.tSubDashboard("SELECT DAY TO EDIT", new String[]{
+                "[1] Monday", "[2] Tuesday", "[3] Wednesday", "[4] Thursday",
+                "[5] Friday", "[6] Saturday", "[7] Sunday", "[0] Back"
+            });
             int choice = FastInput.readInt();
 
             if (choice == 0) {
@@ -48,78 +43,69 @@ public class CafeteriaService {
 
     private void renderWeeklyBoxes(List<DailyMenu> currentMenu) {
         boolean isRamadan = TimeManager.isRamadanMode();
-        System.out.println();
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                         WEEKLY MENU PREVIEW                         ║");
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("WEEKLY MENU PREVIEW");
+        TerminalUI.tBoxBottom();
 
         for (int i = 0; i < days.length; i++) {
             String day = days[i];
 
-            System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-            System.out.println("║ [" + (i + 1) + "] MENU FOR: " + String.format("%-54s", day) + "║");
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            TerminalUI.tBoxTop();
+            TerminalUI.tBoxLine("[" + (i + 1) + "] MENU FOR: " + day);
+            TerminalUI.tBoxSep();
 
             if (isRamadan) {
                 printWrappedMenu("Suhoor", extractMenuText(currentMenu, day, MealType.SUHOOR));
-                System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+                TerminalUI.tBoxSep();
                 printWrappedMenu("Iftar", extractMenuText(currentMenu, day, MealType.IFTAR));
-                System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+                TerminalUI.tBoxSep();
                 printWrappedMenu("Dinner", extractMenuText(currentMenu, day, MealType.DINNER));
             } else {
                 printWrappedMenu("Breakfast", extractMenuText(currentMenu, day, MealType.BREAKFAST));
-                System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+                TerminalUI.tBoxSep();
                 printWrappedMenu("Lunch", extractMenuText(currentMenu, day, MealType.LUNCH));
-                System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+                TerminalUI.tBoxSep();
                 printWrappedMenu("Dinner", extractMenuText(currentMenu, day, MealType.DINNER));
             }
-            System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+            TerminalUI.tBoxBottom();
         }
     }
 
     private void promptDayEdit(String day, List<DailyMenu> currentMenu) {
         ConsoleUtil.clearScreen();
-        System.out.println();
-
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║ SETTINGS FOR: " + String.format("%-54s", day) + "║");
-        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
 
         boolean isRamadan = TimeManager.isRamadanMode();
 
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("SETTINGS FOR: " + day);
+        TerminalUI.tBoxSep();
+
         if (isRamadan) {
             printWrappedMenu("Suhoor", extractMenuText(currentMenu, day, MealType.SUHOOR));
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            TerminalUI.tBoxSep();
             printWrappedMenu("Iftar", extractMenuText(currentMenu, day, MealType.IFTAR));
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            TerminalUI.tBoxSep();
             printWrappedMenu("Dinner", extractMenuText(currentMenu, day, MealType.DINNER));
         } else {
             printWrappedMenu("Breakfast", extractMenuText(currentMenu, day, MealType.BREAKFAST));
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            TerminalUI.tBoxSep();
             printWrappedMenu("Lunch", extractMenuText(currentMenu, day, MealType.LUNCH));
-            System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+            TerminalUI.tBoxSep();
             printWrappedMenu("Dinner", extractMenuText(currentMenu, day, MealType.DINNER));
         }
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+        TerminalUI.tBoxBottom();
 
-        System.out.println();
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                         SELECT MEAL TO EDIT                         ║");
-        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+        TerminalUI.tEmpty();
+        String[] mealItems;
         if (isRamadan) {
-            System.out.println("║ [1] Suhoor                                                          ║");
-            System.out.println("║ [2] Iftar                                                           ║");
-            System.out.println("║ [3] Dinner                                                          ║");
-            System.out.println("║ [0] Cancel                                                          ║");
+            mealItems = new String[]{"[1] Suhoor", "[2] Iftar", "[3] Dinner", "[0] Cancel"};
         } else {
-            System.out.println("║ [1] Breakfast                                                       ║");
-            System.out.println("║ [2] Lunch                                                           ║");
-            System.out.println("║ [3] Dinner                                                          ║");
-            System.out.println("║ [0] Cancel                                                          ║");
+            mealItems = new String[]{"[1] Breakfast", "[2] Lunch", "[3] Dinner", "[0] Cancel"};
         }
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-        System.out.println();
-        System.out.print("Choice: ");
+        TerminalUI.tSubDashboard("SELECT MEAL TO EDIT", mealItems);
         int mealChoice = FastInput.readInt();
 
         if (mealChoice == 0) {
@@ -152,27 +138,25 @@ public class CafeteriaService {
         }
 
         if (type != null) {
-            System.out.print("Enter new items: ");
+            TerminalUI.tPrompt("Enter new items: ");
             String items = FastInput.readNonEmptyLine();
 
             String result = menuController.processSingleMealUpdate(day, type, items);
-            System.out.println("\n" + result);
-
-            System.out.print("Press Enter to continue...");
-            FastInput.readLine();
+            TerminalUI.tEmpty();
+            TerminalUI.tSuccess(result);
+            TerminalUI.tPause();
         } else {
-            System.out.println("Invalid selection.");
-            System.out.print("Press Enter to continue...");
-            FastInput.readLine();
+            TerminalUI.tError("Invalid selection.");
+            TerminalUI.tPause();
         }
     }
 
     private void printWrappedMenu(String mealName, String menuItems) {
-        String prefix = String.format("%-11s ", mealName + ":");
-        int maxLineLength = 67 - prefix.length();
+        String prefix = mealName + ": ";
+        int maxLen = 55;
 
         if (menuItems == null || menuItems.isEmpty() || menuItems.equals("---")) {
-            System.out.printf("║ %-67s ║%n", prefix + "(Not set)");
+            TerminalUI.tBoxLine(prefix + "(Not set)");
             return;
         }
 
@@ -181,9 +165,9 @@ public class CafeteriaService {
         boolean firstLine = true;
 
         for (String word : words) {
-            if (currentLine.length() + word.length() + (currentLine.length() > 0 ? 1 : 0) > maxLineLength) {
-                String linePrefix = firstLine ? prefix : String.format("%" + prefix.length() + "s", "");
-                System.out.printf("║ %-67s ║%n", linePrefix + currentLine.toString());
+            if (currentLine.length() + word.length() + (currentLine.length() > 0 ? 1 : 0) > maxLen) {
+                String linePrefix = firstLine ? prefix : " ".repeat(prefix.length());
+                TerminalUI.tBoxLine(linePrefix + currentLine.toString());
                 currentLine = new StringBuilder(word);
                 firstLine = false;
             } else {
@@ -194,42 +178,36 @@ public class CafeteriaService {
             }
         }
         if (currentLine.length() > 0 || firstLine) {
-            String linePrefix = firstLine ? prefix : String.format("%" + prefix.length() + "s", "");
-            System.out.printf("║ %-67s ║%n", linePrefix + currentLine.toString());
+            String linePrefix = firstLine ? prefix : " ".repeat(prefix.length());
+            TerminalUI.tBoxLine(linePrefix + currentLine.toString());
         }
     }
 
     public void showSpecialEventUI() {
-        System.out.println();
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                       SCHEDULE SPECIAL EVENT                        ║");
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-        System.out.print(" Enter Date (YYYY-MM-DD): ");
+        TerminalUI.tEmpty();
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("SCHEDULE SPECIAL EVENT");
+        TerminalUI.tBoxBottom();
+        TerminalUI.tPrompt("Enter Date (YYYY-MM-DD): ");
         String dateStr = FastInput.readNonEmptyLine();
 
-        System.out.println();
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                         SELECT MEAL TYPE                            ║");
-        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
-        System.out.println("║ [1] Lunch                                                           ║");
-        System.out.println("║ [2] Dinner                                                          ║");
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-        System.out.print(" Choice: ");
+        TerminalUI.tEmpty();
+        TerminalUI.tSubDashboard("SELECT MEAL TYPE", new String[]{
+            "[1] Lunch", "[2] Dinner"
+        });
         int typeChoice = FastInput.readInt();
 
-        System.out.println();
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                      ENTER SPECIAL MENU ITEMS                       ║");
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-        System.out.print(" Items: ");
+        TerminalUI.tEmpty();
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("ENTER SPECIAL MENU ITEMS");
+        TerminalUI.tBoxBottom();
+        TerminalUI.tPrompt("Items: ");
         String items = FastInput.readNonEmptyLine();
 
-        System.out.println();
-        System.out.println("=======================================================================");
+        TerminalUI.tEmpty();
         String result = menuController.processSpecialEvent(dateStr, typeChoice, items);
-        System.out.println(" " + result);
-        System.out.println("=======================================================================");
-        FastInput.readLine();
+        TerminalUI.tSuccess(result);
+        TerminalUI.tPause();
     }
 
     private String extractMenuText(List<DailyMenu> menu, String day, MealType type) {

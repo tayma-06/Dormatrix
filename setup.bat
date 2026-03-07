@@ -7,6 +7,7 @@ for /F "delims=" %%A in ('echo prompt $E^| cmd') do set "ESC=%%A"
 set "ROOT=%~dp0"
 set "SRC_DIR=%ROOT%src"
 set "OUT_DIR=%ROOT%out"
+set "LIB_DIR=%ROOT%lib"
 set "MAIN_CLASS=Dormatrix"
 
 REM ========== CHECK JDK ==========
@@ -26,7 +27,10 @@ REM ========== COMPILE ==========
 echo.
 echo Compiling...
 dir /s /b "%SRC_DIR%\*.java" > "%OUT_DIR%\sources.txt"
-javac -encoding UTF-8 -d "%OUT_DIR%" -sourcepath "%SRC_DIR%" @"%OUT_DIR%\sources.txt"
+
+REM -- Updated javac to include the lib folder in the classpath --
+javac -encoding UTF-8 -d "%OUT_DIR%" -sourcepath "%SRC_DIR%" -cp "%LIB_DIR%\*" @"%OUT_DIR%\sources.txt"
+
 if errorlevel 1 (
     echo.
     echo [ERROR] Compilation failed! Check the source code for errors.
@@ -35,10 +39,15 @@ if errorlevel 1 (
     exit /b 1
 )
 del "%OUT_DIR%\sources.txt" 2>nul
+
+REM ========== COPY RESOURCES ==========
+copy "%SRC_DIR%\themes.json" "%OUT_DIR%\" >nul 2>&1
+
 echo Compilation successful.
 
 REM ========== RUN ==========
-java -cp "%OUT_DIR%" %MAIN_CLASS%
+REM -- Updated java command to include both out and lib folders --
+java -cp "%OUT_DIR%;%LIB_DIR%\*" %MAIN_CLASS%
 
 >nul echo %ESC%[0m%ESC%[?25h
 echo.

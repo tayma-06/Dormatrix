@@ -3,6 +3,7 @@ package cli.views.complaint;
 import libraries.collections.MyArrayList;
 import libraries.collections.MyString;
 import models.complaints.Complaint;
+import utils.TerminalUI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,212 +11,185 @@ import java.util.List;
 public class ComplaintView {
 
     public void studentMenu() {
-        System.out.println();
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("║                      COMPLAINT(STUDENT)                             ║");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("1. File a Complaint");
-        System.out.println("2. View My Complaints");
-//        System.out.println("3. Track Complaint by ID");
-        System.out.println("0. Back");
-        System.out.print("Enter choice: ");
+        TerminalUI.tSubDashboard("COMPLAINT (STUDENT)", new String[]{
+            "[1] File a Complaint",
+            "[2] View My Complaints",
+            "[0] Back"
+        });
     }
 
     public void attendantMenu() {
-        System.out.println();
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("║                      COMPLAINT(ATTENDANT)                           ║");
-        System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("1. View ALL complaints");
-        System.out.println("2. View PENDING");
-        System.out.println("3. Reassign complaint (manual worker id)");
-        System.out.println("4. Resolve complaint");
-        System.out.println("5. View complaints by ROOM");
-        System.out.println("6. View complaints by COMPLAINT ID");
-        System.out.println("0. Back");
-        System.out.print("Enter choice: ");
+        TerminalUI.tSubDashboard("COMPLAINT (ATTENDANT)", new String[]{
+            "[1] View ALL complaints",
+            "[2] View PENDING",
+            "[3] Reassign complaint (manual worker id)",
+            "[4] Resolve complaint",
+            "[5] View complaints by ROOM",
+            "[6] View complaints by COMPLAINT ID",
+            "[0] Back"
+        });
     }
 
     public void workerMenu() {
-        System.out.println();
-        System.out.println("════════════════════════════════════════════════════════════════════════");
-        System.out.println("║                       TASK RELEVANT OPTIONS                          ║");
-        System.out.println("════════════════════════════════════════════════════════════════════════");
-        System.out.println("1. Update Progress");
-//        System.out.println("3. Mark Completed");
-        System.out.println("0. Back");
-        System.out.println();
-        System.out.print("Enter choice: ");
+        TerminalUI.tSubDashboard("TASK RELEVANT OPTIONS", new String[]{
+            "[1] Update Progress",
+            "[0] Back"
+        });
     }
 
     public void msg(String s) {
-        System.out.println(s);
+        TerminalUI.tPrint(s);
     }
 
     public void error(String s) {
-        System.out.println("Error: " + s);
+        TerminalUI.tError(s);
     }
 
     public void filed(Complaint c) {
-        System.out.println("\nComplaint Filed Successfully!");
-        System.out.println("Complaint ID : " + c.getComplaintId());
-        System.out.println("Status       : " + c.getStatus().name());
         String wid = c.getAssignedWorkerId();
         boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
-        System.out.println("Assigned To  : " + (blank ? "(not assigned yet)" : wid));
-        System.out.println();
+        TerminalUI.tEmpty();
+        TerminalUI.tSuccess("Complaint Filed Successfully!");
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxLine("Complaint ID : " + c.getComplaintId());
+        TerminalUI.tBoxLine("Status       : " + c.getStatus().name());
+        TerminalUI.tBoxLine("Assigned To  : " + (blank ? "(not assigned yet)" : wid));
+        TerminalUI.tBoxBottom();
+        TerminalUI.tEmpty();
     }
 
     public void studentList(MyArrayList<Complaint> list) {
         if (list == null || list.size() == 0) {
-            System.out.println("\n(No complaints found)\n");
+            TerminalUI.tEmpty();
+            TerminalUI.tPrint("(No complaints found)");
+            TerminalUI.tEmpty();
             return;
         }
 
-        System.out.println("╔═════════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                          YOUR COMPLAINTS                                ║");
-        System.out.println("╠═════════════════════════════════════════════════════════════════════════╣");
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("YOUR COMPLAINTS");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Total Complaints: " + list.size());
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("ID                  | STATUS     | CATEGORY        | WORKER");
+        TerminalUI.tBoxSep();
 
-        System.out.println(String.format("║ %-71s ║", "Total Complaints: " + list.size()));
-        System.out.println("╠═════════════════════╦════════════╦═════════════════╦════════════════════╣");
-
-        if (list.size() == 0) {
-            System.out.println(String.format("║ %-67s ║", "No complaints found. Please file a complaint."));
-        } else {
-            // Column Headers
-            System.out.println("║ COMPLAINT ID        ║ STATUS     ║ CATEGORY        ║ ASSIGNED WORKER    ║");
-            System.out.println("╠═════════════════════╬════════════╬═════════════════╬════════════════════╣");
-
-            for (int i = 0; i < list.size(); i++) {
-                Complaint c = list.get(i);
-                String wid = c.getAssignedWorkerId();
-                boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
-
-                System.out.println(String.format(
-                        "║ %-19s ║ %-10s ║ %-15s ║ %-18s ║",
-                        c.getComplaintId(),
-                        c.getStatus().name(),
-                        c.getCategory().name(),
-                        (blank ? "(none)" : wid)
-                ));
-            }
+        for (int i = 0; i < list.size(); i++) {
+            Complaint c = list.get(i);
+            String wid = c.getAssignedWorkerId();
+            boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
+            TerminalUI.tBoxLine(String.format("%-19s | %-10s | %-15s | %s",
+                    c.getComplaintId(), c.getStatus().name(),
+                    c.getCategory().name(), (blank ? "(none)" : wid)));
         }
 
-        System.out.println("╠═════════════════════╩════════════╩═════════════════╩════════════════════╣");
-        System.out.println("║ Press Enter to continue...                                              ║");
-        System.out.println("╚═════════════════════════════════════════════════════════════════════════╝");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Press Enter to continue...");
+        TerminalUI.tBoxBottom();
     }
 
     public void attendantList(MyArrayList<Complaint> list) {
         if (list == null || list.size() == 0) {
-            System.out.println("\n(No complaints found)\n");
+            TerminalUI.tEmpty();
+            TerminalUI.tPrint("(No complaints found)");
+            TerminalUI.tEmpty();
             return;
         }
 
-        int descriptionMaxLength = 59;
+        int descriptionMaxLength = 50;
 
-        System.out.println("════════════════════════════════════════════════════════════════════════════");
-        System.out.println("║                                 LIST                                     ║");
-        System.out.println("════════════════════════════════════════════════════════════════════════════");
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("COMPLAINT LIST");
+        TerminalUI.tBoxSep();
+
         for (int i = 0; i < list.size(); i++) {
             Complaint c = list.get(i);
             String wid = c.getAssignedWorkerId();
             boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
 
-            // Start the double line for each complaint
-            System.out.println("╠══════════════════════════════════════════════════════════════════════════╣");
+            if (i > 0) {
+                TerminalUI.tBoxSep();
+            }
 
-            System.out.println(String.format("║ Complaint ID: %-58s ║", c.getComplaintId()));
-            System.out.println(String.format("║ Student ID  : %-58s ║", c.getStudentId()));
-            System.out.println(String.format("║ Room No     : %-58s ║", c.getStudentRoomNo()));
-            System.out.println(String.format("║ Status      : %-58s ║", c.getStatus().name()));
-            System.out.println(String.format("║ Priority    : %-58s ║", c.getPriority().name()));
-            System.out.println(String.format("║ Category    : %-58s ║", c.getCategory().name()));
-            System.out.println(String.format("║ Assigned Worker: %-55s ║", (blank ? "(none)" : wid)));
-            // Wrap the description into lines of max length
+            TerminalUI.tBoxLine("Complaint ID: " + c.getComplaintId());
+            TerminalUI.tBoxLine("Student ID  : " + c.getStudentId());
+            TerminalUI.tBoxLine("Room No     : " + c.getStudentRoomNo());
+            TerminalUI.tBoxLine("Status      : " + c.getStatus().name());
+            TerminalUI.tBoxLine("Priority    : " + c.getPriority().name());
+            TerminalUI.tBoxLine("Category    : " + c.getCategory().name());
+            TerminalUI.tBoxLine("Worker      : " + (blank ? "(none)" : wid));
+
             String description = c.getDescription();
             if (description != null && !description.isEmpty()) {
-                // Split the description into multiple lines
                 String[] descriptionLines = wrapText(description, descriptionMaxLength);
                 for (int t = 0; t < descriptionLines.length; t++) {
                     if (t == 0) {
-                        System.out.println(String.format("║ Description: %-59s ║", descriptionLines[t])); 
-                    }else {
-                        System.out.println(String.format("║            : %-59s ║", descriptionLines[t])); // aligned continuation
-
-                                    }}
+                        TerminalUI.tBoxLine("Description : " + descriptionLines[t]);
+                    } else {
+                        TerminalUI.tBoxLine("            : " + descriptionLines[t]);
+                    }
+                }
             } else {
-                System.out.println("║ Description: (no description)                               ║");
+                TerminalUI.tBoxLine("Description : (no description)");
             }
 
-            // ---------------- TAGS ----------------
             String tagsRaw = c.getTags();
             if (tagsRaw != null) {
                 tagsRaw = tagsRaw.trim();
             }
-
             if (tagsRaw == null || tagsRaw.isEmpty()) {
-                System.out.println(String.format("║ Tags       : %-59s ║", "(none)"));
+                TerminalUI.tBoxLine("Tags        : (none)");
             } else {
-                // supports both comma + semicolon in stored tags, but prints using ';'
-                String[] tagLines = wrapTags(tagsRaw, 59);
-
+                String[] tagLines = wrapTags(tagsRaw, 50);
                 for (int t = 0; t < tagLines.length; t++) {
                     if (t == 0) {
-                        System.out.println(String.format("║ Tags       : %-59s ║", tagLines[t])); 
-                    }else {
-                        System.out.println(String.format("║            : %-59s ║", tagLines[t])); // aligned continuation
-
-                                    }}
+                        TerminalUI.tBoxLine("Tags        : " + tagLines[t]);
+                    } else {
+                        TerminalUI.tBoxLine("            : " + tagLines[t]);
+                    }
+                }
             }
-
-            // End the double line for each complaint
-            System.out.println("╚══════════════════════════════════════════════════════════════════════════╝");
         }
+        TerminalUI.tBoxBottom();
     }
 
     public void workerList(MyArrayList<Complaint> list) {
         if (list == null || list.size() == 0) {
-            System.out.println("\n(No complaints found)\n");
+            TerminalUI.tEmpty();
+            TerminalUI.tPrint("(No complaints found)");
+            TerminalUI.tEmpty();
             return;
         }
 
-        int descriptionMaxLength = 59;
+        int descriptionMaxLength = 50;
 
-        System.out.println("════════════════════════════════════════════════════════════════════════════");
-        System.out.println("║                                 LIST                                     ║");
-        System.out.println("════════════════════════════════════════════════════════════════════════════");
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("TASK LIST");
+        TerminalUI.tBoxSep();
 
         for (int i = 0; i < list.size(); i++) {
-            Complaint c = list.get(i);  // Access complaint at index i
-            String wid = c.getAssignedWorkerId();
-            boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
+            Complaint c = list.get(i);
 
-            // Start the double line for each complaint
-            System.out.println("╠══════════════════════════════════════════════════════════════════════════╣");
-
-            // Display Complaint details (excluding student ID)
-            System.out.println(String.format("║ Complaint ID: %-58s ║", c.getComplaintId()));
-            System.out.println(String.format("║ Room No     : %-58s ║", c.getStudentRoomNo()));
-            System.out.println(String.format("║ Status      : %-58s ║", c.getStatus().name()));
-            System.out.println(String.format("║ Priority    : %-58s ║", c.getPriority().name()));
-//            System.out.println(String.format("║ Assigned Worker: %-55s ║", (blank ? "(none)" : wid)));
-
-            // Wrap the description into lines of max length
-            String description = c.getDescription();
-            if (description != null && !description.isEmpty()) {
-                // Split the description into multiple lines
-                String[] descriptionLines = wrapText(description, descriptionMaxLength);
-                for (String line : descriptionLines) {
-                    System.out.println(String.format("║ Description : %-58s ║", line));
-                }
-            } else {
-                System.out.println("║ Description: (no description)                               ║");
+            if (i > 0) {
+                TerminalUI.tBoxSep();
             }
 
-            // End the double line for each complaint
-            System.out.println("╚══════════════════════════════════════════════════════════════════════════╝");
+            TerminalUI.tBoxLine("Complaint ID: " + c.getComplaintId());
+            TerminalUI.tBoxLine("Room No     : " + c.getStudentRoomNo());
+            TerminalUI.tBoxLine("Status      : " + c.getStatus().name());
+            TerminalUI.tBoxLine("Priority    : " + c.getPriority().name());
+
+            String description = c.getDescription();
+            if (description != null && !description.isEmpty()) {
+                String[] descriptionLines = wrapText(description, descriptionMaxLength);
+                for (String line : descriptionLines) {
+                    TerminalUI.tBoxLine("Description : " + line);
+                }
+            } else {
+                TerminalUI.tBoxLine("Description : (no description)");
+            }
         }
+        TerminalUI.tBoxBottom();
     }
 
     // Helper method to split text into lines of a certain maximum length

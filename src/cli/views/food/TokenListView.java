@@ -3,6 +3,7 @@ package cli.views.food;
 import controllers.food.CafeteriaController;
 import models.food.MealToken;
 import utils.FastInput;
+import utils.TerminalUI;
 
 import java.util.List;
 
@@ -13,22 +14,21 @@ public class TokenListView {
     public void show(String username) {
         List<MealToken> tokens = controller.getStudentTokens(username);
 
-        System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                         YOUR MEAL TOKENS                            ║");
-        System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
-
-        System.out.println(String.format("║ %-67s ║", "Total Tokens: " + tokens.size()));
-        System.out.println("╠════════════════════╦════════════╦════════════╦══════════════════════╣");
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("YOUR MEAL TOKENS");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Total Tokens: " + tokens.size());
+        TerminalUI.tBoxSep();
 
         if (tokens.isEmpty()) {
-            System.out.println(String.format("║ %-67s ║", "No tokens found. Go buy some delicious food!   "));
+            TerminalUI.tBoxLine("No tokens found. Go buy some delicious food!");
         } else {
-            System.out.println("║ TOKEN ID           ║ MEAL       ║ DATE       ║ STATUS               ║");
-            System.out.println("╠════════════════════╬════════════╬════════════╬══════════════════════╣");
+            TerminalUI.tBoxLine("TOKEN ID           | MEAL       | DATE       | STATUS");
+            TerminalUI.tBoxSep();
 
             for (MealToken t : tokens) {
-                System.out.println(String.format(
-                        "║ %-18s ║ %-10s ║ %-10s ║ %-20s ║",
+                TerminalUI.tBoxLine(String.format(
+                        "%-18s | %-10s | %-10s | %-20s",
                         t.getTokenId(),
                         t.getType(),
                         t.getDate(),
@@ -37,10 +37,9 @@ public class TokenListView {
             }
         }
 
-        System.out.println("╠════════════════════╩════════════╩════════════╩══════════════════════╣");
-        System.out.println("║ Press Enter to continue...                                          ║");
-        System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Press Enter to continue...");
+        TerminalUI.tBoxBottom();
         FastInput.readLine();
     }
 }

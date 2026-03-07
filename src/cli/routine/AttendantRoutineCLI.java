@@ -1,63 +1,58 @@
 package cli.routine;
 
 import controllers.routine.RoutineController;
-import utils.BackgroundFiller;
-import utils.ConsoleUtil;
-
-import java.util.Scanner;
+import utils.*;
+import static utils.TerminalUI.*;
 
 public class AttendantRoutineCLI {
+
     private final RoutineController controller = new RoutineController();
-    private final Scanner sc = new Scanner(System.in);
+
+    private static final MenuItem[] MENU = {
+        new MenuItem(1, "View masked student routine"),
+        new MenuItem(0, "Back"),};
 
     public void show() {
         while (true) {
-            ConsoleUtil.clearScreen();
-            BackgroundFiller.applyAttendantTheme();
-
-            System.out.println();
-            System.out.println("╔═════════════════════ STUDENT ROUTINE VIEW (MASKED) ═════════════════════╗");
-            System.out.println("[1] View masked student routine");
-            System.out.println("[0] Back");
-            System.out.print("Enter choice: ");
-
-            int choice = readInt();
-            if (choice == 0) return;
-
-            if (choice == 1) {
-                System.out.print("Enter student ID/username: ");
-                String studentId = readText();
-                System.out.println();
-                controller.printMaskedRoutine(studentId);
-                pause();
-            } else {
-                System.out.println("Invalid choice.");
-                pause();
-            }
-        }
-    }
-
-    private int readInt() {
-        while (true) {
-            String line = sc.nextLine().trim();
-            if (line.isEmpty()) continue;
             try {
-                return Integer.parseInt(line);
+                ConsoleUtil.clearScreen();
+                BackgroundFiller.applyAttendantTheme();
+                System.out.print(HIDE_CUR);
+
+                int menuStartRow = 3;
+                int promptRow = drawDashboard(
+                        "STUDENT ROUTINE VIEW (MASKED)",
+                        "Attendant Access",
+                        MENU,
+                        TerminalUI.getActiveTextColor(),
+                        TerminalUI.getActiveBoxColor(),
+                        null,
+                        menuStartRow
+                );
+
+                System.out.print(SHOW_CUR);
+                int choice = FastInput.readInt();
+                System.out.print(RESET);
+
+                if (choice == 0) {
+                    return;
+                }
+
+                if (choice == 1) {
+                    tPrompt("Enter student ID/username: ");
+                    String studentId = FastInput.readNonEmptyLine();
+                    System.out.println();
+                    controller.printMaskedRoutine(studentId);
+                    tPause();
+                } else {
+                    tError("Invalid choice.");
+                    tPause();
+                }
+
             } catch (Exception e) {
-                System.out.print("Enter a valid number: ");
+                cleanup();
+                System.err.println("[AttendantRoutineCLI] " + e.getMessage());
             }
         }
-    }
-
-    private String readText() {
-        while (true) {
-            String line = sc.nextLine();
-            if (line != null) return line.trim();
-        }
-    }
-
-    private void pause() {
-        System.out.print("Press Enter to continue...");
-        sc.nextLine();
     }
 }
