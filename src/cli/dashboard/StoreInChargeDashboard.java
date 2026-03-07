@@ -2,13 +2,13 @@ package cli.dashboard;
 
 import controllers.dashboard.StoreInChargeDashboardController;
 import utils.BackgroundFiller;
-import utils.FastInput;
 import utils.ConsoleUtil;
+import utils.FastInput;
 
 public class StoreInChargeDashboard implements Dashboard {
 
-    private final StoreInChargeDashboardController controller =
-            new StoreInChargeDashboardController();
+    private final StoreInChargeDashboardController controller
+            = new StoreInChargeDashboardController();
 
     @Override
     public void show(String username) {
@@ -24,8 +24,8 @@ public class StoreInChargeDashboard implements Dashboard {
             int totalWidth = 69;
             int paddingLeft = (totalWidth - welcomeMessage.length()) / 2;
             int paddingRight = totalWidth - welcomeMessage.length() - paddingLeft;
-            String formattedWelcome =
-                    String.format("║%" + paddingLeft + "s%s%" + paddingRight + "s║", "", welcomeMessage, "");
+            String formattedWelcome
+                    = String.format("║%" + paddingLeft + "s%s%" + paddingRight + "s║", "", welcomeMessage, "");
             System.out.println(formattedWelcome);
 
             System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
@@ -41,6 +41,7 @@ public class StoreInChargeDashboard implements Dashboard {
             int choice = FastInput.readInt();
 
             if (choice == 0) {
+                ConsoleUtil.clearScreen();
                 System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
                 System.out.println("║                         Logging Out....                             ║");
                 System.out.println("╚═════════════════════════════════════════════════════════════════════╝");

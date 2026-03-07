@@ -4,6 +4,7 @@ import controllers.dashboard.CafeteriaDashboardController;
 import utils.*;
 
 public class CafeteriaManagerDashboard implements Dashboard {
+
     private final CafeteriaDashboardController mainController = new CafeteriaDashboardController();
 
     @Override
@@ -18,6 +19,7 @@ public class CafeteriaManagerDashboard implements Dashboard {
             int choice = FastInput.readInt();
 
             if (choice == 0) {
+                ConsoleUtil.clearScreen();
                 renderLogoutBox();
                 return;
             }

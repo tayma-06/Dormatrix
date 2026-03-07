@@ -1,0 +1,47 @@
+@echo off
+setlocal EnableDelayedExpansion
+title Dormatrix - Compile and Run
+
+for /F "delims=" %%A in ('echo prompt $E^| cmd') do set "ESC=%%A"
+
+set "ROOT=%~dp0"
+set "SRC_DIR=%ROOT%src"
+set "OUT_DIR=%ROOT%out"
+set "MAIN_CLASS=Dormatrix"
+
+REM ========== CHECK JDK ==========
+where javac >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] javac not found. Please install JDK and ensure JAVA_HOME / PATH are correctly set.
+    pause
+    exit /b 1
+)
+
+for /f "tokens=2 delims==" %%I in ('java -version 2^>^&1 ^| findstr "version"') do set "JAVA_VERSION=%%I"
+
+REM ========== ENSURE OUT DIR ==========
+if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
+
+REM ========== COMPILE ==========
+echo.
+echo Compiling...
+dir /s /b "%SRC_DIR%\*.java" > "%OUT_DIR%\sources.txt"
+javac -encoding UTF-8 -d "%OUT_DIR%" -sourcepath "%SRC_DIR%" @"%OUT_DIR%\sources.txt"
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Compilation failed! Check the source code for errors.
+    del "%OUT_DIR%\sources.txt" 2>nul
+    pause
+    exit /b 1
+)
+del "%OUT_DIR%\sources.txt" 2>nul
+echo Compilation successful.
+
+REM ========== RUN ==========
+java -cp "%OUT_DIR%" %MAIN_CLASS%
+
+>nul echo %ESC%[0m%ESC%[?25h
+echo.
+pause
+endlocal
+exit /b 0

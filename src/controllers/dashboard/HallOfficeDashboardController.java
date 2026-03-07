@@ -9,6 +9,7 @@ import controllers.room.RoomService;
 import repo.file.FileComplaintRepository;
 import models.complaints.Complaint;
 import libraries.collections.MyArrayList;
+import utils.ConsoleUtil;
 
 import java.io.*;
 import java.util.*;
@@ -47,6 +48,7 @@ public class HallOfficeDashboardController {
 
     private void handleRoomAllocation() {
         while (true) {
+            ConsoleUtil.clearScreen();
             System.out.println();
             System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
             System.out.println("║                          ROOM MANAGEMENT MENU                       ║");
@@ -66,12 +68,16 @@ public class HallOfficeDashboardController {
                     for (models.room.Room r : roomController.getAllRooms()) {
                         System.out.println(r);
                     }
+                    ConsoleUtil.pause();
                 } else if (subChoice == 2) {
                     updateStudentRoom();
+                    ConsoleUtil.pause();
                 } else if (subChoice == 0) {
+                    ConsoleUtil.clearScreen();
                     return;
                 } else {
                     System.out.println("Invalid sub-choice.");
+                    ConsoleUtil.pause();
                 }
             } else {
                 sc.nextLine();
@@ -129,7 +135,9 @@ public class HallOfficeDashboardController {
         System.out.print("Enter New Room Number (or type '0' to cancel): ");
         String newRoom = sc.nextLine().trim();
 
-        if (newRoom.equals("0")) return;
+        if (newRoom.equals("0")) {
+            return;
+        }
 
         if (roomController.allocateRoom(newRoom)) {
             if (!oldRoom.equals("UNASSIGNED") && !oldRoom.equals("N/A")) {
@@ -139,7 +147,7 @@ public class HallOfficeDashboardController {
             String[] parts = currentLine.split("\\|", -1);
             StringBuilder newLine = new StringBuilder();
 
-            for(int i = 0; i < 8; i++) {
+            for (int i = 0; i < 8; i++) {
                 if (i == 7) {
                     newLine.append(newRoom);
                 } else if (i < parts.length) {
@@ -148,13 +156,17 @@ public class HallOfficeDashboardController {
                     newLine.append("");
                 }
 
-                if (i < 7) newLine.append("|");
+                if (i < 7) {
+                    newLine.append("|");
+                }
             }
 
             lines.add(newLine.toString());
 
             try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-                for (String l : lines) pw.println(l);
+                for (String l : lines) {
+                    pw.println(l);
+                }
             } catch (IOException e) {
                 System.out.println("Error saving student data.");
             }
@@ -165,6 +177,7 @@ public class HallOfficeDashboardController {
 
     private void handleComplaintManagement() {
         while (true) {
+            ConsoleUtil.clearScreen();
             complaintView.attendantMenu();
             if (sc.hasNextInt()) {
                 int choice = sc.nextInt();
@@ -174,20 +187,25 @@ public class HallOfficeDashboardController {
                     case 1:
                         MyArrayList<Complaint> all = complaintRepo.findAll();
                         complaintView.attendantList(all);
+                        ConsoleUtil.pause();
                         break;
                     case 2:
                         System.out.println(">> Filtering Pending... (To be implemented fully)");
                         complaintView.attendantList(complaintRepo.findAll());
+                        ConsoleUtil.pause();
                         break;
                     case 7:
                         System.out.print("Enter Room ID: ");
                         String rid = sc.nextLine().trim();
                         new StudentRoomDashboard(new StudentRoomDashboardController(new RoomService())).showComplaints(rid);
+                        ConsoleUtil.pause();
                         break;
                     case 0:
+                        ConsoleUtil.clearScreen();
                         return;
                     default:
                         System.out.println("Option " + choice + " is coming soon.");
+                        ConsoleUtil.pause();
                 }
             } else {
                 sc.nextLine();

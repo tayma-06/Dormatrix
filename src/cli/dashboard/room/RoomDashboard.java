@@ -29,7 +29,10 @@ public class RoomDashboard implements Dashboard {
             System.out.print("Enter choice: ");
 
             int choice = FastInput.readInt();
-            if (choice == 0) return;
+            if (choice == 0) {
+                ConsoleUtil.clearScreen();
+                return;
+            }
 
             controller.handleInput(choice);
 

@@ -9,7 +9,7 @@ import java.util.List;
 
 public class ComplaintView {
 
-    public void studentMenu(){
+    public void studentMenu() {
         System.out.println();
         System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("║                      COMPLAINT(STUDENT)                             ║");
@@ -21,7 +21,7 @@ public class ComplaintView {
         System.out.print("Enter choice: ");
     }
 
-    public void attendantMenu(){
+    public void attendantMenu() {
         System.out.println();
         System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("║                      COMPLAINT(ATTENDANT)                           ║");
@@ -36,7 +36,7 @@ public class ComplaintView {
         System.out.print("Enter choice: ");
     }
 
-    public void workerMenu(){
+    public void workerMenu() {
         System.out.println();
         System.out.println("════════════════════════════════════════════════════════════════════════");
         System.out.println("║                       TASK RELEVANT OPTIONS                          ║");
@@ -48,10 +48,15 @@ public class ComplaintView {
         System.out.print("Enter choice: ");
     }
 
-    public void msg(String s){ System.out.println(s); }
-    public void error(String s){ System.out.println("Error: " + s); }
+    public void msg(String s) {
+        System.out.println(s);
+    }
 
-    public void filed(Complaint c){
+    public void error(String s) {
+        System.out.println("Error: " + s);
+    }
+
+    public void filed(Complaint c) {
         System.out.println("\nComplaint Filed Successfully!");
         System.out.println("Complaint ID : " + c.getComplaintId());
         System.out.println("Status       : " + c.getStatus().name());
@@ -97,12 +102,12 @@ public class ComplaintView {
         }
 
         System.out.println("╠═════════════════════╩════════════╩═════════════════╩════════════════════╣");
-        System.out.println("║ Press Enter to return...                                                ║");
+        System.out.println("║ Press Enter to continue...                                              ║");
         System.out.println("╚═════════════════════════════════════════════════════════════════════════╝");
     }
 
-    public void attendantList(MyArrayList<Complaint> list){
-        if (list == null || list.size() == 0){
+    public void attendantList(MyArrayList<Complaint> list) {
+        if (list == null || list.size() == 0) {
             System.out.println("\n(No complaints found)\n");
             return;
         }
@@ -133,16 +138,21 @@ public class ComplaintView {
                 // Split the description into multiple lines
                 String[] descriptionLines = wrapText(description, descriptionMaxLength);
                 for (int t = 0; t < descriptionLines.length; t++) {
-                    if (t == 0) System.out.println(String.format("║ Description: %-59s ║", descriptionLines[t]));
-                    else        System.out.println(String.format("║            : %-59s ║", descriptionLines[t])); // aligned continuation
-                }
+                    if (t == 0) {
+                        System.out.println(String.format("║ Description: %-59s ║", descriptionLines[t])); 
+                    }else {
+                        System.out.println(String.format("║            : %-59s ║", descriptionLines[t])); // aligned continuation
+
+                                    }}
             } else {
                 System.out.println("║ Description: (no description)                               ║");
             }
 
             // ---------------- TAGS ----------------
             String tagsRaw = c.getTags();
-            if (tagsRaw != null) tagsRaw = tagsRaw.trim();
+            if (tagsRaw != null) {
+                tagsRaw = tagsRaw.trim();
+            }
 
             if (tagsRaw == null || tagsRaw.isEmpty()) {
                 System.out.println(String.format("║ Tags       : %-59s ║", "(none)"));
@@ -151,9 +161,12 @@ public class ComplaintView {
                 String[] tagLines = wrapTags(tagsRaw, 59);
 
                 for (int t = 0; t < tagLines.length; t++) {
-                    if (t == 0) System.out.println(String.format("║ Tags       : %-59s ║", tagLines[t]));
-                    else        System.out.println(String.format("║            : %-59s ║", tagLines[t])); // aligned continuation
-                }
+                    if (t == 0) {
+                        System.out.println(String.format("║ Tags       : %-59s ║", tagLines[t])); 
+                    }else {
+                        System.out.println(String.format("║            : %-59s ║", tagLines[t])); // aligned continuation
+
+                                    }}
             }
 
             // End the double line for each complaint
@@ -219,7 +232,6 @@ public class ComplaintView {
         lines.add(text);  // Add the remaining part of the text
         return lines.toArray(new String[0]);
 
-
     }
 
     private String[] wrapTags(String tags, int maxLength) {
@@ -231,7 +243,9 @@ public class ComplaintView {
         List<String> parts = new ArrayList<>();
         for (int i = 0; i < rawParts.length; i++) {
             String p = rawParts[i].trim();
-            if (!p.isEmpty()) parts.add(p);
+            if (!p.isEmpty()) {
+                parts.add(p);
+            }
         }
 
         // pack tags into lines <= maxLength, joined by ';'
@@ -255,7 +269,9 @@ public class ComplaintView {
             }
         }
 
-        if (cur.length() > 0) lines.add(cur.toString());
+        if (cur.length() > 0) {
+            lines.add(cur.toString());
+        }
 
         return lines.toArray(new String[0]);
     }

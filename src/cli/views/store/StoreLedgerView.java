@@ -3,9 +3,11 @@ package cli.views.store;
 import controllers.balance.BalanceController;
 import controllers.store.DueController;
 import controllers.store.PurchaseHistoryController;
+import utils.ConsoleUtil;
 import utils.FastInput;
 
 public class StoreLedgerView {
+
     private final BalanceController balanceController;
     private final DueController dueController;
     private final PurchaseHistoryController purchaseHistoryController;
@@ -18,6 +20,7 @@ public class StoreLedgerView {
 
     public void show(String studentId) {
         while (true) {
+            ConsoleUtil.clearScreen();
             displayHeader(studentId);
             displayMenu();
 
@@ -43,6 +46,7 @@ public class StoreLedgerView {
                     viewRecentPurchases(studentId);
                     break;
                 case "0":
+                    ConsoleUtil.clearScreen();
                     return;
                 default:
                     System.out.println("✗ Invalid choice!");

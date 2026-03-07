@@ -8,9 +8,11 @@ import utils.FastInput;
 public class AccountDashboard implements Dashboard {
 
     private final AccountDashboardController controller;
+
     public AccountDashboard(AccountDashboardController controller) {
         this.controller = controller;
     }
+
     @Override
     public void show(String username) {
         while (true) {
@@ -25,7 +27,10 @@ public class AccountDashboard implements Dashboard {
             System.out.println();
             System.out.print("Enter choice: ");
             int choice = FastInput.readInt();
-            if (choice == 0) return;
+            if (choice == 0) {
+                ConsoleUtil.clearScreen();
+                return;
+            }
             controller.handleInput(choice);
             ConsoleUtil.pause();
         }

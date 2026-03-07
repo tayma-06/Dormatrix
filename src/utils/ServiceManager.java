@@ -15,10 +15,6 @@ public class ServiceManager {
         tokenService = TokenPurchaseService.getInstance();
         tokenService.start();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            shutdown();
-        }));
-
         initialized = true;
     }
 

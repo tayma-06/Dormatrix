@@ -14,6 +14,7 @@ import models.users.StudentPublicInfo;
 import module.complaint.ComplaintModule;
 import repo.file.FileComplaintRepository;
 import repo.file.FileMaintenanceWorkerRepository;
+import utils.ConsoleUtil;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -26,17 +27,21 @@ public class StudentComplaintCLI {
     private final ComplaintView view = new ComplaintView();
     private final ComplaintForm form = new ComplaintForm(Input.SC);
 
-    private final ComplaintModule module =
-            new ComplaintModule(new FileComplaintRepository(), new FileMaintenanceWorkerRepository());
+    private final ComplaintModule module
+            = new ComplaintModule(new FileComplaintRepository(), new FileMaintenanceWorkerRepository());
 
     private final FileComplaintRepository repo = new FileComplaintRepository();
 
     public void start(String studentIdentifier) {
         while (true) {
+            ConsoleUtil.clearScreen();
             view.studentMenu();
             int ch = form.readInt();
 
-            if (ch == 0) return;
+            if (ch == 0) {
+                ConsoleUtil.clearScreen();
+                return;
+            }
 
             if (ch == 1) {
                 MyOptional<StudentPublicInfo> infoOpt = resolveStudentPublicInfo(studentIdentifier);
@@ -47,7 +52,7 @@ public class StudentComplaintCLI {
 
                 ComplaintCategory cat = form.readCategory();
 
-                if (cat == null){
+                if (cat == null) {
                     return;
                 }
 
@@ -55,6 +60,7 @@ public class StudentComplaintCLI {
 
                 Complaint c = module.fileComplaint(infoOpt.get(), cat, desc);
                 view.filed(c);
+                ConsoleUtil.pause();
 
             } else if (ch == 2) {
                 MyOptional<StudentPublicInfo> infoOpt = resolveStudentPublicInfo(studentIdentifier);
@@ -65,9 +71,11 @@ public class StudentComplaintCLI {
 
                 MyArrayList<Complaint> mine = repo.findByStudentId(infoOpt.get().getStudentId());
                 view.studentList(mine);
+                ConsoleUtil.pause();
 
             } else {
                 view.error("Invalid choice.");
+                ConsoleUtil.pause();
             }
         }
     }
@@ -78,12 +86,16 @@ public class StudentComplaintCLI {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split("\\|", -1);
-                if (parts.length < 2) continue;
+                if (parts.length < 2) {
+                    continue;
+                }
 
                 String id = parts[0].trim().replace("\uFEFF", "");
                 String name = parts[1].trim();
                 String room = (parts.length > 7) ? parts[7].trim() : "UNASSIGNED";
-                if (room.isEmpty()) room = "UNASSIGNED";
+                if (room.isEmpty()) {
+                    room = "UNASSIGNED";
+                }
 
                 boolean matchesId = id.equals(target.trim());
                 boolean matchesName = name.equalsIgnoreCase(target.trim());

@@ -1,15 +1,15 @@
 package cli.dashboard;
 
-import controllers.dashboard.MaintenanceWorkerDashboardController;
 import cli.complaint.WorkerComplaintCLI;
+import controllers.dashboard.MaintenanceWorkerDashboardController;
 import utils.BackgroundFiller;
-import utils.FastInput;
 import utils.ConsoleUtil;
+import utils.FastInput;
 
 public class MaintenanceWorkerDashboard implements Dashboard {
 
-    private final MaintenanceWorkerDashboardController controller =
-            new MaintenanceWorkerDashboardController();
+    private final MaintenanceWorkerDashboardController controller
+            = new MaintenanceWorkerDashboardController();
 
     @Override
     public void show(String username) {
@@ -25,8 +25,8 @@ public class MaintenanceWorkerDashboard implements Dashboard {
             int totalWidth = 69;
             int paddingLeft = (totalWidth - welcomeMessage.length()) / 2;
             int paddingRight = totalWidth - welcomeMessage.length() - paddingLeft;
-            String formattedWelcome =
-                    String.format("║%" + paddingLeft + "s%s%" + paddingRight + "s║", "", welcomeMessage, "");
+            String formattedWelcome
+                    = String.format("║%" + paddingLeft + "s%s%" + paddingRight + "s║", "", welcomeMessage, "");
             System.out.println(formattedWelcome);
 
             System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
@@ -41,6 +41,7 @@ public class MaintenanceWorkerDashboard implements Dashboard {
             int choice = FastInput.readInt();
 
             if (choice == 0) {
+                ConsoleUtil.clearScreen();
                 System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
                 System.out.println("║                         Logging Out....                             ║");
                 System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
@@ -58,7 +59,6 @@ public class MaintenanceWorkerDashboard implements Dashboard {
                 System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
                 continue;
             }
-
 
             if (choice == 2) {
                 new WorkerComplaintCLI().start(username);

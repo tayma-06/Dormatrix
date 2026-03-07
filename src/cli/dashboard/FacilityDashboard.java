@@ -1,15 +1,17 @@
 package cli.dashboard;
 
 import controllers.facilities.*;
-import libraries.slots.SlotAllocator;
-
 import java.util.Scanner;
+import libraries.slots.SlotAllocator;
+import utils.ConsoleUtil;
 
 public class FacilityDashboard {
+
     private final Scanner scanner = new Scanner(System.in);
 
     public void showMenu(String username, StudyRoomController study, FridgeController fridge, LaundryController laundry) {
         while (true) {
+            ConsoleUtil.clearScreen();
             System.out.println();
             System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
             System.out.println("║                       FACILITY BOOKING SYSTEM                       ║");
@@ -24,16 +26,18 @@ public class FacilityDashboard {
             System.out.println();
             System.out.print("Enter your choice: ");
             int choice = scanner.nextInt();
-            if (choice == 0) break;
+            if (choice == 0) {
+                ConsoleUtil.clearScreen();
+                break;
+            }
 
             handleFacilityChoice(choice, username, study, fridge, laundry);
         }
     }
 
     private void handleFacilityChoice(int choice, String user, StudyRoomController s, FridgeController f, LaundryController l) {
+        ConsoleUtil.clearScreen();
         switch (choice) {
-            // Inside your switch(choice) block in the Dashboard:
-
             case 1: // 1. Book Study Room Seat
                 int currentSlot = SlotAllocator.getCurrentSlotIndex();
 
@@ -45,7 +49,9 @@ public class FacilityDashboard {
                     } else {
                         System.out.print("[ Seat " + (i + 1) + " : TAKEN ]  ");
                     }
-                    if (i == 4) System.out.println(); // Break to next line for 2 rows of 5
+                    if (i == 4) {
+                        System.out.println(); // Break to next line for 2 rows of 5
+                    }
                 }
 
                 System.out.print("\n\nEnter seat number you want to book (1-10): ");
@@ -54,6 +60,7 @@ public class FacilityDashboard {
                 if (s.bookSeat(user, seatToBook)) {
                     System.out.println("Booking successful! You have 30 seconds to choose Option 2 and Check-in.");
                 }
+                ConsoleUtil.pause();
                 break;
 
             case 2: // 2. Check-in to Study Room
@@ -61,9 +68,11 @@ public class FacilityDashboard {
                 int seatToCheckIn = scanner.nextInt() - 1;
 
                 s.checkIn(user, seatToCheckIn);
+                ConsoleUtil.pause();
                 break;
             case 3:
                 f.handleFridgeBooking(user);
+                ConsoleUtil.pause();
                 break;
             case 4: // Schedule Laundry Machine
                 // First, show the current status of all 6 slots
@@ -75,9 +84,11 @@ public class FacilityDashboard {
                 // Attempt booking
                 String result = l.bookLaundry(slot, user);
                 System.out.println(result);
+                ConsoleUtil.pause();
                 break;
             default:
                 System.out.println("Invalid option.");
+                ConsoleUtil.pause();
         }
     }
 }

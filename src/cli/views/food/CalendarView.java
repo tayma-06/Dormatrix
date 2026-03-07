@@ -99,7 +99,7 @@ public class CalendarView {
 
         buyDayToken(username, day);
 
-        System.out.println("\nDone! Press Enter to return to calendar...");
+        System.out.println("\nDone! Press Enter to continue...");
         FastInput.readLine();
     }
 

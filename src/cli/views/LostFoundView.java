@@ -3,14 +3,17 @@ package cli.views;
 import controllers.miscellaneous.LostFoundController;
 import java.util.List;
 import java.util.Scanner;
+import utils.ConsoleUtil;
 
 public class LostFoundView {
+
     private LostFoundController controller = new LostFoundController();
     private Scanner scanner = new Scanner(System.in);
 
     public void showMainBoard(String userId, boolean canAddFoundItem) {
         boolean back = false;
         while (!back) {
+            ConsoleUtil.clearScreen();
             System.out.println("\n--------------------------------------------------");
             System.out.println("|              LOST & FOUND BOARD                |");
             System.out.println("--------------------------------------------------");
@@ -28,17 +31,40 @@ public class LostFoundView {
             int choice = scanner.nextInt();
             scanner.nextLine(); // Consume the leftover newline from nextInt()
 
-            switch(choice) {
-                case 1 -> viewFoundItems();
-                case 2 -> viewLostItems();
-                case 3 -> reportLost(userId);
-                case 4 -> claimItem(userId);
-                case 5 -> {
-                    if (canAddFoundItem) addFound();
-                    else System.out.println("Invalid option. You do not have permission.");
+            switch (choice) {
+                case 1 -> {
+                    viewFoundItems();
+                    ConsoleUtil.pause();
                 }
-                case 0 -> back = true;
-                default -> System.out.println("Invalid choice. Please try again.");
+                case 2 -> {
+                    viewLostItems();
+                    ConsoleUtil.pause();
+                }
+                case 3 -> {
+                    reportLost(userId);
+                    ConsoleUtil.pause();
+                }
+                case 4 -> {
+                    claimItem(userId);
+                    ConsoleUtil.pause();
+                }
+                case 5 -> {
+                    if (canAddFoundItem) {
+                        addFound();
+                        ConsoleUtil.pause();
+                    } else {
+                        System.out.println("Invalid option. You do not have permission.");
+                        ConsoleUtil.pause();
+                    }
+                }
+                case 0 -> {
+                    ConsoleUtil.clearScreen();
+                    back = true;
+                }
+                default -> {
+                    System.out.println("Invalid choice. Please try again.");
+                    ConsoleUtil.pause();
+                }
             }
         }
     }

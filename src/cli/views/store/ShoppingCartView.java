@@ -7,9 +7,11 @@ import controllers.store.DueController;
 import models.store.Item;
 import models.store.ShoppingCart;
 import models.store.CartItem;
+import utils.ConsoleUtil;
 import utils.FastInput;
 
 public class ShoppingCartView {
+
     private final InventoryController inventoryController;
     private final PurchaseController purchaseController;
     private final BalanceController balanceController;
@@ -26,6 +28,7 @@ public class ShoppingCartView {
         ShoppingCart cart = new ShoppingCart();
 
         while (true) {
+            ConsoleUtil.clearScreen();
             displayHeader(studentId);
             displayCart(cart);
             displayMenu();
@@ -53,6 +56,7 @@ public class ShoppingCartView {
                     System.out.println("✓ Cart cleared!");
                     break;
                 case "0":
+                    ConsoleUtil.clearScreen();
                     return;
                 default:
                     System.out.println("✗ Invalid choice!");

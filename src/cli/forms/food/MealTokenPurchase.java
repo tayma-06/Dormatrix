@@ -65,6 +65,7 @@ public class MealTokenPurchase {
 
             int choice = FastInput.readInt();
             if (choice == 0) {
+                ConsoleUtil.clearScreen();
                 break;
             }
 

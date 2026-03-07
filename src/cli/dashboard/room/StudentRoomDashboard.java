@@ -7,6 +7,7 @@ import libraries.collections.MyArrayList;
 import libraries.collections.MyString;
 import models.complaints.Complaint;
 import models.room.Room;
+import utils.ConsoleUtil;
 import utils.FastInput;
 
 public class StudentRoomDashboard implements Dashboard {
@@ -25,21 +26,24 @@ public class StudentRoomDashboard implements Dashboard {
         Room room = controller.getRoomDetails(roomNumber);
 
         while (true) {
+            ConsoleUtil.clearScreen();
             int choice = view.show(roomNumber, room);
-            if (choice == 0) return;
+            if (choice == 0) {
+                ConsoleUtil.clearScreen();
+                return;
+            }
             if (choice == 1) {
                 if (roomNumber.equals("UNASSIGNED") || roomNumber.equals("N/A")) {
                     System.out.println("\n>> You do not have a room assigned yet.");
                 } else {
                     showComplaints(roomNumber);
                 }
-                System.out.print("Press Enter to return...");
-                FastInput.readLine();
+                ConsoleUtil.pause();
             }
         }
     }
 
-    public void showComplaints(String roomNumber){
+    public void showComplaints(String roomNumber) {
         MyArrayList<Complaint> list = controller.getComplaints(roomNumber);
 
         System.out.println("╔════════════════════════════════════════════════════════════════════════╗");
@@ -47,7 +51,7 @@ public class StudentRoomDashboard implements Dashboard {
         System.out.println("╠════════════════════╦════════════╦═════════════════╦════════════════════╣");
         System.out.println("║ ID                 ║ Status     ║ Assigned Worker ║ Category           ║");
         System.out.println("╠════════════════════╬════════════╬═════════════════╬════════════════════╣");
-        if (list.size() == 0){
+        if (list.size() == 0) {
             System.out.println(String.format("║ %-18s ║ %-10s ║ %-15s ║ %-18s ║", "(none)", "(none)", "(none)", "(none)"));
         } else {
             for (int i = 0; i < list.size(); i++) {
@@ -66,7 +70,7 @@ public class StudentRoomDashboard implements Dashboard {
         }
 
         System.out.println("╠════════════════════╩════════════╩═════════════════╩════════════════════╣");
-        System.out.println("║ Press Enter to return...                                               ║");
+        System.out.println("║ Press Enter to continue...                                             ║");
         System.out.println("╚════════════════════════════════════════════════════════════════════════╝");
 
         FastInput.readLine();

@@ -11,6 +11,7 @@ import repo.file.FileComplaintRepository;
 import libraries.collections.MyArrayList;
 import libraries.collections.MyString;
 import models.complaints.Complaint;
+import utils.ConsoleUtil;
 
 public class RoomController {
 
@@ -51,6 +52,7 @@ public class RoomController {
 
         boolean stayInMenu = true;
         while (stayInMenu) {
+            ConsoleUtil.clearScreen();
             int choice = studentRoomView.show(roomNumber, roomDetails);
 
             if (choice == 1) {
@@ -59,9 +61,9 @@ public class RoomController {
                 } else {
                     new StudentRoomDashboard(new StudentRoomDashboardController(new RoomService())).showComplaints(roomNumber);
                 }
-                System.out.print("Press Enter to return...");
-                new Scanner(System.in).nextLine();
+                ConsoleUtil.pause();
             } else {
+                ConsoleUtil.clearScreen();
                 stayInMenu = false;
             }
         }
@@ -92,7 +94,9 @@ public class RoomController {
                 found = true;
             }
         }
-        if (!found) System.out.println("No rooms available.");
+        if (!found) {
+            System.out.println("No rooms available.");
+        }
     }
 
     public boolean allocateRoom(String roomId) {
@@ -113,7 +117,9 @@ public class RoomController {
     }
 
     public void freeRoom(String roomId) {
-        if (roomId == null || roomId.equals("N/A") || roomId.isEmpty() || roomId.equals("UNASSIGNED")) return;
+        if (roomId == null || roomId.equals("N/A") || roomId.isEmpty() || roomId.equals("UNASSIGNED")) {
+            return;
+        }
 
         for (Room r : rooms) {
             if (r.getRoomId().equals(roomId)) {
@@ -153,7 +159,9 @@ public class RoomController {
 //    }
     private String getStudentRoomNumber(String target) {
         File file = new File(STUDENT_FILE);
-        if (!file.exists()) return "UNASSIGNED";
+        if (!file.exists()) {
+            return "UNASSIGNED";
+        }
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -169,14 +177,21 @@ public class RoomController {
                     }
                 }
             }
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return "UNASSIGNED";
     }
+
     private int countStudentsInRoom(String roomId) {
-        if (roomId == null || roomId.trim().isEmpty()) return 0;
+        if (roomId == null || roomId.trim().isEmpty()) {
+            return 0;
+        }
 
         File file = new File(STUDENT_FILE);
-        if (!file.exists()) return 0;
+        if (!file.exists()) {
+            return 0;
+        }
 
         int count = 0;
 
@@ -203,20 +218,28 @@ public class RoomController {
             for (Room r : rooms) {
                 pw.println(r.toFileString());
             }
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private List<Room> loadRooms() {
         List<Room> list = new ArrayList<>();
         File file = new File(ROOM_FILE);
-        if (!file.exists()) return list;
+        if (!file.exists()) {
+            return list;
+        }
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
                 Room r = Room.fromString(line);
-                if (r != null) list.add(r);
+                if (r != null) {
+                    list.add(r);
+                }
             }
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return list;
     }
 }

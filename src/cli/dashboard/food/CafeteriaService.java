@@ -1,15 +1,15 @@
 package cli.dashboard.food;
 
 import controllers.food.MenuManagementController;
+import java.util.List;
 import models.food.DailyMenu;
 import models.food.MealType;
 import utils.ConsoleUtil;
 import utils.FastInput;
 import utils.TimeManager;
 
-import java.util.List;
-
 public class CafeteriaService {
+
     private final MenuManagementController menuController = new MenuManagementController();
     private final String[] days = {"MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"};
 
@@ -35,7 +35,10 @@ public class CafeteriaService {
             System.out.print("Choice: ");
             int choice = FastInput.readInt();
 
-            if (choice == 0) return;
+            if (choice == 0) {
+                ConsoleUtil.clearScreen();
+                return;
+            }
 
             if (choice >= 1 && choice <= 7) {
                 promptDayEdit(days[choice - 1], currentMenu);
@@ -119,22 +122,32 @@ public class CafeteriaService {
         System.out.print("Choice: ");
         int mealChoice = FastInput.readInt();
 
-        if (mealChoice == 0) return;
+        if (mealChoice == 0) {
+            return;
+        }
 
         MealType type = null;
         if (isRamadan) {
             type = switch (mealChoice) {
-                case 1 -> MealType.SUHOOR;
-                case 2 -> MealType.IFTAR;
-                case 3 -> MealType.DINNER;
-                default -> null;
+                case 1 ->
+                    MealType.SUHOOR;
+                case 2 ->
+                    MealType.IFTAR;
+                case 3 ->
+                    MealType.DINNER;
+                default ->
+                    null;
             };
         } else {
             type = switch (mealChoice) {
-                case 1 -> MealType.BREAKFAST;
-                case 2 -> MealType.LUNCH;
-                case 3 -> MealType.DINNER;
-                default -> null;
+                case 1 ->
+                    MealType.BREAKFAST;
+                case 2 ->
+                    MealType.LUNCH;
+                case 3 ->
+                    MealType.DINNER;
+                default ->
+                    null;
             };
         }
 
@@ -174,7 +187,9 @@ public class CafeteriaService {
                 currentLine = new StringBuilder(word);
                 firstLine = false;
             } else {
-                if (currentLine.length() > 0) currentLine.append(" ");
+                if (currentLine.length() > 0) {
+                    currentLine.append(" ");
+                }
                 currentLine.append(word);
             }
         }
@@ -218,9 +233,13 @@ public class CafeteriaService {
     }
 
     private String extractMenuText(List<DailyMenu> menu, String day, MealType type) {
-        if (menu == null) return "---";
+        if (menu == null) {
+            return "---";
+        }
         for (DailyMenu m : menu) {
-            if (m.getDay().equalsIgnoreCase(day) && m.getType() == type) return m.getItems();
+            if (m.getDay().equalsIgnoreCase(day) && m.getType() == type) {
+                return m.getItems();
+            }
         }
         return "---";
     }

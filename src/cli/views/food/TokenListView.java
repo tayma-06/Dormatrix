@@ -7,6 +7,7 @@ import utils.FastInput;
 import java.util.List;
 
 public class TokenListView {
+
     private final CafeteriaController controller = new CafeteriaController();
 
     public void show(String username) {
@@ -37,7 +38,7 @@ public class TokenListView {
         }
 
         System.out.println("╠════════════════════╩════════════╩════════════╩══════════════════════╣");
-        System.out.println("║ Press Enter to return...                                            ║");
+        System.out.println("║ Press Enter to continue...                                          ║");
         System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
 
         FastInput.readLine();
