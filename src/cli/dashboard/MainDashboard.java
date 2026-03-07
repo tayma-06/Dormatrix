@@ -10,6 +10,7 @@ import controllers.dashboard.MainDashboardController;
 import libraries.collections.MyString;
 
 public class MainDashboard {
+
     private final DormatrixBanner banner = new DormatrixBanner();
     private final MainDashboardController controller = new MainDashboardController();
 
@@ -54,11 +55,11 @@ public class MainDashboard {
                 System.out.println(EXIT_BOX + "║                     Exiting Dormatrix. Goodbye!                     ║");
                 System.out.println(EXIT_BOX + "╚═════════════════════════════════════════════════════════════════════╝");
 
-
-                System.out.print(INPUT + "Press Enter 0 to close... ");
-                FastInput.readNonEmptyLine();
+                System.out.print(INPUT + "Press Enter to close... ");
+                FastInput.readLine();
 
                 BackgroundFiller.resetTheme();
+                ConsoleUtil.clearScreen();
                 System.exit(0);
             }
 
