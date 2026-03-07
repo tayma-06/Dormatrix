@@ -22,3 +22,10 @@
 [2026/03/04 23:05:42] Staff added found item: Water Bottle
 [2026/03/04 23:06:32] User Halima Begum reported lost item: 0
 [2026/03/04 23:07:28] Item FID-1772643942417 claimed by Khadiza Sultana pending verification.
+[2026/03/06 13:02:50] User Khadiza Sultana reported lost item: Wrist Watch
+[2026/03/06 13:05:52] Staff added found item: Wrist Watch 
+[2026/03/06 13:06:57] Item FID-1772780752575 claimed by Rahima Khatun pending verification.
+[2026/03/06 13:12:13] Seat 10 reserved by Khadiza Sultana
+[2026/03/06 13:12:19] Khadiza Sultana checked in to Seat 10
+[2026/03/06 13:29:01] Seat 1 reserved by Khadiza Sultana
+[2026/03/06 13:29:12] Khadiza Sultana checked in to Seat 1
