@@ -81,20 +81,20 @@ public class FileComplaintRepository implements ComplaintRepository{
         return out;
     }
 
-    @Override
-    public MyArrayList<Complaint> findUnassigned(){
-        MyArrayList<Complaint> out = new MyArrayList<>();
-        MyArrayList<Complaint> all = findAll();
-
-        for (int i = 0; i < all.size(); i++){
-            Complaint c = all.get(i);
-            String wid = c.getAssignedWorkerId();
-            boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
-            if (blank) out.add(c);
-        }
-
-        return out;
-    }
+//    @Override
+//    public MyArrayList<Complaint> findUnassigned(){
+//        MyArrayList<Complaint> out = new MyArrayList<>();
+//        MyArrayList<Complaint> all = findAll();
+//
+//        for (int i = 0; i < all.size(); i++){
+//            Complaint c = all.get(i);
+//            String wid = c.getAssignedWorkerId();
+//            boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
+//            if (blank) out.add(c);
+//        }
+//
+//        return out;
+//    }
 
     @Override
     public MyArrayList<Complaint> findByStudentId(String studentId){
@@ -118,6 +118,20 @@ public class FileComplaintRepository implements ComplaintRepository{
         {
             Complaint c = all.get(i);
             if (msEquals(c.getAssignedWorkerId(), workerId)) out.add(c);
+        }
+
+        return out;
+    }
+
+    @Override
+    public MyArrayList<Complaint> findUnresolvedByAssignedWorker(String workerId){
+        MyArrayList<Complaint> out = new MyArrayList<>();
+        MyArrayList<Complaint> all = findAll();
+
+        for (int i = 0; i < all.size(); i++)
+        {
+            Complaint c = all.get(i);
+            if (msEquals(c.getAssignedWorkerId(), workerId) && !c.getStatus().equals(ComplaintStatus.RESOLVED)) out.add(c);
         }
 
         return out;

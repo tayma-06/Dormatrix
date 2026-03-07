@@ -18,7 +18,7 @@ public class ComplaintPolicy {
 
         PriorityLevel priority = priorityBase(category, emergency);
         String tags = "";
-        if (emergency) tags = addTags(tags,"EMERGENCY");
+//        if (emergency) tags = addTags(tags,"EMERGENCY");
         return new DormDecision(priority, emergency, tags);
     }
 
@@ -29,7 +29,7 @@ public class ComplaintPolicy {
             case PLUMBING -> WorkerField.PLUMBER;
             case INTERNET -> WorkerField.INTERNET_TECH;
             case CLEANING -> WorkerField.CLEANING;
-            case SECURITY -> WorkerField.SECURITY;
+//            case SECURITY -> WorkerField.SECURITY;
             default -> WorkerField.CLEANING;
         };
     }
@@ -39,9 +39,9 @@ public class ComplaintPolicy {
         if (emergency) return PriorityLevel.EMERGENCY;
 
         return switch (cat) {
-            case SECURITY -> PriorityLevel.HIGH;
+//            case SECURITY -> PriorityLevel.HIGH;
             case ELECTRICITY, PLUMBING  -> PriorityLevel.NORMAL;
-            case INTERNET, CLEANING, OTHER -> PriorityLevel.NORMAL;
+            case INTERNET, CLEANING -> PriorityLevel.NORMAL;
         };
     }
 
@@ -52,15 +52,16 @@ public class ComplaintPolicy {
         // general emergency keywords
         if(d.containsAny(ms("fire"), ms("smoke"), ms("burning"), ms("sparks"),
                 ms("electric shock"), ms("flood"), ms("burst pipe"), ms("overflow"),
-                ms("danger"), ms("panic"),
-                ms("harassment"), ms("assault"), ms("stalker"),
-                ms("intruder"), ms("violent"),
-                ms("bleeding"), ms("unconscious"), ms("fracture")))
+                ms("danger"), ms("panic")
+//                ms("harassment"), ms("assault"), ms("stalker"),
+//                ms("intruder"), ms("violent"),
+//                ms("bleeding"), ms("unconscious"), ms("fracture")
+        ))
         { return true; }
 
         // category-based emergencies
         return switch(cat){
-            case SECURITY -> true;
+//            case SECURITY -> true;
             case ELECTRICITY -> d.containsAny(
                     ms("short circuit"), ms("sparks"), ms("burning smell"), ms("shock")
             );
@@ -73,12 +74,12 @@ public class ComplaintPolicy {
 
     }
 
-    private String addTags(String tags, String tag){
-        MyString mtags = ms(tags);
-        if(mtags == null || mtags.isEmpty()) return tag;
-        if(mtags.contains(ms(tag))) return tags;
-        return tags + "," + tag;
-    }
+//    private String addTags(String tags, String tag){
+//        MyString mtags = ms(tags);
+//        if(mtags == null || mtags.isEmpty()) return tag;
+//        if(mtags.contains(ms(tag))) return tags;
+//        return tags + "," + tag;
+//    }
 
     // Nested Class
     public static class DormDecision{

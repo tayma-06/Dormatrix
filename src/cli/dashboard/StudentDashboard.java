@@ -36,8 +36,9 @@ public class StudentDashboard implements Dashboard {
             System.out.println("║ [4] Store Account & Dues                                            ║");
             System.out.println("║ [5] Lost & Found                                                    ║");
             System.out.println("║ [6] Complaint Menu                                                  ║");
-            System.out.println("║ [7] View Announcements                                              ║");
-            System.out.println("║ [8] Store Shopping Cart                                             ║");
+            System.out.println("║ [7] Weekly Routine                                                  ║");
+            System.out.println("║ [8] View Announcements                                              ║");
+            System.out.println("║ [9] Store Shopping Cart                                             ║");
             System.out.println("║ [0] Logout                                                          ║");
             System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
 

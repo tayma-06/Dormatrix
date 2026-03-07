@@ -4,7 +4,7 @@ public enum ComplaintCategory {
     ELECTRICITY,
     PLUMBING,
     INTERNET,
-    CLEANING,
-    SECURITY,
-    OTHER
+    CLEANING
+//    SECURITY,
+//    OTHER
 }

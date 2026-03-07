@@ -21,9 +21,9 @@ public class AttendantComplaintController {
     public MyArrayList<Complaint> pending(){ return module.findPending(); }
     public MyArrayList<Complaint> mishaps(){ return module.findMishaps(); }
 
-    public boolean reassign(String cid, String wid){ return module.reassignComplaint(cid, wid); }
-    public boolean retryAutoAssign(String cid){ return module.retryAutoAssign(cid); }
-    public boolean resolve(String cid, String note){ return module.resolveByAttendant(cid, note); }
+//    public boolean reassign(String cid, String wid){ return module.reassignComplaint(cid, wid); }
+//    public boolean retryAutoAssign(String cid){ return module.retryAutoAssign(cid); }
+//    public boolean resolve(String cid, String note){ return module.resolveByAttendant(cid, note); }
 
     public MyArrayList<Complaint> byRoom(String roomId){
         MyArrayList<Complaint> all = repo.findAll();
