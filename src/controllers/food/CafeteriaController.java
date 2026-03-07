@@ -245,6 +245,18 @@ public class CafeteriaController {
 
     public String purchaseTokenForDay(String username, LocalDate day, MealType mealType) {
         synchronized (TOKEN_LOCK) {
+            LocalDate today = TimeManager.nowDate();
+            if (day.isBefore(today)) {
+                return "Transaction Failed: Cannot purchase tokens for a past date.";
+            }
+            if (day.equals(today)) {
+                java.time.LocalTime now = TimeManager.nowTime();
+                java.time.LocalTime cutoff = TimeManager.getMealEndTime(mealType);
+                if (now.isAfter(cutoff)) {
+                    return "Not available — " + mealType + " timeframe has passed for today.";
+                }
+            }
+
             if (hasActiveToken(username, mealType, day)) {
                 return "You already have an ACTIVE token for " + mealType + " on " + day;
             }

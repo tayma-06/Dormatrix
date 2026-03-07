@@ -4,11 +4,89 @@ import models.users.*;
 import models.enums.WorkerField;
 import libraries.hashing.HashFunction;
 import libraries.collections.MyString;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.UserInterruptException;
+import org.jline.reader.EndOfFileException;
 import java.io.*;
+import java.util.Scanner;
 
 public class AuthController {
 
     private static final MyString DATA_DIR = new MyString("data/users/");
+
+    private static Terminal terminal = null;
+    private static LineReader lineReader = null;
+    private static boolean jlineAvailable = true;
+
+    private static void initJLine() {
+        if (!jlineAvailable || terminal != null) return;
+        java.util.logging.Logger.getLogger("org.jline").setLevel(java.util.logging.Level.OFF);
+        try {
+            Terminal t = TerminalBuilder.builder().system(true).build();
+            if (org.jline.terminal.Terminal.TYPE_DUMB.equals(t.getType())
+                    || org.jline.terminal.Terminal.TYPE_DUMB_COLOR.equals(t.getType())) {
+                t.close();
+                jlineAvailable = false;
+                return;
+            }
+            terminal = t;
+            lineReader = LineReaderBuilder.builder().terminal(terminal).build();
+        } catch (IOException | IllegalStateException e) {
+            jlineAvailable = false;
+        }
+    }
+
+    public static MyString readInput(String prompt) {
+        initJLine();
+        if (jlineAvailable && lineReader != null) {
+            try {
+                String input = lineReader.readLine(prompt);
+                return new MyString(input == null ? "" : input.trim());
+            } catch (UserInterruptException | EndOfFileException e) {
+                System.out.println("\nInput cancelled.");
+                return new MyString("");
+            }
+        }
+        System.out.print(prompt);
+        Scanner sc = new Scanner(System.in);
+        return new MyString(sc.hasNextLine() ? sc.nextLine().trim() : "");
+    }
+
+    public static MyString readPassword(String prompt) {
+        initJLine();
+        if (jlineAvailable && lineReader != null) {
+            try {
+                String password = lineReader.readLine(prompt, '*');
+                return new MyString(password == null ? "" : password);
+            } catch (UserInterruptException | EndOfFileException e) {
+                System.out.println("\nInput cancelled.");
+                return new MyString("");
+            }
+        }
+        Console console = System.console();
+        if (console != null) {
+            char[] chars = console.readPassword(prompt);
+            return new MyString(chars == null ? "" : new String(chars));
+        }
+        System.out.print(prompt + "(warning: input visible) ");
+        Scanner sc = new Scanner(System.in);
+        return new MyString(sc.hasNextLine() ? sc.nextLine() : "");
+    }
+
+    public static void closeTerminal() {
+        if (terminal != null) {
+            try { terminal.close(); } catch (IOException e) {
+                System.err.println("[AuthController] Error closing terminal: " + e.getMessage());
+            } finally {
+                terminal = null;
+                lineReader = null;
+            }
+        }
+    }
+
 
     private MyString getFilePath(MyString role) {
         if (role.getValue().equals("ADMIN")) {
@@ -102,13 +180,9 @@ public class AuthController {
             case "STUDENT":
                 String dept = parts.length > 3 ? parts[3].getValue() : "N/A";
                 String email = parts.length > 6 ? parts[6].getValue() : "N/A";
-
                 Student s = new Student(id, name, role, hash, phone, email);
                 s.setDepartment(dept);
-
-                if (parts.length > 7) {
-                    s.setRoomNumber(parts[7].getValue());
-                }
+                if (parts.length > 7) s.setRoomNumber(parts[7].getValue());
                 return s;
 
             case "HALL_ATTENDANT":

@@ -95,7 +95,7 @@ public final class ConsoleUtil {
 
     private static void clearTerminal() {
         try {
-            System.out.print("\u001B[2J\u001B[H");
+            System.out.print("\u001B[3J\u001B[2J\u001B[H");
             System.out.flush();
         } catch (Exception e) {
             System.out.println("Failed to clear terminal.");

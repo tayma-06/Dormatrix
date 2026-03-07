@@ -3,6 +3,8 @@ package cli.dashboard.food;
 import controllers.food.OperationController;
 import utils.ConsoleUtil;
 import utils.FastInput;
+import utils.TerminalUI;
+import utils.TimeManager;
 
 public class SystemOperationService {
 
@@ -11,7 +13,18 @@ public class SystemOperationService {
     public void showTokenVerificationUI() {
         while (true) {
             ConsoleUtil.clearScreen();
-            System.out.print("Enter Token ID (or 0 to back): ");
+            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+            TerminalUI.at(2, 1);
+
+            TerminalUI.tBoxTop();
+            TerminalUI.tBoxTitle("MEAL TOKEN VERIFICATION");
+            TerminalUI.tBoxSep();
+            TerminalUI.tBoxLine("Scan or enter a token ID to verify and consume it.");
+            TerminalUI.tBoxLine("Enter 0 to go back.");
+            TerminalUI.tBoxBottom();
+
+            TerminalUI.tEmpty();
+            TerminalUI.tPrompt("Enter Token ID: ");
             String id = FastInput.readNonEmptyLine();
             if (id.equals("0")) {
                 ConsoleUtil.clearScreen();
@@ -19,16 +32,33 @@ public class SystemOperationService {
             }
 
             String result = opController.processTokenVerification(id);
-            System.out.println(">> " + result);
+
+            TerminalUI.tEmpty();
+            if (result.toLowerCase().contains("success") || result.toLowerCase().contains("verified") || result.toLowerCase().contains("used")) {
+                TerminalUI.tSuccess(result);
+            } else {
+                TerminalUI.tError(result);
+            }
+            TerminalUI.tPause();
         }
     }
 
     public void showRamadanToggleUI() {
         ConsoleUtil.clearScreen();
-        System.out.print("Enable Ramadan Mode? (true/false): ");
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("RAMADAN MODE SETTINGS");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Current Mode: " + (TimeManager.isRamadanMode() ? "RAMADAN" : "NORMAL"));
+        TerminalUI.tBoxBottom();
+
+        TerminalUI.tEmpty();
+        TerminalUI.tPrompt("Enable Ramadan Mode? (true/false): ");
         boolean isRamadan = FastInput.readBoolean();
         String result = opController.processRamadanModeToggle(isRamadan);
-        System.out.println(result);
-        ConsoleUtil.clearScreen();
+        TerminalUI.tEmpty();
+        TerminalUI.tSuccess(result);
     }
 }

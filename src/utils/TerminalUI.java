@@ -54,11 +54,15 @@ public final class TerminalUI {
 
     private static void refreshTerminalSizeIfNeeded() {
         long now = System.currentTimeMillis();
-        if (now - lastTermProbeMs < TERM_PROBE_INTERVAL_MS) return;
+        if (now - lastTermProbeMs < TERM_PROBE_INTERVAL_MS) {
+            return;
+        }
 
         synchronized (TerminalUI.class) {
             now = System.currentTimeMillis();
-            if (now - lastTermProbeMs < TERM_PROBE_INTERVAL_MS) return;
+            if (now - lastTermProbeMs < TERM_PROBE_INTERVAL_MS) {
+                return;
+            }
 
             int w = -1, h = -1;
 
@@ -66,19 +70,30 @@ public final class TerminalUI {
             try {
                 String ec = System.getenv("COLUMNS");
                 String el = System.getenv("LINES");
-                if (ec != null) w = Integer.parseInt(ec.trim());
-                if (el != null) h = Integer.parseInt(el.trim());
-            } catch (Exception ignored) {}
+                if (ec != null) {
+                    w = Integer.parseInt(ec.trim());
+                }
+                if (el != null) {
+                    h = Integer.parseInt(el.trim());
+                }
+            } catch (Exception ignored) {
+            }
 
             // ── Priority 2: tput (Unix only) ─────────────────────────────────
             if (!IS_WINDOWS) {
                 if (w <= 0) {
                     String s = runProbe(new String[]{"sh", "-c", "tput cols 2>/dev/null"}, 1000);
-                    if (s != null) try { w = Integer.parseInt(s.trim()); } catch (Exception ignored) {}
+                    if (s != null) try {
+                        w = Integer.parseInt(s.trim());
+                    } catch (Exception ignored) {
+                    }
                 }
                 if (h <= 0) {
                     String s = runProbe(new String[]{"sh", "-c", "tput lines 2>/dev/null"}, 1000);
-                    if (s != null) try { h = Integer.parseInt(s.trim()); } catch (Exception ignored) {}
+                    if (s != null) try {
+                        h = Integer.parseInt(s.trim());
+                    } catch (Exception ignored) {
+                    }
                 }
             }
 
@@ -90,15 +105,21 @@ public final class TerminalUI {
                         String t = line.trim().toLowerCase();
                         if (t.contains("column")) {
                             Matcher m = COLON_NUMBER.matcher(t);
-                            if (m.find()) w = Integer.parseInt(m.group(1));
+                            if (m.find()) {
+                                w = Integer.parseInt(m.group(1));
+                            }
                         }
                     }
                 }
             }
 
             // ── Sanity clamp ───────────────────────────────────────────────────
-            if (w > 20)  cachedTermW = w;
-            if (h > 10)  cachedTermH = h;
+            if (w > 20) {
+                cachedTermW = w;
+            }
+            if (h > 10) {
+                cachedTermH = h;
+            }
             lastTermProbeMs = now;
         }
     }
@@ -247,9 +268,11 @@ public final class TerminalUI {
         }
 
         char[][] screen = new char[h][w];
-        for (int r = 0; r < h; r++)
-            for (int c = 0; c < w; c++)
+        for (int r = 0; r < h; r++) {
+            for (int c = 0; c < w; c++) {
                 screen[r][c] = ' ';
+            }
+        }
 
         // Build background + clear strings once
         String bgCode = ConsoleColors.bgRGB(RAIN_BG[0], RAIN_BG[1], RAIN_BG[2]);
@@ -276,7 +299,9 @@ public final class TerminalUI {
             for (RainColumn rc : cols) {
                 for (int r = 0; r < h; r++) {
                     int dist = rc.head - r;
-                    if (dist < 0 || dist > rc.len) continue;
+                    if (dist < 0 || dist > rc.len) {
+                        continue;
+                    }
 
                     int[] color;
                     if (dist == 0) {
@@ -291,15 +316,22 @@ public final class TerminalUI {
                     }
 
                     char ch = screen[r][rc.col];
-                    if (ch == ' ') ch = MATRIX_GLYPHS[RAND.nextInt(MATRIX_GLYPHS.length)];
+                    if (ch == ' ') {
+                        ch = MATRIX_GLYPHS[RAND.nextInt(MATRIX_GLYPHS.length)];
+                    }
 
                     frame.append("\u001B[").append(r + 1).append(";").append(rc.col + 1).append("H");
                     frame.append(bgCode);
                     frame.append(ConsoleColors.fgRGB(color[0], color[1], color[2]));
-                    if (dist == 0) frame.append(BOLD);
+                    if (dist == 0) {
+                        frame.append(BOLD);
+                    }
                     frame.append(ch);
                     // Use SGR reset only for BOLD — keep bg color active
-                    if (dist == 0) frame.append("\u001B[22m");  // bold off only
+                    if (dist == 0) {
+                        frame.append("\u001B[22m");  // bold off only
+
+                    }
                 }
 
                 // Erase tail cell
@@ -323,7 +355,6 @@ public final class TerminalUI {
         System.out.print(SHOW_CUR);
         System.out.flush();
     }
-
 
     /**
      * Quick matrix rain intro (1000ms) - for dashboard transitions
@@ -501,7 +532,7 @@ public final class TerminalUI {
         int fieldW = iw - inputLabel.length() - 2;     // 2 = outer padding
         boxRow(startRow, col,
                 boxColor + "║ " + RESET
-                + ConsoleColors.Accent.INPUT + inputLabel + RESET
+                + ConsoleColors.FG_WHITE + inputLabel + RESET
                 + " ".repeat(Math.max(0, fieldW))
                 + boxColor + " ║" + RESET);
         int inputRow = startRow++;
@@ -892,22 +923,6 @@ public final class TerminalUI {
         System.out.print("\u001B[" + col + "G" + color + prompt + RESET);
     }
 
-    /**
-     * Draw a single-field input box, centered on screen.
-     *
-     * Layout: ╔══════════════════════════════════════╗ ║ ║ ← blank ║ Label : [
-     * ] ║ ← input field ║ ║ ← blank ╚══════════════════════════════════════╝
-     *
-     * Positions the cursor inside the input field and returns. The caller
-     * should immediately read input after calling this.
-     *
-     * @param startRow first terminal row to draw on
-     * @param label field label (e.g. "Enter your choice")
-     * @param boxColor border color escape
-     * @param textColor label/text color escape
-     * @param panelBg panel background color escape
-     * @param inputBg input field background color escape
-     */
     public static void drawInputBox(int startRow, String label,
             String boxColor, String textColor,
             String panelBg, String inputBg)
@@ -1163,18 +1178,27 @@ public final class TerminalUI {
         }
         // Input separator + input row inside the box (matches drawDashboard style)
         tBoxSep();
+        tInputRow();
+    }
+
+    /**
+     * Draws the "Your choice" input row + bottom border and positions the
+     * cursor inside the input field. Call this after all menu lines have been
+     * drawn (no tBoxBottom needed after this).
+     */
+    public static void tInputRow() {
         int col = centerCol(DASH_W);
         String inputLabel = "Your choice  : ";
         int fieldW = DASH_IW - inputLabel.length() - 2;
         System.out.print(
                 "\u001B[" + col + "G"
                 + activeBoxColor + activePanelBgColor + "║ "
-                + ConsoleColors.Accent.INPUT + inputLabel + RESET + activePanelBgColor
+                + ConsoleColors.FG_WHITE + inputLabel + RESET + activePanelBgColor
                 + " ".repeat(Math.max(0, fieldW))
-                + activeBoxColor + activePanelBgColor + "║" + RESET + "\n"
+                + activeBoxColor + activePanelBgColor + " ║" + RESET + "\n"
         );
         tBoxBottom();
-        // Position cursor inside the input field (2 lines up: past bottom border to input row)
+        // Move cursor up 2 rows (input row is above the bottom border row)
         System.out.print(SHOW_CUR + "\u001B[2A\u001B[" + (col + 2 + inputLabel.length()) + "G");
         System.out.flush();
     }

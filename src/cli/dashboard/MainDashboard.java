@@ -4,31 +4,108 @@ import controllers.dashboard.MainDashboardController;
 import libraries.collections.MyString;
 import utils.*;
 
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.UserInterruptException;
+import org.jline.reader.EndOfFileException;
+
+import java.io.IOException;
+
 import static utils.TerminalUI.*;
 
 public class MainDashboard {
 
     private final MainDashboardController controller = new MainDashboardController();
 
-    private static final String BOX = ConsoleColors.Accent.BOX;
+    private static final String BOX   = ConsoleColors.Accent.BOX;
     private static final String THEME = ConsoleColors.ThemeText.SOFT_WHITE;
     private static final String INPUT = ConsoleColors.Accent.INPUT;
-    private static final String EXIT = ConsoleColors.Accent.EXIT;
+    private static final String EXIT  = ConsoleColors.Accent.EXIT;
     private static final String MUTED = ConsoleColors.Accent.MUTED;
+
+    // ── JLine terminal (shared, initialised once) ─────────────────
+    private static Terminal  jlineTerminal  = null;
+    private static LineReader jlineReader   = null;
+    private static boolean   jlineReady     = false;
+
+    private static void initJLine() {
+        if (jlineTerminal != null) return;
+        java.util.logging.Logger.getLogger("org.jline").setLevel(java.util.logging.Level.OFF);
+        try {
+            Terminal t = TerminalBuilder.builder().system(true).build();
+            if (org.jline.terminal.Terminal.TYPE_DUMB.equals(t.getType())
+                    || org.jline.terminal.Terminal.TYPE_DUMB_COLOR.equals(t.getType())) {
+                t.close();
+                jlineReady = false;
+                return;
+            }
+            jlineTerminal = t;
+            jlineReader   = LineReaderBuilder.builder()
+                    .terminal(jlineTerminal)
+                    .build();
+            jlineReady = true;
+        } catch (IOException | IllegalStateException e) {
+            jlineReady = false;
+        }
+    }
+
+    // Change this to '·' (alt+0183) if you prefer dot masking instead of asterisks
+    private static final char PASSWORD_MASK = '•';
+
+    /**
+     * Reads a password at the current cursor position.
+     * Each typed character is echoed as PASSWORD_MASK ('*' or '·').
+     * The caller is responsible for positioning the cursor with at() first.
+     * Falls back to System.console() then plain FastInput if JLine is unavailable.
+     */
+    private static MyString readMaskedPassword() {
+        initJLine();
+
+        if (jlineReady && jlineReader != null) {
+            try {
+                // Correct overload: readLine(prompt, rightPrompt, mask, buffer)
+                // Empty prompt — caller already positioned cursor with at().
+                // JLine echoes PASSWORD_MASK for every character typed.
+                String raw = jlineReader.readLine("", null, (Character) PASSWORD_MASK, null);
+                return new MyString(raw == null ? "" : raw);
+            } catch (UserInterruptException | EndOfFileException e) {
+                return new MyString("");
+            }
+        }
+
+        // Fallback 1: System.console() — input is silent/invisible
+        java.io.Console console = System.console();
+        if (console != null) {
+            char[] chars = console.readPassword();
+            return new MyString(chars == null ? "" : new String(chars));
+        }
+
+        // Fallback 2: plain read — input is visible (last resort)
+        return new MyString(FastInput.readNonEmptyLine());
+    }
 
     // ── Role select menu ─────────────────────────────────────────
     private static final MenuItem[] MENU = {
-        new MenuItem(1, "Student"),
-        new MenuItem(2, "Attendant"),
-        new MenuItem(3, "Maintenance Worker"),
-        new MenuItem(4, "Store-in-Charge"),
-        new MenuItem(5, "Hall Office"),
-        new MenuItem(6, "Admin"),
-        new MenuItem(7, "Cafeteria Manager"),
-        new MenuItem(0, "Exit"),};
+            new MenuItem(1, "Student"),
+            new MenuItem(2, "Attendant"),
+            new MenuItem(3, "Maintenance Worker"),
+            new MenuItem(4, "Store-in-Charge"),
+            new MenuItem(5, "Hall Office"),
+            new MenuItem(6, "Admin"),
+            new MenuItem(7, "Cafeteria Manager"),
+            new MenuItem(0, "Exit"),
+    };
 
     public void show() {
-        Runtime.getRuntime().addShutdownHook(new Thread(TerminalUI::cleanup));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            TerminalUI.cleanup();
+            // Close JLine terminal cleanly on shutdown
+            if (jlineTerminal != null) {
+                try { jlineTerminal.close(); } catch (IOException ignored) {}
+            }
+        }));
 
         boolean firstRun = true;
 
@@ -38,15 +115,15 @@ public class MainDashboard {
                 // ── Phase 1: matrix rain (first visit only) ───────
                 if (firstRun) {
                     firstRun = false;
-                    quickMatrixRain();            // plays 2 s of pink/magenta rain
+                    quickMatrixRain();
                 }
 
                 // ── Phase 2: apply theme + fill canvas ────────────
-                BackgroundFiller.applyMainMenuTheme();   // sets bg escape + fillCanvas()
+                BackgroundFiller.applyMainMenuTheme();
                 System.out.print(HIDE_CUR);
 
                 // ── Phase 3: animated banner ──────────────────────
-                int afterBanner = drawBanner(2);         // rows 2-6, returns row 7
+                int afterBanner = drawBanner(2);
 
                 // ── Phase 4: subtitle typewriter ─────────────────
                 String sub = "IUT Female Dormitory  ·  Islamic University of Technology";
@@ -63,7 +140,7 @@ public class MainDashboard {
                         menuStartRow
                 );
 
-                // ── Phase 6: read input ─────────────────────────
+                // ── Phase 6: read role choice ────────────────────
                 System.out.print(SHOW_CUR);
                 int choice = FastInput.readInt();
                 System.out.print(RESET);
@@ -81,46 +158,36 @@ public class MainDashboard {
                     System.exit(0);
                 }
 
-                // ── Phase 8: login panel (absolute positioned) ────
-                //
-                //  We redraw the background so the login box appears
-                //  cleanly over it instead of over the old menu text.
-                //
+                // ── Phase 8: login panel ──────────────────────────
                 BackgroundFiller.applyMainMenuTheme();
-                drawBanner(2);                           // keep banner visible
-
-                // Subtitle
-                typewrite(afterBanner + 1, sub, MUTED, 0);  // instant replay
+                drawBanner(2);
+                typewrite(afterBanner + 1, sub, MUTED, 0);
 
                 int mid = afterBanner + 4;
                 int col = boxCol();
-                int iw = innerW();
+                int iw  = innerW();
 
-                // Panel bg is slightly lighter than the screen bg
                 String panelBg = ConsoleColors.bgRGB(16, 11, 30);
                 String inputBg = ConsoleColors.bgRGB(22, 16, 38);
 
-                // Draw login box — fully absolute, no println()
                 drawLoginBox(mid, col, iw, panelBg, inputBg);
 
-                // ── Position cursor inside User ID field and read ─
+                // ── Read username ────────────────────────────────
                 at(mid + 4, col + 14);
                 System.out.print(inputBg + THEME);
                 System.out.flush();
                 MyString username = new MyString(FastInput.readNonEmptyLine());
 
-                // Redraw password row (username input may have scrolled)
+                // ── Read password with '*' masking ───────────────
                 at(mid + 6, col + 14);
                 System.out.print(inputBg + THEME);
                 System.out.flush();
-                MyString password = InputHelper.readPassword();
+                MyString password = readMaskedPassword();   // ← JLine masked input
 
                 System.out.print(RESET);
 
-                // Move cursor below the login box so success/error messages don't overlap
                 at(mid + 10, 1);
 
-                // Hand off to controller
                 controller.handleRoleInput(choice, username, password);
 
             } catch (Exception e) {
@@ -133,44 +200,38 @@ public class MainDashboard {
     // ─────────────────────────────────────────────────────────────
     //  LOGIN BOX
     //
-    //  Draws a credential panel starting at `topRow`.
-    //  Layout (rows relative to topRow):
-    //
     //    +0  ╔══════════════════════╗
     //    +1  ║   LOGIN CREDENTIALS  ║
     //    +2  ╠══════════════════════╣
     //    +3  ║                      ║   ← blank
-    //    +4  ║  User ID   : [     ] ║   ← input here
+    //    +4  ║  User ID   : [     ] ║   ← username input
     //    +5  ║                      ║   ← blank
-    //    +6  ║  Password  : [     ] ║   ← input here
+    //    +6  ║  Password  : [     ] ║   ← masked password input
     //    +7  ║                      ║   ← blank
     //    +8  ╚══════════════════════╝
-    //
     // ─────────────────────────────────────────────────────────────
     private static void drawLoginBox(int topRow, int col, int iw,
-            String panelBg, String inputBg)
+                                     String panelBg, String inputBg)
             throws InterruptedException {
 
-        String b = BOX + panelBg;
-        String t = THEME + panelBg;
-        String r = RESET;
-
-        // Field label width = 12 chars ("User ID   : ")
-        // Input field width = iw - 14 chars
-        int fieldW = Math.max(10, iw - 14);
+        String b      = BOX + panelBg;
+        String t      = THEME + panelBg;
+        String r      = RESET;
+        int    fieldW = Math.max(10, iw - 14);
 
         String[][] rows = {
-            /* +0 top    */{b + "╔" + "═".repeat(iw) + "╗" + r},
-            /* +1 title  */ {b + "║" + r + BOLD + t + padC("LOGIN CREDENTIALS", iw) + r + b + "║" + r},
-            /* +2 sep    */ {b + "╠" + "═".repeat(iw) + "╣" + r},
-            /* +3 blank  */ {b + "║" + panelBg + " ".repeat(iw) + b + "║" + r},
-            /* +4 userid */ {b + "║ " + r + INPUT + panelBg + "User ID   : " + r
-                + inputBg + THEME + " ".repeat(fieldW) + " " + r + b + "║" + r},
-            /* +5 blank  */ {b + "║" + panelBg + " ".repeat(iw) + b + "║" + r},
-            /* +6 passwd */ {b + "║ " + r + INPUT + panelBg + "Password  : " + r
-                + inputBg + THEME + " ".repeat(fieldW) + " " + r + b + "║" + r},
-            /* +7 blank  */ {b + "║" + panelBg + " ".repeat(iw) + b + "║" + r},
-            /* +8 bottom */ {b + "╚" + "═".repeat(iw) + "╝" + r},};
+                /* +0 top    */ { b + "╔" + "═".repeat(iw) + "╗" + r },
+                /* +1 title  */ { b + "║" + r + BOLD + t + padC("LOGIN CREDENTIALS", iw) + r + b + "║" + r },
+                /* +2 sep    */ { b + "╠" + "═".repeat(iw) + "╣" + r },
+                /* +3 blank  */ { b + "║" + panelBg + " ".repeat(iw) + b + "║" + r },
+                /* +4 userid */ { b + "║ " + r + INPUT + panelBg + "User ID   : " + r
+                + inputBg + THEME + " ".repeat(fieldW) + " " + r + b + "║" + r },
+                /* +5 blank  */ { b + "║" + panelBg + " ".repeat(iw) + b + "║" + r },
+                /* +6 passwd */ { b + "║ " + r + INPUT + panelBg + "Password  : " + r
+                + inputBg + THEME + " ".repeat(fieldW) + " " + r + b + "║" + r },
+                /* +7 blank  */ { b + "║" + panelBg + " ".repeat(iw) + b + "║" + r },
+                /* +8 bottom */ { b + "╚" + "═".repeat(iw) + "╝" + r },
+        };
 
         for (int i = 0; i < rows.length; i++) {
             at(topRow + i, col);

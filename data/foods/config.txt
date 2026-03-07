@@ -1,1 +1,1 @@
-RAMADAN=true
+RAMADAN=false

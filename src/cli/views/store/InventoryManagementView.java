@@ -41,9 +41,8 @@ public class InventoryManagementView {
             TerminalUI.tBoxLine("[7] View Low Stock Items");
             TerminalUI.tBoxLine("[8] View Items by Price Range");
             TerminalUI.tBoxLine("[0] Back", utils.ConsoleColors.Accent.EXIT);
-            TerminalUI.tBoxBottom();
-            TerminalUI.tEmpty();
-            TerminalUI.tPrompt("Enter your choice: ");
+            TerminalUI.tBoxSep();
+            TerminalUI.tInputRow();
 
             String choice = FastInput.readLine();
 

@@ -42,21 +42,35 @@ public class StoreLedgerView {
             TerminalUI.tBoxLine("[5] View Complete Purchase History");
             TerminalUI.tBoxLine("[6] View Recent Purchases");
             TerminalUI.tBoxLine("[0] Back", utils.ConsoleColors.Accent.EXIT);
-            TerminalUI.tBoxBottom();
-            TerminalUI.tEmpty();
-            TerminalUI.tPrompt("Enter your choice: ");
+            TerminalUI.tBoxSep();
+            TerminalUI.tInputRow();
 
             String choice = FastInput.readLine();
 
             switch (choice) {
-                case "1": viewBalance(studentId); break;
-                case "2": addBalance(studentId); break;
-                case "3": viewDues(studentId); break;
-                case "4": payDues(studentId); break;
-                case "5": viewPurchaseHistory(studentId); break;
-                case "6": viewRecentPurchases(studentId); break;
-                case "0": ConsoleUtil.clearScreen(); return;
-                default: TerminalUI.tError("Invalid choice!");
+                case "1":
+                    viewBalance(studentId);
+                    break;
+                case "2":
+                    addBalance(studentId);
+                    break;
+                case "3":
+                    viewDues(studentId);
+                    break;
+                case "4":
+                    payDues(studentId);
+                    break;
+                case "5":
+                    viewPurchaseHistory(studentId);
+                    break;
+                case "6":
+                    viewRecentPurchases(studentId);
+                    break;
+                case "0":
+                    ConsoleUtil.clearScreen();
+                    return;
+                default:
+                    TerminalUI.tError("Invalid choice!");
             }
 
             if (!choice.equals("0")) {

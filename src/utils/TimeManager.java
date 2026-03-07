@@ -51,7 +51,9 @@ public class TimeManager {
         }
     }
 
-    public static boolean isDemoMode() { return demoMode; }
+    public static boolean isDemoMode() {
+        return demoMode;
+    }
 
     public static void setRamadanMode(boolean active) {
         isRamadanMode = active;
@@ -70,10 +72,14 @@ public class TimeManager {
         }
     }
 
-    public static boolean isRamadanMode() { return isRamadanMode; }
+    public static boolean isRamadanMode() {
+        return isRamadanMode;
+    }
 
     public static LocalTime nowTime() {
-        if (!demoMode) return LocalTime.now();
+        if (!demoMode) {
+            return LocalTime.now();
+        }
 
         long elapsedRealSec = (System.currentTimeMillis() - demoStartRealMillis) / 1000;
         long simSec = elapsedRealSec * DEMO_SIM_SECONDS_PER_REAL_SECOND;
@@ -81,9 +87,13 @@ public class TimeManager {
         return DEMO_START_TIME.plusSeconds(simSec);
     }
 
-    public static LocalDate nowDate() { return demoMode ? demoDate : LocalDate.now(); }
+    public static LocalDate nowDate() {
+        return demoMode ? demoDate : LocalDate.now();
+    }
 
-    public static DayOfWeek nowDay() { return nowDate().getDayOfWeek(); }
+    public static DayOfWeek nowDay() {
+        return nowDate().getDayOfWeek();
+    }
 
     public static MealType getCurrentMealSlot() {
         LocalTime now = nowTime();
@@ -97,21 +107,62 @@ public class TimeManager {
             return MealType.BREAKFAST;
         }
 
-        if (isBetween(now, "07:00", "09:30")) return MealType.BREAKFAST;
-        if (isBetween(now, "12:00", "14:00")) return MealType.LUNCH;
-        if (isBetween(now, "19:00", "21:00")) return MealType.DINNER;
+        if (isBetween(now, "07:00", "09:30")) {
+            return MealType.BREAKFAST;
+        }
+        if (isBetween(now, "12:00", "14:00")) {
+            return MealType.LUNCH;
+        }
+        if (isBetween(now, "19:00", "21:00")) {
+            return MealType.DINNER;
+        }
 
         return MealType.NONE;
     }
 
     private static MealType getRamadanSlot(LocalTime now) {
-        if (isBetween(now, "03:00", "04:30")) return MealType.SUHOOR;
-        if (isBetween(now, "18:00", "19:15")) return MealType.IFTAR;
-        if (isBetween(now, "19:30", "21:30")) return MealType.DINNER;
+        if (isBetween(now, "03:00", "04:30")) {
+            return MealType.SUHOOR;
+        }
+        if (isBetween(now, "18:00", "19:15")) {
+            return MealType.IFTAR;
+        }
+        if (isBetween(now, "19:30", "21:30")) {
+            return MealType.DINNER;
+        }
         return MealType.NONE;
     }
 
     private static boolean isBetween(LocalTime now, String start, String end) {
         return !now.isBefore(LocalTime.parse(start)) && !now.isAfter(LocalTime.parse(end));
+    }
+
+    /**
+     * Returns the end time for a given meal type's purchase window. After this
+     * time on the same day, tokens for that meal cannot be purchased.
+     */
+    public static LocalTime getMealEndTime(MealType type) {
+        if (isRamadanMode) {
+            return switch (type) {
+                case SUHOOR ->
+                    LocalTime.parse("04:30");
+                case IFTAR ->
+                    LocalTime.parse("19:15");
+                case DINNER ->
+                    LocalTime.parse("21:30");
+                default ->
+                    LocalTime.MIN;
+            };
+        }
+        return switch (type) {
+            case BREAKFAST ->
+                LocalTime.parse("09:30");
+            case LUNCH ->
+                LocalTime.parse("14:00");
+            case DINNER ->
+                LocalTime.parse("21:00");
+            default ->
+                LocalTime.MIN;
+        };
     }
 }

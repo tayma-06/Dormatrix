@@ -47,7 +47,7 @@ echo Compilation successful.
 
 REM ========== RUN ==========
 REM -- Updated java command to include both out and lib folders --
-java -cp "%OUT_DIR%;%LIB_DIR%\*" %MAIN_CLASS%
+java --enable-native-access=ALL-UNNAMED -cp "%OUT_DIR%;%LIB_DIR%\*" %MAIN_CLASS%
 
 >nul echo %ESC%[0m%ESC%[?25h
 echo.

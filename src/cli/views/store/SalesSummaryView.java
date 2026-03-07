@@ -9,6 +9,7 @@ import utils.FastInput;
 import utils.TerminalUI;
 
 public class SalesSummaryView {
+
     private final String SALES_FILE = "data/store/sales.txt";
 
     private final SalesSummaryController salesController;
@@ -64,9 +65,8 @@ public class SalesSummaryView {
         TerminalUI.tBoxLine("[3] Monthly Summary (Last 30 Days)");
         TerminalUI.tBoxLine("[4] Custom Date Range");
         TerminalUI.tBoxLine("[0] Back", utils.ConsoleColors.Accent.EXIT);
-        TerminalUI.tBoxBottom();
-        TerminalUI.tEmpty();
-        TerminalUI.tPrompt("Enter your choice: ");
+        TerminalUI.tBoxSep();
+        TerminalUI.tInputRow();
     }
 
     private void showCustomDateRange() {
@@ -99,6 +99,7 @@ public class SalesSummaryView {
 
         } catch (DateTimeParseException e) {
             TerminalUI.tError("Invalid date format! Please use dd-MM-yyyy");
+
         } catch (Exception e) {
             TerminalUI.tError("Error processing date range: " + e.getMessage());
         }

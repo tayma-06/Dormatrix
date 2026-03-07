@@ -6,6 +6,7 @@ for /F "delims=" %%A in ('echo prompt $E^| cmd') do set "ESC=%%A"
 
 set "ROOT=%~dp0"
 set "OUT_DIR=%ROOT%out"
+set "LIB_DIR=%ROOT%lib"
 set "MAIN_CLASS=Dormatrix"
 
 REM ========== CHECK OUT DIR ==========
@@ -18,7 +19,7 @@ if not exist "%OUT_DIR%" (
 )
 
 REM ========== RUN ==========
-java -cp "%OUT_DIR%" %MAIN_CLASS%
+java --enable-native-access=ALL-UNNAMED -cp "%OUT_DIR%;%LIB_DIR%\*" %MAIN_CLASS%
 
 >nul echo %ESC%[0m%ESC%[?25h
 echo.

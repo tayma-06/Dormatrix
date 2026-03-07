@@ -24,7 +24,6 @@ public class ShoppingCartView {
             TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
             TerminalUI.at(2, 1);
 
-            // Header with balance info
             double balance = BalanceController.getBalance(studentId);
             double dues = DueController.getDue(studentId);
 
@@ -33,7 +32,9 @@ public class ShoppingCartView {
             TerminalUI.tBoxSep();
             TerminalUI.tBoxLine("Student ID: " + studentId);
             String balInfo = String.format("Balance: $%.2f", balance);
-            if (dues > 0) balInfo += String.format(" | Dues: $%.2f", dues);
+            if (dues > 0) {
+                balInfo += String.format(" | Dues: $%.2f", dues);
+            }
             TerminalUI.tBoxLine(balInfo);
             TerminalUI.tBoxSep();
 
@@ -51,24 +52,36 @@ public class ShoppingCartView {
             TerminalUI.tBoxLine("[5] Checkout");
             TerminalUI.tBoxLine("[6] Clear Cart");
             TerminalUI.tBoxLine("[0] Back", utils.ConsoleColors.Accent.EXIT);
-            TerminalUI.tBoxBottom();
-            TerminalUI.tEmpty();
-            TerminalUI.tPrompt("Enter your choice: ");
+            TerminalUI.tBoxSep();
+            TerminalUI.tInputRow();
 
             String choice = FastInput.readLine().toUpperCase();
 
             switch (choice) {
-                case "1": browseAndAddItems(cart); break;
-                case "2": addItemToCart(cart); break;
-                case "3": removeItemFromCart(cart); break;
-                case "4": viewCartDetails(cart); break;
-                case "5": processCheckout(studentId, cart); break;
+                case "1":
+                    browseAndAddItems(cart);
+                    break;
+                case "2":
+                    addItemToCart(cart);
+                    break;
+                case "3":
+                    removeItemFromCart(cart);
+                    break;
+                case "4":
+                    viewCartDetails(cart);
+                    break;
+                case "5":
+                    processCheckout(studentId, cart);
+                    break;
                 case "6":
                     cart.clear();
                     TerminalUI.tSuccess("Cart cleared!");
                     break;
-                case "0": ConsoleUtil.clearScreen(); return;
-                default: TerminalUI.tError("Invalid choice!");
+                case "0":
+                    ConsoleUtil.clearScreen();
+                    return;
+                default:
+                    TerminalUI.tError("Invalid choice!");
             }
 
             if (!choice.equals("0")) {
@@ -88,15 +101,27 @@ public class ShoppingCartView {
         String itemId = FastInput.readLine();
 
         Item item = InventoryController.getItem(itemId);
-        if (item == null) { TerminalUI.tError("Item not found!"); return; }
-        if (item.getQuantity() <= 0) { TerminalUI.tError("Item out of stock!"); return; }
+        if (item == null) {
+            TerminalUI.tError("Item not found!");
+            return;
+        }
+        if (item.getQuantity() <= 0) {
+            TerminalUI.tError("Item out of stock!");
+            return;
+        }
 
         TerminalUI.tBoxLine(String.format("Item: %s - $%.2f (Available: %d)", item.getName(), item.getPrice(), item.getQuantity()));
         TerminalUI.tPrompt("Enter Quantity: ");
         int qty = FastInput.readInt();
 
-        if (qty <= 0) { TerminalUI.tError("Invalid quantity!"); return; }
-        if (qty > item.getQuantity()) { TerminalUI.tError("Insufficient stock! Available: " + item.getQuantity()); return; }
+        if (qty <= 0) {
+            TerminalUI.tError("Invalid quantity!");
+            return;
+        }
+        if (qty > item.getQuantity()) {
+            TerminalUI.tError("Insufficient stock! Available: " + item.getQuantity());
+            return;
+        }
 
         cart.addItem(itemId, item.getName(), qty, item.getPrice());
         TerminalUI.tSuccess("Added to cart!");
@@ -104,7 +129,10 @@ public class ShoppingCartView {
     }
 
     private static void removeItemFromCart(ShoppingCart cart) {
-        if (cart.isEmpty()) { TerminalUI.tError("Cart is empty!"); return; }
+        if (cart.isEmpty()) {
+            TerminalUI.tError("Cart is empty!");
+            return;
+        }
         viewCartDetails(cart);
         TerminalUI.tPrompt("Enter Item ID to remove: ");
         String itemId = FastInput.readLine();
@@ -131,7 +159,10 @@ public class ShoppingCartView {
     }
 
     private static void processCheckout(String studentId, ShoppingCart cart) {
-        if (cart.isEmpty()) { TerminalUI.tError("Cart is empty! Add items before checkout."); return; }
+        if (cart.isEmpty()) {
+            TerminalUI.tError("Cart is empty! Add items before checkout.");
+            return;
+        }
 
         TerminalUI.tEmpty();
         TerminalUI.tBoxTop();
@@ -147,9 +178,10 @@ public class ShoppingCartView {
         double balance = BalanceController.getBalance(studentId);
         double currentDues = DueController.getDue(studentId);
         TerminalUI.tBoxLine(String.format("Your Balance: $%.2f", balance));
-        if (currentDues > 0) TerminalUI.tBoxLine(String.format("Current Dues: $%.2f", currentDues));
+        if (currentDues > 0) {
+            TerminalUI.tBoxLine(String.format("Current Dues: $%.2f", currentDues));
+        }
 
-        TerminalUI.tEmpty();
         TerminalUI.tSubDashboard("PAYMENT METHOD", new String[]{
             "[1] Pay with Balance",
             "[2] Buy on Credit (Add to Dues)",
@@ -170,10 +202,17 @@ public class ShoppingCartView {
                 useCredit = true;
                 TerminalUI.tPrompt("This will be added to dues. Confirm? (y/n): ");
                 String confirm = FastInput.readLine();
-                if (!confirm.equalsIgnoreCase("y")) { TerminalUI.tPrint("Checkout cancelled."); return; }
+                if (!confirm.equalsIgnoreCase("y")) {
+                    TerminalUI.tPrint("Checkout cancelled.");
+                    return;
+                }
                 break;
-            case "0": TerminalUI.tPrint("Checkout cancelled."); return;
-            default: TerminalUI.tError("Invalid payment method!"); return;
+            case "0":
+                TerminalUI.tPrint("Checkout cancelled.");
+                return;
+            default:
+                TerminalUI.tError("Invalid payment method!");
+                return;
         }
 
         boolean success = PurchaseController.purchaseCart(studentId, cart.getItems(), useCredit);

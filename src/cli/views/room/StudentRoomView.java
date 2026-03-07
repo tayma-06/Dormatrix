@@ -25,10 +25,11 @@ public class StudentRoomView {
                 TerminalUI.tBoxLine("Info: Room details not found.");
             }
         }
-        TerminalUI.tSubDashboard("MY ROOM STATUS", new String[]{
-            "[1] My Room Complaints",
-            "[0] Exit"
-        });
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("[1] My Room Complaints");
+        TerminalUI.tBoxLine("[0] Exit", utils.ConsoleColors.Accent.EXIT);
+        TerminalUI.tBoxSep();
+        TerminalUI.tInputRow();
 
         while (true) {
             String input = FastInput.readLine().trim();

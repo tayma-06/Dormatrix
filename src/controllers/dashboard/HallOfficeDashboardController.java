@@ -15,7 +15,6 @@ import utils.ConsoleUtil;
 import utils.FastInput;
 import utils.TerminalUI;
 
-
 public class HallOfficeDashboardController {
 
     private final String STUDENT_FILE = "data/users/students.txt";
@@ -60,18 +59,20 @@ public class HallOfficeDashboardController {
 
             int subChoice = FastInput.readInt();
 
-                if (subChoice == 1) {
-                    for (models.room.Room r : roomController.getAllRooms()) {
-                        TerminalUI.tBoxLine(r.toString());
-                    }
-                    TerminalUI.tPause();
-                } else if (subChoice == 2) {
-                    updateStudentRoom();
-                    TerminalUI.tPause();
-                } else if (subChoice == 0) {
-                    ConsoleUtil.clearScreen();
-                    return;
+            if (subChoice == 1) {
+                for (models.room.Room r : roomController.getAllRooms()) {
+                    TerminalUI.tBoxLine(r.toString());
                 }
+                TerminalUI.tPause();
+            } else if (subChoice == 2) {
+                updateStudentRoom();
+                TerminalUI.tPause();
+            } else if (subChoice == 0) {
+                ConsoleUtil.clearScreen();
+                return;
+            } else {
+                TerminalUI.tPrint("Invalid sub-choice.");
+                TerminalUI.tPause();
             }
         }
     }
@@ -172,30 +173,29 @@ public class HallOfficeDashboardController {
             complaintView.attendantMenu();
             int choice = FastInput.readInt();
 
-                switch (choice) {
-                    case 1:
-                        MyArrayList<Complaint> all = complaintRepo.findAll();
-                        complaintView.attendantList(all);
-                        ConsoleUtil.pause();
-                        break;
-                    case 2:
-                        System.out.println(">> Filtering Pending... (To be implemented fully)");
-                        complaintView.attendantList(complaintRepo.findAll());
-                        ConsoleUtil.pause();
-                        break;
-                    case 7:
-                        TerminalUI.tPrompt("Enter Room ID: ");
-                        String rid = FastInput.readLine().trim();
-                        new StudentRoomDashboard(new StudentRoomDashboardController(new RoomService())).showComplaints(rid);
-                        ConsoleUtil.pause();
-                        break;
-                    case 0:
-                        ConsoleUtil.clearScreen();
-                        return;
-                    default:
-                        TerminalUI.tPrint("Option " + choice + " is coming soon.");
-                        ConsoleUtil.pause();
-                }
+            switch (choice) {
+                case 1:
+                    MyArrayList<Complaint> all = complaintRepo.findAll();
+                    complaintView.attendantList(all);
+                    ConsoleUtil.pause();
+                    break;
+                case 2:
+                    System.out.println(">> Filtering Pending... (To be implemented fully)");
+                    complaintView.attendantList(complaintRepo.findAll());
+                    ConsoleUtil.pause();
+                    break;
+                case 7:
+                    TerminalUI.tPrompt("Enter Room ID: ");
+                    String rid = FastInput.readLine().trim();
+                    new StudentRoomDashboard(new StudentRoomDashboardController(new RoomService())).showComplaints(rid);
+                    ConsoleUtil.pause();
+                    break;
+                case 0:
+                    ConsoleUtil.clearScreen();
+                    return;
+                default:
+                    TerminalUI.tPrint("Option " + choice + " is coming soon.");
+                    ConsoleUtil.pause();
             }
         }
     }
