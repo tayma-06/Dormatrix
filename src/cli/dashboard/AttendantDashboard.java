@@ -33,6 +33,7 @@ public class AttendantDashboard implements Dashboard {
             System.out.println("║ [2] Handle Worker Schedule                                          ║");
             System.out.println("║ [3] Add Found Items                                                 ║");
             System.out.println("║ [4] View Student Routine                                            ║");
+            System.out.println("║ [5] Announcements                                                   ║");
             System.out.println("║ [0] Logout                                                          ║");
             System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
 

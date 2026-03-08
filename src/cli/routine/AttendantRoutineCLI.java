@@ -1,40 +1,55 @@
 package cli.routine;
 
+import cli.Input;
 import controllers.routine.RoutineController;
-import utils.BackgroundFiller;
-import utils.ConsoleUtil;
+import libraries.collections.MyArrayList;
+import models.users.StudentPublicInfo;
 
 import java.util.Scanner;
 
 public class AttendantRoutineCLI {
+
     private final RoutineController controller = new RoutineController();
-    private final Scanner sc = new Scanner(System.in);
+    private final Scanner sc = Input.SC;
 
     public void show() {
-        while (true) {
-            ConsoleUtil.clearScreen();
-            BackgroundFiller.applyAttendantTheme();
+        String room = readNonEmpty("Enter room number: ");
+        MyArrayList<StudentPublicInfo> students = controller.findStudentsByRoom(room);
 
-            System.out.println();
-            System.out.println("╔═════════════════════ STUDENT ROUTINE VIEW (MASKED) ═════════════════════╗");
-            System.out.println("[1] View masked student routine");
-            System.out.println("[0] Back");
-            System.out.print("Enter choice: ");
-
-            int choice = readInt();
-            if (choice == 0) return;
-
-            if (choice == 1) {
-                System.out.print("Enter student ID/username: ");
-                String studentId = readText();
-                System.out.println();
-                controller.printMaskedRoutine(studentId);
-                pause();
-            } else {
-                System.out.println("Invalid choice.");
-                pause();
-            }
+        if (students == null || students.size() == 0) {
+            System.out.println("No students found in room " + room + ".");
+            return;
         }
+
+        int selected = pickStudent(students, room);
+        if (selected < 0) return;
+
+        StudentPublicInfo chosen = students.get(selected);
+        System.out.println();
+        System.out.println(controller.renderMaskedRoutineForStudent(chosen.getStudentId()));
+    }
+
+    private int pickStudent(MyArrayList<StudentPublicInfo> students, String room) {
+        if (students.size() == 1) {
+            System.out.println("One student found in room " + room + ": " + students.get(0).getName());
+            return 0;
+        }
+
+        System.out.println("Students in room " + room + ":");
+        for (int i = 0; i < students.size(); i++) {
+            System.out.println("[" + (i + 1) + "] " + students.get(i).getName());
+        }
+        System.out.println("[0] Cancel");
+        System.out.print("Choose student: ");
+
+        int x = readInt();
+        if (x == 0) return -1;
+        if (x < 1 || x > students.size()) {
+            System.out.println("Invalid choice.");
+            return -1;
+        }
+
+        return x - 1;
     }
 
     private int readInt() {
@@ -44,20 +59,17 @@ public class AttendantRoutineCLI {
             try {
                 return Integer.parseInt(line);
             } catch (Exception e) {
-                System.out.print("Enter a valid number: ");
+                System.out.print("Invalid number. Enter again: ");
             }
         }
     }
 
-    private String readText() {
+    private String readNonEmpty(String prompt) {
         while (true) {
-            String line = sc.nextLine();
-            if (line != null) return line.trim();
+            System.out.print(prompt);
+            String line = sc.nextLine().trim();
+            if (!line.isEmpty()) return line;
+            System.out.println("Input can not be empty.");
         }
-    }
-
-    private void pause() {
-        System.out.print("Press Enter to continue...");
-        sc.nextLine();
     }
 }

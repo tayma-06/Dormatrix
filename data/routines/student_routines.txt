@@ -1,0 +1,5 @@
+230042141|SUNDAY|0|sleep
+230042141|SUNDAY|1|sleep
+230042141|SUNDAY|2|pray, sehri, prayer
+230042141|SUNDAY|3|Modify dormatrix scheduler
+230042141|SUNDAY|4|Study, get ready to teach

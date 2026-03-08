@@ -93,7 +93,11 @@ public class WorkerComplaintCLI {
         c.setStatus(models.enums.ComplaintStatus.IN_PROGRESS);
         c.appendTagNote(("WORKER_PROGRESS:") + (note == null ? "" : note));
 
-        view.msg(repo.update(c) ? "Updated successfully." : "Failed to update file.");
+        boolean ok = repo.update(c);
+        if (ok) {
+            new repo.file.FileWorkerVisitRepository().markDone(complaintId);
+        }
+        view.msg(ok ? "Updated successfully." : "Failed to update file.");
     }
 
     // -------------------- Helper: NAME/ID -> Worker ID --------------------

@@ -32,6 +32,7 @@ public class MaintenanceWorkerDashboard implements Dashboard {
             System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
             System.out.println("║ [1] Work Field                                                      ║");
             System.out.println("║ [2] Task Queue                                                      ║");
+            System.out.println("║ [3] My Visit Schedule                                               ║");
             System.out.println("║ [0] Logout                                                          ║");
             System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
 
@@ -62,6 +63,11 @@ public class MaintenanceWorkerDashboard implements Dashboard {
 
             if (choice == 2) {
                 new WorkerComplaintCLI().start(username);
+                continue;
+            }
+
+            if (choice == 3) {
+                new cli.schedule.WorkerVisitBoardCLI().show(username);
                 continue;
             }
 

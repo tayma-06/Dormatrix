@@ -8,4 +8,4 @@ C-7|230042110|Khadija Kubra|310|PLUMBING|The water tape is not working in my roo
 C-8|230042154|Aksan Anan Ria|304|CLEANING|My room is a mess for 5 days|RESOLVED|MW04|NORMAL|
 C-9|230042151|Rabeya Khatun|304|ELECTRICITY|Electricity Line Fire Outbreak|RESOLVED|MW01|EMERGENCY|
 C-11|230042135|Khadiza Sultana|301|ELECTRICITY|Water Burst|RESOLVED|MW01|NORMAL|
-C-12|230042141|Ayman Binta Altaf Nondiny|301|CLEANING|The corridor is dirty as some unknown spilled yogurt on corridor and it became a mess as a result.|IN_PROGRESS|MW04|NORMAL|foing;in progress;doing;foing2;WORKER_PROGRESS:doing3;WORKER_PROGRESS:doing4;WORKER_PROGRESS:doing5
+C-12|230042141|Ayman Binta Altaf Nondiny|301|CLEANING|The corridor is dirty as some unknown spilled yogurt on corridor and it became a mess as a result.|IN_PROGRESS|MW04|NORMAL|foing;in progress;doing;foing2;WORKER_PROGRESS:doing3;WORKER_PROGRESS:doing4;WORKER_PROGRESS:doing5;VISIT:SATURDAY:08-10;VISIT:SUNDAY:10-12

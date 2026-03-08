@@ -3,6 +3,8 @@ package controllers.dashboard;
 import cli.dashboard.MainDashboard;
 import cli.dashboard.room.StudentRoomDashboard;
 import cli.routine.AttendantRoutineCLI;
+import cli.schedule.AttendantWorkerScheduleCLI;
+import cli.announcement.AttendantAnnouncementCLI;
 import cli.views.LostFoundView;
 import controllers.dashboard.room.StudentRoomDashboardController;
 import controllers.room.RoomService;
@@ -36,9 +38,8 @@ public class AttendantDashboardController {
 //                complaintsMenu();
 //                break;
             case 2:
-                System.out.println("Handling Worker Schedule...");
+                new AttendantWorkerScheduleCLI().show(username);
                 break;
-            // Inside your handleInput(int choice, String username) method:
 
             case 3: // Lost & Found
                 LostFoundView attendantLfView = new LostFoundView();
@@ -47,6 +48,9 @@ public class AttendantDashboardController {
                 break;
             case 4:
                 new AttendantRoutineCLI().show();
+                break;
+            case 5:
+                new AttendantAnnouncementCLI().show(username);
                 break;
             case 0:
                 mainDashboard.show();
