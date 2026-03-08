@@ -18,27 +18,20 @@ public class StudentRoutineCLI {
         while (true) {
             try {
                 ConsoleUtil.clearScreen();
-                BackgroundFiller.applyStudentTheme();
-                System.out.print(HIDE_CUR);
+                TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                TerminalUI.at(2, 1);
 
-                // Show weekly routine table below banner
-                TerminalUI.at(3, 1);
                 controller.printStudentRoutine(studentId);
 
-                int menuStartRow = 17;
-                int promptRow = drawDashboard(
-                        "WEEKLY ROUTINE",
-                        "Student: " + studentId,
-                        MENU,
-                        TerminalUI.getActiveTextColor(),
-                        TerminalUI.getActiveBoxColor(),
-                        null,
-                        menuStartRow
-                );
+                TerminalUI.tEmpty();
+                TerminalUI.tSubDashboard("WEEKLY ROUTINE  —  Student: " + studentId, new String[]{
+                    "[1] Edit Slot",
+                    "[2] Clear Slot",
+                    "[3] View Exact Slot Text",
+                    "[0] Back"
+                });
 
-                System.out.print(SHOW_CUR);
                 int choice = FastInput.readInt();
-                System.out.print(RESET);
 
                 if (choice == 0) {
                     return;

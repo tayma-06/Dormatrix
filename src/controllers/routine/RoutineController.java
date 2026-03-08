@@ -14,13 +14,13 @@ import java.time.DayOfWeek;
 public class RoutineController {
 
     public static final String[] FULL_SLOT_LABELS = {
-            "00-02", "02-04", "04-06", "06-08",
-            "08-10", "10-12", "12-14", "14-16",
-            "16-18", "18-20", "20-22", "22-24"
+        "00-02", "02-04", "04-06", "06-08",
+        "08-10", "10-12", "12-14", "14-16",
+        "16-18", "18-20", "20-22", "22-24"
     };
 
     public static final String[] ATTENDANT_SLOT_LABELS = {
-            "08-10", "10-12", "12-14", "14-16", "16-18", "18-20"
+        "08-10", "10-12", "12-14", "14-16", "16-18", "18-20"
     };
 
     private static final int TIME_COL_WIDTH = 10;
@@ -43,12 +43,16 @@ public class RoutineController {
 
     public boolean putSlot(String dashboardToken, DayOfWeek day, int fullSlotIndex, String content) {
         MyOptional<String> studentIdOpt = resolveStudentId(dashboardToken);
-        if (studentIdOpt.isEmpty()) return false;
+        if (studentIdOpt.isEmpty()) {
+            return false;
+        }
         return putSlotByStudentId(studentIdOpt.get(), day, fullSlotIndex, content);
     }
 
     public boolean putSlotByStudentId(String studentId, DayOfWeek day, int fullSlotIndex, String content) {
-        if (!isValidFullSlot(fullSlotIndex)) return false;
+        if (!isValidFullSlot(fullSlotIndex)) {
+            return false;
+        }
 
         if (content == null || content.trim().isEmpty()) {
             routineRepo.deleteSlot(studentId, day, fullSlotIndex);
@@ -61,19 +65,25 @@ public class RoutineController {
 
     public boolean clearSlot(String dashboardToken, DayOfWeek day, int fullSlotIndex) {
         MyOptional<String> studentIdOpt = resolveStudentId(dashboardToken);
-        if (studentIdOpt.isEmpty()) return false;
+        if (studentIdOpt.isEmpty()) {
+            return false;
+        }
         routineRepo.deleteSlot(studentIdOpt.get(), day, fullSlotIndex);
         return true;
     }
 
     public boolean clearSlotByStudentId(String studentId, DayOfWeek day, int fullSlotIndex) {
-        if (!isValidFullSlot(fullSlotIndex)) return false;
+        if (!isValidFullSlot(fullSlotIndex)) {
+            return false;
+        }
         routineRepo.deleteSlot(studentId, day, fullSlotIndex);
         return true;
     }
 
     public boolean writeComplaintVisit(String studentId, DayOfWeek day, int attendantSlotIndex, String complaintId, String label) {
-        if (attendantSlotIndex < 0 || attendantSlotIndex >= ATTENDANT_SLOT_LABELS.length) return false;
+        if (attendantSlotIndex < 0 || attendantSlotIndex >= ATTENDANT_SLOT_LABELS.length) {
+            return false;
+        }
 
         int fullSlotIndex = attendantToFull(attendantSlotIndex);
         String safeLabel = (label == null || label.trim().isEmpty()) ? "Complaint Visit" : label.trim();
@@ -82,16 +92,22 @@ public class RoutineController {
     }
 
     public boolean clearComplaintVisitIfPresent(String studentId, DayOfWeek day, int attendantSlotIndex, String complaintId) {
-        if (attendantSlotIndex < 0 || attendantSlotIndex >= ATTENDANT_SLOT_LABELS.length) return false;
+        if (attendantSlotIndex < 0 || attendantSlotIndex >= ATTENDANT_SLOT_LABELS.length) {
+            return false;
+        }
 
         int fullSlotIndex = attendantToFull(attendantSlotIndex);
         MyOptional<StudentRoutineEntry> entryOpt = routineRepo.findOne(studentId, day, fullSlotIndex);
 
-        if (entryOpt.isEmpty()) return false;
+        if (entryOpt.isEmpty()) {
+            return false;
+        }
 
         StudentRoutineEntry entry = entryOpt.get();
         String content = entry.getContent();
-        if (content == null) return false;
+        if (content == null) {
+            return false;
+        }
 
         if (complaintId == null || complaintId.trim().isEmpty()) {
             routineRepo.deleteSlot(studentId, day, fullSlotIndex);
@@ -153,21 +169,27 @@ public class RoutineController {
     }
 
     public boolean isBusyForAttendantWindowExceptComplaint(String studentId,
-                                                           DayOfWeek day,
-                                                           int attendantSlotIndex,
-                                                           String complaintId) {
-        if (attendantSlotIndex < 0 || attendantSlotIndex >= ATTENDANT_SLOT_LABELS.length) return true;
+            DayOfWeek day,
+            int attendantSlotIndex,
+            String complaintId) {
+        if (attendantSlotIndex < 0 || attendantSlotIndex >= ATTENDANT_SLOT_LABELS.length) {
+            return true;
+        }
 
         int fullSlotIndex = attendantToFull(attendantSlotIndex);
         MyOptional<StudentRoutineEntry> entryOpt = routineRepo.findOne(studentId, day, fullSlotIndex);
 
-        if (entryOpt.isEmpty()) return false;
+        if (entryOpt.isEmpty()) {
+            return false;
+        }
 
         StudentRoutineEntry entry = entryOpt.get();
-        if (!entry.hasContent()) return false;
+        if (!entry.hasContent()) {
+            return false;
+        }
 
-        if (complaintId != null && entry.getContent() != null &&
-                entry.getContent().contains(complaintVisitToken(complaintId))) {
+        if (complaintId != null && entry.getContent() != null
+                && entry.getContent().contains(complaintVisitToken(complaintId))) {
             return false;
         }
 
@@ -179,7 +201,9 @@ public class RoutineController {
     }
 
     public boolean isStudentBusy24(String studentId, DayOfWeek day, int fullSlotIndex) {
-        if (hasExplicitEntry(studentId, day, fullSlotIndex)) return true;
+        if (hasExplicitEntry(studentId, day, fullSlotIndex)) {
+            return true;
+        }
         return isPrivateByDefaultNightSlot(fullSlotIndex);
     }
 
@@ -215,7 +239,9 @@ public class RoutineController {
 
     private String buildStudentContactBlock(String studentId) {
         MyOptional<Student> studentOpt = studentRepo.findById(studentId);
-        if (studentOpt.isEmpty()) return "";
+        if (studentOpt.isEmpty()) {
+            return "";
+        }
 
         Student s = studentOpt.get();
         StringBuilder sb = new StringBuilder();
@@ -238,7 +264,9 @@ public class RoutineController {
         for (int i = 0; i < 7; i++) {
             DayOfWeek day = columnToDay(i);
             String label = dayShort(day);
-            if (day == TimeManager.nowDay()) label = "*" + label + "*";
+            if (day == TimeManager.nowDay()) {
+                label = "*" + label + "*";
+            }
             sb.append("│").append(center(label, CELL_WIDTH));
         }
 
@@ -280,7 +308,9 @@ public class RoutineController {
     }
 
     private String valueOrDash(String value) {
-        if (value == null || value.trim().isEmpty()) return "(not set)";
+        if (value == null || value.trim().isEmpty()) {
+            return "(not set)";
+        }
         return value.trim();
     }
 
@@ -296,37 +326,58 @@ public class RoutineController {
 
     private String dayShort(DayOfWeek day) {
         switch (day) {
-            case MONDAY: return "MON";
-            case TUESDAY: return "TUE";
-            case WEDNESDAY: return "WED";
-            case THURSDAY: return "THU";
-            case FRIDAY: return "FRI";
-            case SATURDAY: return "SAT";
-            default: return "SUN";
+            case MONDAY:
+                return "MON";
+            case TUESDAY:
+                return "TUE";
+            case WEDNESDAY:
+                return "WED";
+            case THURSDAY:
+                return "THU";
+            case FRIDAY:
+                return "FRI";
+            case SATURDAY:
+                return "SAT";
+            default:
+                return "SUN";
         }
     }
 
     private int dayToColumn(DayOfWeek day) {
         switch (day) {
-            case MONDAY: return 0;
-            case TUESDAY: return 1;
-            case WEDNESDAY: return 2;
-            case THURSDAY: return 3;
-            case FRIDAY: return 4;
-            case SATURDAY: return 5;
-            default: return 6;
+            case MONDAY:
+                return 0;
+            case TUESDAY:
+                return 1;
+            case WEDNESDAY:
+                return 2;
+            case THURSDAY:
+                return 3;
+            case FRIDAY:
+                return 4;
+            case SATURDAY:
+                return 5;
+            default:
+                return 6;
         }
     }
 
     private DayOfWeek columnToDay(int column) {
         switch (column) {
-            case 0: return DayOfWeek.MONDAY;
-            case 1: return DayOfWeek.TUESDAY;
-            case 2: return DayOfWeek.WEDNESDAY;
-            case 3: return DayOfWeek.THURSDAY;
-            case 4: return DayOfWeek.FRIDAY;
-            case 5: return DayOfWeek.SATURDAY;
-            default: return DayOfWeek.SUNDAY;
+            case 0:
+                return DayOfWeek.MONDAY;
+            case 1:
+                return DayOfWeek.TUESDAY;
+            case 2:
+                return DayOfWeek.WEDNESDAY;
+            case 3:
+                return DayOfWeek.THURSDAY;
+            case 4:
+                return DayOfWeek.FRIDAY;
+            case 5:
+                return DayOfWeek.SATURDAY;
+            default:
+                return DayOfWeek.SUNDAY;
         }
     }
 
@@ -335,15 +386,25 @@ public class RoutineController {
     }
 
     private String clip(String s, int max) {
-        if (s == null) return "";
-        if (s.length() <= max) return s;
-        if (max <= 1) return s.substring(0, max);
+        if (s == null) {
+            return "";
+        }
+        if (s.length() <= max) {
+            return s;
+        }
+        if (max <= 1) {
+            return s.substring(0, max);
+        }
         return s.substring(0, max - 1) + "…";
     }
 
     private String center(String s, int width) {
-        if (s == null) s = "";
-        if (s.length() > width) return s.substring(0, width);
+        if (s == null) {
+            s = "";
+        }
+        if (s.length() > width) {
+            return s.substring(0, width);
+        }
 
         int left = (width - s.length()) / 2;
         int right = width - s.length() - left;
@@ -351,14 +412,64 @@ public class RoutineController {
     }
 
     private String pad(String s, int width) {
-        if (s == null) s = "";
-        if (s.length() >= width) return s.substring(0, width);
+        if (s == null) {
+            s = "";
+        }
+        if (s.length() >= width) {
+            return s.substring(0, width);
+        }
         return s + repeat(" ", width - s.length());
     }
 
     private String repeat(String s, int count) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) sb.append(s);
+        for (int i = 0; i < count; i++) {
+            sb.append(s);
+        }
         return sb.toString();
+    }
+
+    // ── convenience methods used by CLI ──
+    public void printStudentRoutine(String studentId) {
+        System.out.println(renderStudentRoutineByStudentId(studentId));
+    }
+
+    public void printMaskedRoutine(String studentId) {
+        System.out.println(renderMaskedRoutineForStudent(studentId));
+    }
+
+    public void printDayChoices() {
+        DayOfWeek[] days = {
+            DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+            DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY
+        };
+        for (int i = 0; i < days.length; i++) {
+            System.out.println("  " + (i + 1) + ". " + dayShort(days[i]));
+        }
+    }
+
+    public void printSlotChoices() {
+        for (int i = 0; i < FULL_SLOT_LABELS.length; i++) {
+            System.out.println("  " + (i + 1) + ". " + FULL_SLOT_LABELS[i]);
+        }
+    }
+
+    public void setSlot(String studentId, int day, int slot, String content) {
+        DayOfWeek dow = columnToDay(day - 1);
+        putSlotByStudentId(studentId, dow, slot - 1, content);
+    }
+
+    public void clearSlot(String studentId, int day, int slot) {
+        DayOfWeek dow = columnToDay(day - 1);
+        clearSlotByStudentId(studentId, dow, slot - 1);
+    }
+
+    public String getSlotContent(String studentId, int day, int slot) {
+        DayOfWeek dow = columnToDay(day - 1);
+        MyOptional<StudentRoutineEntry> entry = routineRepo.findOne(studentId, dow, slot - 1);
+        if (entry.isEmpty()) {
+            return null;
+        }
+        return entry.get().getContent();
     }
 }

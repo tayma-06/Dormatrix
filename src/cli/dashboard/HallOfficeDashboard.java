@@ -5,7 +5,7 @@ import cli.announcement.AnnouncementBoardCLI;
 import utils.BackgroundFiller;
 import utils.ConsoleUtil;
 import utils.FastInput;
-iport utils.*;
+import utils.*;
 import static utils.TerminalUI.*;
 
 public class HallOfficeDashboard implements Dashboard {
