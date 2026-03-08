@@ -118,10 +118,3 @@ src/
 
 - **Username:** admin
 - **Password:** admin123
-
-## Team
-
-- [tayma-06](https://github.com/tayma-06)
-- [aymannondiny](https://github.com/aymannondiny)
-- [SayTas](https://github.com/SayTas)
-- [prochetaSilvie](https://github.com/prochetaSilvie)
