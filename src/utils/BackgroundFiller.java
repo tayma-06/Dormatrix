@@ -6,8 +6,8 @@ public final class BackgroundFiller {
     }
 
     /**
-     * Fills every cell of the terminal with the current background color.
-     * Uses \e[2J then overwrites with spaces carrying the active bg attribute.
+     * Fills every cell of the terminal with the current background color. Uses
+     * \e[2J then overwrites with spaces carrying the active bg attribute.
      */
     private static void clearWithCurrentBackground() {
         int w = TerminalUI.termW();
@@ -28,56 +28,56 @@ public final class BackgroundFiller {
 
     public static void applyMainMenuTheme() {
         System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(20, 14, 32));
+        System.out.print(ConsoleColors.bgRGB(18, 12, 45));
         System.out.print(ConsoleColors.ThemeText.SOFT_WHITE);
         clearWithCurrentBackground();
     }
 
     public static void applyStudentTheme() {
         System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(0, 4, 53));
+        System.out.print(ConsoleColors.bgRGB(8, 18, 60));
         System.out.print(ConsoleColors.ThemeText.STUDENT_TEXT);
         clearWithCurrentBackground();
     }
 
     public static void applyAttendantTheme() {
         System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(0, 40, 36));
+        System.out.print(ConsoleColors.bgRGB(5, 45, 42));
         System.out.print(ConsoleColors.ThemeText.ATTENDANT_TEXT);
         clearWithCurrentBackground();
     }
 
     public static void applyMaintenanceTheme() {
         System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(27, 31, 40));
+        System.out.print(ConsoleColors.bgRGB(15, 20, 60));
         System.out.print(ConsoleColors.ThemeText.MAINTENANCE_TEXT);
         clearWithCurrentBackground();
     }
 
     public static void applyStoreInChargeTheme() {
         System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(43, 20, 0));
+        System.out.print(ConsoleColors.bgRGB(50, 28, 5));
         System.out.print(ConsoleColors.ThemeText.STORE_TEXT);
         clearWithCurrentBackground();
     }
 
     public static void applyHallOfficeTheme() {
         System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(31, 24, 38));
+        System.out.print(ConsoleColors.bgRGB(28, 12, 65));
         System.out.print(ConsoleColors.ThemeText.HALL_TEXT);
         clearWithCurrentBackground();
     }
 
     public static void applyAdminTheme() {
         System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(61, 0, 8));
+        System.out.print(ConsoleColors.bgRGB(55, 8, 22));
         System.out.print(ConsoleColors.ThemeText.ADMIN_TEXT);
         clearWithCurrentBackground();
     }
 
     public static void applyCafeteriaManagerTheme() {
         System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(45, 25, 10));
+        System.out.print(ConsoleColors.bgRGB(48, 38, 5));
         System.out.print(ConsoleColors.ThemeText.CAFETERIA_TEXT);
         clearWithCurrentBackground();
     }

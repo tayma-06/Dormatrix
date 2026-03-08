@@ -21,5 +21,5 @@
 230042114,640.0
 230042135,1000.0
 230012154,500.0
-Khadiza Sultana,1040.0
+Khadiza Sultana,1010.0
 Sayma Tasnim,970.0

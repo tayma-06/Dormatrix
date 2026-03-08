@@ -115,6 +115,7 @@ public class MainDashboard {
                 // ── Phase 1: matrix rain (first visit only) ───────
                 if (firstRun) {
                     firstRun = false;
+                    quickDormRain();
                     quickMatrixRain();
                 }
 

@@ -210,14 +210,14 @@ public final class TerminalUI {
             = "DORMATRIX0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%&*<>=/+".toCharArray();
     private static final Random RAND = new Random();
 
-    // Background color for matrix rain
-    private static final int[] RAIN_BG = {10, 5, 15};  // Dark purple/black
+    // Background color for matrix rain — deep black-magenta
+    private static final int[] RAIN_BG = {20, 5, 20};
 
-    // Magenta/pink color palette
-    private static final int[] RAIN_HEAD = {255, 150, 220};  // Bright pink head
-    private static final int[] RAIN_BODY = {220, 50, 150};   // Hot magenta
-    private static final int[] RAIN_MID = {150, 30, 100};   // Medium magenta
-    private static final int[] RAIN_GHOST = {80, 20, 60};     // Dim magenta trail
+    // Hot pink / magenta palette on dark background
+    private static final int[] RAIN_HEAD = {255, 240, 255};  // near-white pink head
+    private static final int[] RAIN_BODY = {255, 50, 180};   // hot magenta
+    private static final int[] RAIN_MID = {200, 20, 130};    // deep hot pink
+    private static final int[] RAIN_GHOST = {80, 5, 55};     // faint dark magenta trail
 
     private static class RainColumn {
 
@@ -363,6 +363,283 @@ public final class TerminalUI {
         matrixRain(2000);
     }
 
+    // ── Dot-art image ─────────────────────────────────────────────
+// 65 columns × 23 rows  (moon + dorm-building silhouette)
+// Characters used: · for structure dots, spaces for empty cells.
+// You can swap this with any other dot art; the animation is
+// fully data-driven from this array.
+    private static final String[] DORM_DOT_ART = {
+        "        *       *            *      *                  *         ",
+        "  *   *          ▒▒▒▒▒    *                 ██████               ",
+        "             ▒▒▒▒▒▒▒▒▒▒▒         *        ██████████             ",
+        "     *       ▒▒▒▒▒▒▒▒▒▒▒▒▒                ████  ████      *      ",
+        "             ▒▒▒▒▒▒▒▒▒▒▒▒▒   *            ████    ██             ",
+        "         *                          *     ████  ████  *      *   ",
+        "  *                           ▒▒▒▒    *   ██████████     *       ",
+        "            *      *        ▒▒▒▒▒▒▒▒        ██████               ",
+        "   *     *       *    *     ▒▒▒▒▒▒▒▒     *        *        *     ",
+        "           ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄             ",
+        "      *    █████████████████████████████████████████     *       ",
+        "           █████████████████████████████████████████             ",
+        "           █████████████████████████████████████████             ",
+        "           ████▒▒▄▄▄▒▒██████▒▒▄▄▄▒▒██████▒▒▒▒▒▒▒████             ",
+        "           ████▒█████▒██████▒████▒▒██████▒▒▓▓▓▒▒████             ",
+        "           ████▒█▒█▒█▒██████▒▒▒█▒▒▒██████▒▓▓▓▓▓▒████             ",
+        "           ████▒█▒▒▒█▒██████▒▒▀▀▀▒▒██████▒▒▓▓▓▒▒████             ",
+        "           █████████████████████████████████████████             ",
+        "           ████▒▒▒▒▒▒▒██████▒▒▀▀▀▒▒██████▒▒▒▒▒▒▒████             ",
+        "           ████▒▒▓▓▒▒▒██████▒▒▒█▒▒▒██████▒▒▒▓▓▒▒████             ",
+        "           ████▒▒▒▒▒▒▒██████▒▒▄▄▄▒▒██████▒▒▒▒▒▒▒████             ",
+        "   ▀▀▀▀▀▀▀▀█████████████████████████████████████████▀▀▀▀▀▀▀▀▀▀   ",
+        "   ███████████████████████████████████████████████████████████   ",};
+
+    // ── Color palette — hot pink / magenta theme ──
+    private static final int[] DR_BG = {20, 5, 20};     // deep black-magenta bg
+    private static final int[] DR_HEAD = {255, 235, 255};  // near-white pink head
+    private static final int[] DR_FALL_MID = {255, 60, 190};   // hot magenta falling trail
+    private static final int[] DR_SETTLE = {200, 20, 130};   // deep hot pink — settled dot
+    private static final int[] DR_STAR = {160, 15, 100};   // muted dark pink — stars
+
+    /**
+     * Full dorm-rain intro animation.
+     *
+     * @param durationMs total ms to spend animating (≈ 2000 recommended)
+     */
+    public static void dormRain(int durationMs) throws InterruptedException {
+        // Always re-probe terminal size so we use the live window dimensions
+        lastTermProbeMs = 0L;
+        int w = termW();
+        int h = termH();
+
+        // ── Pad / measure the art ───────────────────────────────────
+        int artH = DORM_DOT_ART.length;
+        int artW = 0;
+        for (String row : DORM_DOT_ART) {
+            artW = Math.max(artW, row.length());
+        }
+
+        char[][] art = new char[artH][artW];
+        for (int r = 0; r < artH; r++) {
+            String line = DORM_DOT_ART[r];
+            for (int c = 0; c < artW; c++) {
+                art[r][c] = c < line.length() ? line.charAt(c) : ' ';
+            }
+        }
+
+        // Center art in the terminal
+        int artStartRow = Math.max(1, (h - artH) / 2);
+        int artStartCol = Math.max(1, (w - artW) / 2 + 1);
+
+        // ── Paint blank lavender canvas ─────────────────────────────
+        String bgCode = ConsoleColors.bgRGB(DR_BG[0], DR_BG[1], DR_BG[2]);
+        System.out.print(HIDE_CUR + bgCode + "\u001B[2J\u001B[H");
+        StringBuilder init = new StringBuilder(w * h + h * 30);
+        String blankRow = bgCode + " ".repeat(w);
+        for (int r = 1; r <= h; r++) {
+            init.append("\u001B[").append(r).append(";1H").append(blankRow);
+        }
+        init.append("\u001B[H");
+        System.out.print(init);
+        System.out.flush();
+
+        // ── Per-column rain state ───────────────────────────────────
+        // head  = current terminal row of the falling droplet tip (1-based)
+        // delay = frames to wait before this column starts falling
+        // done  = true once the column has fully settled
+        int[] head = new int[artW];
+        int[] delay = new int[artW];
+        boolean[] done = new boolean[artW];
+        boolean[] settled = new boolean[artW]; // full column rendered
+
+        for (int c = 0; c < artW; c++) {
+            head[c] = 0;
+            delay[c] = c;          // stagger: column 0 starts first, c=artW-1 starts last
+        }
+
+        // ── Animation loop ──────────────────────────────────────────
+        long endTime = System.currentTimeMillis() + durationMs;
+
+        while (System.currentTimeMillis() < endTime) {
+            StringBuilder frame = new StringBuilder(artW * h * 30);
+            boolean anyActive = false;
+
+            for (int c = 0; c < artW; c++) {
+                if (done[c]) {
+                    continue;
+                }
+
+                if (delay[c] > 0) {
+                    delay[c]--;
+                    anyActive = true;
+                    continue;
+                }
+                anyActive = true;
+
+                int termCol = artStartCol + c;
+
+                // ── Draw current head character ─────────────────────
+                int r = head[c];
+                if (r >= 1 && r <= h) {
+                    frame.append("\u001B[").append(r).append(";").append(termCol).append("H");
+                    frame.append(bgCode);
+                    // Use art char if we're inside the art area, else a trail glyph
+                    int artRow = r - artStartRow;
+                    char ch;
+                    if (artRow >= 0 && artRow < artH) {
+                        ch = art[artRow][c];
+                        if (ch == ' ') {
+                            ch = '·';
+                        }
+                    } else {
+                        ch = '·';
+                    }
+                    frame.append(ConsoleColors.fgRGB(DR_HEAD[0], DR_HEAD[1], DR_HEAD[2]));
+                    frame.append(BOLD).append(ch).append("\u001B[22m");
+                }
+
+                // ── Render mid-trail one row back ───────────────────
+                int trail = r - 1;
+                if (trail >= 1 && trail <= h) {
+                    int artRow = trail - artStartRow;
+                    boolean hasDot = artRow >= 0 && artRow < artH && art[artRow][c] != ' ';
+                    frame.append("\u001B[").append(trail).append(";").append(termCol).append("H");
+                    frame.append(bgCode);
+                    if (hasDot) {
+                        // Dot is settling — render in mid-purple
+                        frame.append(ConsoleColors.fgRGB(DR_FALL_MID[0], DR_FALL_MID[1], DR_FALL_MID[2]));
+                        frame.append(art[artRow][c]);
+                    } else {
+                        frame.append(' ');
+                    }
+                }
+
+                // ── Settle the row two back into final color ────────
+                int settle = r - 2;
+                if (settle >= 1 && settle <= h) {
+                    int artRow = settle - artStartRow;
+                    boolean hasDot = artRow >= 0 && artRow < artH && art[artRow][c] != ' ';
+                    frame.append("\u001B[").append(settle).append(";").append(termCol).append("H");
+                    frame.append(bgCode);
+                    if (hasDot) {
+                        frame.append(ConsoleColors.fgRGB(DR_SETTLE[0], DR_SETTLE[1], DR_SETTLE[2]));
+                        frame.append(art[artRow][c]);
+                    } else {
+                        frame.append(' ');
+                    }
+                }
+
+                head[c]++;
+
+                // ── Check if this column is fully past the art bottom ─
+                if (head[c] > artStartRow + artH + 2) {
+                    done[c] = true;
+                    // Guarantee all art dots in this column are settled
+                    for (int ar = 0; ar < artH; ar++) {
+                        char ch = art[ar][c];
+                        if (ch != ' ') {
+                            int tr = artStartRow + ar;
+                            frame.append("\u001B[").append(tr).append(";").append(termCol).append("H");
+                            frame.append(bgCode);
+                            frame.append(ConsoleColors.fgRGB(DR_SETTLE[0], DR_SETTLE[1], DR_SETTLE[2]));
+                            frame.append(ch);
+                        }
+                    }
+                    // Erase any leftover head pixel below art
+                    int below = artStartRow + artH;
+                    if (below <= h) {
+                        frame.append("\u001B[").append(below).append(";").append(termCol).append("H");
+                        frame.append(bgCode).append(' ');
+                    }
+                }
+            }
+
+            System.out.print(frame);
+            System.out.flush();
+
+            if (!anyActive) {
+                break;   // all columns settled — done early
+
+            }
+            Thread.sleep(22);
+        }
+
+        // ── One gentle brightness pulse over the finished art ───────
+        dormArtPulse(artStartRow, artStartCol, art, artH, artW, bgCode);
+
+        // Restore cursor — do NOT print RESET; the caller's applyMainMenuTheme()
+        // will set the correct bg immediately after we return.
+        System.out.print(SHOW_CUR);
+        System.out.flush();
+    }
+
+    /**
+     * Quick dorm-rain intro (~2 s) for use before the main dashboard. Drop-in
+     * replacement for quickMatrixRain().
+     */
+    public static void quickDormRain() throws InterruptedException {
+        dormRain(2000);
+    }
+
+    /**
+     * Single brightness pulse: sweeps the art from faded → vivid → settled.
+     * Called once after all columns have landed.
+     */
+    private static void dormArtPulse(
+            int artStartRow, int artStartCol,
+            char[][] art, int artH, int artW,
+            String bgCode) throws InterruptedException {
+
+        int steps = 12;
+        for (int step = 0; step <= steps; step++) {
+            float t = step <= steps / 2
+                    ? (float) step / (steps / 2)
+                    : 1f - (float) (step - steps / 2) / (steps / 2);
+            // Interpolate settled color → bright head color → back
+            int fr = lerp(DR_SETTLE[0], DR_HEAD[0], t);
+            int fg = lerp(DR_SETTLE[1], DR_HEAD[1], t);
+            int fb = lerp(DR_SETTLE[2], DR_HEAD[2], t);
+
+            StringBuilder frame = new StringBuilder(artH * artW * 20);
+            for (int r = 0; r < artH; r++) {
+                for (int c = 0; c < artW; c++) {
+                    char ch = art[r][c];
+                    if (ch == ' ') {
+                        continue;
+                    }
+                    frame.append("\u001B[")
+                            .append(artStartRow + r).append(";")
+                            .append(artStartCol + c).append("H");
+                    frame.append(bgCode);
+                    frame.append(ConsoleColors.fgRGB(fr, fg, fb));
+                    frame.append(ch);
+                }
+            }
+            System.out.print(frame);
+            System.out.flush();
+            Thread.sleep(40);
+        }
+
+        // Final pass: lock all dots to settled color
+        StringBuilder fin = new StringBuilder(artH * artW * 20);
+        for (int r = 0; r < artH; r++) {
+            for (int c = 0; c < artW; c++) {
+                char ch = art[r][c];
+                if (ch == ' ') {
+                    continue;
+                }
+                fin.append("\u001B[")
+                        .append(artStartRow + r).append(";")
+                        .append(artStartCol + c).append("H");
+                fin.append(bgCode);
+                fin.append(ConsoleColors.fgRGB(DR_SETTLE[0], DR_SETTLE[1], DR_SETTLE[2]));
+                fin.append(ch);
+            }
+        }
+        System.out.print(fin);
+        System.out.flush();
+        Thread.sleep(300);  // brief pause so the user sees the finished art
+    }
+
     // ══════════════════════════════════════════════════════════════
     //  COLOR INTERPOLATION
     // ══════════════════════════════════════════════════════════════
@@ -419,8 +696,8 @@ public final class TerminalUI {
         return startRow;   // row directly after last banner line
     }
     private static final int BANNER_W = 73;
-    private static final int[] GRAD_A = {140, 80, 255};  // violet
-    private static final int[] GRAD_B = {60, 210, 230};  // cyan
+    private static final int[] GRAD_A = {100, 40, 200};  // vivid violet
+    private static final int[] GRAD_B = {20, 160, 170};  // deep cyan-teal
 
     // ══════════════════════════════════════════════════════════════
     //  TYPEWRITER
@@ -598,8 +875,8 @@ public final class TerminalUI {
 
     public static void startPulse(int row, String text) {
         pulseStopped = false;
-        int[] bright = {210, 190, 255};
-        int[] dark = {55, 45, 75};
+        int[] bright = {210, 175, 255};  // bright lavender
+        int[] dark = {80, 55, 150};       // dim purple
         pulseThread = new Thread(() -> {
             int p = 0;
             while (!pulseStopped) {
@@ -691,10 +968,9 @@ public final class TerminalUI {
             String numStr = "[" + d.number() + "]";
             String numCol = d.number() == 0 ? ConsoleColors.Accent.EXIT : ConsoleColors.Accent.HIGHLIGHT;
             String lblCol = on
-                    ? ConsoleColors.fgRGB(255, 255, 255)
+                    ? ConsoleColors.fgRGB(25, 15, 55)
                     : (d.number() == 0 ? ConsoleColors.Accent.MUTED : d.theme());
-            String bgOn = on ? ConsoleColors.bgRGB(
-                    lerp(10, 50, 0.4f), lerp(7, 50, 0.4f), lerp(20, 80, 0.4f)) : "";
+            String bgOn = on ? ConsoleColors.bgRGB(185, 165, 220) : "";
             int iw = innerW();
             at(row, boxCol());
             System.out.print(
