@@ -5,6 +5,7 @@ import cli.dashboard.MainDashboard;
 import cli.forms.food.MealTokenPurchase;
 import cli.routine.StudentRoutineCLI;
 import cli.announcement.AnnouncementBoardCLI;
+import cli.contacts.StudentEmergencyContactsCLI;
 import cli.views.store.*;
 import controllers.room.RoomController;
 import cli.dashboard.FacilityDashboard;
@@ -65,6 +66,9 @@ public class StudentDashboardController {
                 break;
             case 9:
                 ShoppingCartView.show(username);
+                break;
+            case 10:
+                new StudentEmergencyContactsCLI().show();
                 break;
             case 0:
                 mainDashboard.show();

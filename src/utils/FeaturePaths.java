@@ -5,6 +5,7 @@ public final class FeaturePaths {
     public static final String STUDENT_ROUTINES = "data/routines/student_routines.txt";
     public static final String WORKER_VISITS = "data/schedules/worker_visits.txt";
     public static final String ANNOUNCEMENTS = "data/announcements/announcements.txt";
+    public static final String EMERGENCY_CONTACTS = "data/contacts/emergency_contacts.txt";
 
     private FeaturePaths() { }
 }

@@ -5,6 +5,7 @@ import cli.dashboard.room.StudentRoomDashboard;
 import cli.routine.AttendantRoutineCLI;
 import cli.schedule.AttendantWorkerScheduleCLI;
 import cli.announcement.AttendantAnnouncementCLI;
+import cli.contacts.AttendantEmergencyContactsCLI;
 import cli.views.LostFoundView;
 import controllers.dashboard.room.StudentRoomDashboardController;
 import controllers.room.RoomService;
@@ -51,6 +52,9 @@ public class AttendantDashboardController {
                 break;
             case 5:
                 new AttendantAnnouncementCLI().show(username);
+                break;
+            case 6:
+                new AttendantEmergencyContactsCLI().show(username);
                 break;
             case 0:
                 mainDashboard.show();
