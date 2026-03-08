@@ -4,6 +4,8 @@ import cli.complaint.StudentComplaintCLI;
 import cli.dashboard.MainDashboard;
 import cli.forms.food.MealTokenPurchase;
 import cli.routine.StudentRoutineCLI;
+import cli.announcement.AnnouncementBoardCLI;
+import cli.contacts.StudentEmergencyContactsCLI;
 import cli.views.store.*;
 import controllers.room.RoomController;
 import cli.dashboard.FacilityDashboard;
@@ -60,10 +62,13 @@ public class StudentDashboardController {
                 studentRoutineCLI.show(username);
                 break;
             case 8:
-                System.out.println(">> Feature [Announcements] is under development.");
+                new AnnouncementBoardCLI().show();
                 break;
             case 9:
                 ShoppingCartView.show(username);
+                break;
+            case 10:
+                new StudentEmergencyContactsCLI().show();
                 break;
             case 0:
                 mainDashboard.show();

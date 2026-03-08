@@ -1514,12 +1514,87 @@ public final class TerminalUI {
     }
 
     /**
-     * Set the terminal background color. Does NOT repaint or clear. Use
-     * BackgroundFiller.applyXTheme() to clear + set color in one step.
+     * Fills the terminal with a subtle vertical gradient based on the given
+     * background color — slightly darker at top and bottom, lighter in the
+     * center. Also sets the SGR background attribute for subsequent output.
      */
     public static void fillBackground(String bgColor) {
-        System.out.print(bgColor);
+        // Parse the rgb values from the ANSI escape sequence
+        int[] rgb = parseBgRGB(bgColor);
+        if (rgb != null) {
+            int w = termW();
+            int h = termH();
+            if (h < 1) {
+                h = 30;
+            }
+
+            int[] top = {Math.max(rgb[0] - 8, 0), Math.max(rgb[1] - 8, 0), Math.max(rgb[2] - 8, 0)};
+            int[] mid = {Math.min(rgb[0] + 12, 255), Math.min(rgb[1] + 12, 255), Math.min(rgb[2] + 12, 255)};
+            int[] bot = {Math.max(rgb[0] - 6, 0), Math.max(rgb[1] - 6, 0), Math.max(rgb[2] - 6, 0)};
+
+            StringBuilder sb = new StringBuilder(w * h + h * 40 + 60);
+            sb.append("\u001B[2J\u001B[H");
+            String rowSpaces = " ".repeat(w);
+            int half = Math.max(h / 2, 1);
+            for (int r = 1; r <= h; r++) {
+                int[] c;
+                if (r <= half) {
+                    double t = (half <= 1) ? 0 : (double) (r - 1) / (half - 1);
+                    c = lerpColor(top, mid, t);
+                } else {
+                    double t = (h - half <= 1) ? 0 : (double) (r - half - 1) / (h - half - 1);
+                    c = lerpColor(mid, bot, t);
+                }
+                sb.append("\u001B[").append(r).append(";1H");
+                sb.append(ConsoleColors.bgRGB(c[0], c[1], c[2]));
+                sb.append(rowSpaces);
+            }
+            sb.append("\u001B[H");
+            // Set the base bg for subsequent text output
+            sb.append(bgColor);
+            System.out.print(sb);
+        } else {
+            System.out.print(bgColor);
+        }
         System.out.flush();
+    }
+
+    private static int[] parseBgRGB(String esc) {
+        // Matches \e[48;2;R;G;Bm
+        if (esc == null) {
+            return null;
+        }
+        String prefix = "\u001B[48;2;";
+        if (!esc.startsWith(prefix)) {
+            return null;
+        }
+        String body = esc.substring(prefix.length());
+        if (body.endsWith("m")) {
+            body = body.substring(0, body.length() - 1);
+        }
+        String[] parts = body.split(";");
+        if (parts.length != 3) {
+            return null;
+        }
+        try {
+            return new int[]{Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2])};
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static int[] lerpColor(int[] a, int[] b, double t) {
+        if (t < 0) {
+            t = 0;
+        }
+        if (t > 1) {
+            t = 1;
+        }
+        return new int[]{
+            (int) (a[0] + (b[0] - a[0]) * t),
+            (int) (a[1] + (b[1] - a[1]) * t),
+            (int) (a[2] + (b[2] - a[2]) * t)
+        };
     }
 
     // ══════════════════════════════════════════════════════════════

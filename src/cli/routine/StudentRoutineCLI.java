@@ -29,32 +29,25 @@ public class StudentRoutineCLI {
             try {
                 ConsoleUtil.clearScreen();
                 BackgroundFiller.applyStudentTheme();
-                TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
                 System.out.print(HIDE_CUR);
 
-                // ── Render the weekly routine table, centred from row 3 ──
+                // Show weekly routine table below banner
                 TerminalUI.at(3, 1);
                 controller.printStudentRoutine(studentId);
 
-                // ── Print menu inline right after the table ──
-                tEmpty();
-                tBoxTop();
-                tBoxTitle("WEEKLY ROUTINE");
-                tBoxSep();
-                tBoxLine("Student: " + studentId, TerminalUI.getActiveTextColor());
-                tBoxSep();
-                for (MenuItem item : MENU) {
-                    if (item.number() == 0) {
-                        tBoxLine("[" + item.number() + "] " + item.label(), utils.ConsoleColors.Accent.EXIT);
-                    } else {
-                        tBoxLine("[" + item.number() + "] " + item.label());
-                    }
-                }
-                tBoxSep();
-                tInputRow();
+                int menuStartRow = 17;
+                int promptRow = drawDashboard(
+                        "WEEKLY ROUTINE",
+                        "Student: " + studentId,
+                        MENU,
+                        TerminalUI.getActiveTextColor(),
+                        TerminalUI.getActiveBoxColor(),
+                        null,
+                        menuStartRow
+                );
 
+                System.out.print(SHOW_CUR);
                 int choice = FastInput.readInt();
-                System.out.print(RESET);
 
                 if (choice == 0) {
                     return;

@@ -3,6 +3,8 @@ package cli.dashboard;
 import cli.complaint.AttendantComplaintCLI;
 import controllers.dashboard.AttendantDashboardController;
 import utils.*;
+import utils.TerminalUI.MenuItem;
+
 import static utils.TerminalUI.*;
 
 public class AttendantDashboard implements Dashboard {
@@ -20,7 +22,10 @@ public class AttendantDashboard implements Dashboard {
         new MenuItem(2, "Handle Worker Schedule"),
         new MenuItem(3, "Add Found Items"),
         new MenuItem(4, "View Student Routine"),
-        new MenuItem(0, "Logout"),};
+        new MenuItem(5, "Announcements"),
+        new MenuItem(6, "Manage Emergency Contacts"),
+        new MenuItem(0, "Logout")
+    };
 
     @Override
     public void show(String username) {
@@ -34,22 +39,34 @@ public class AttendantDashboard implements Dashboard {
 
         while (true) {
             try {
+                ConsoleUtil.clearScreen();
                 BackgroundFiller.applyAttendantTheme();
-                setActiveTheme(BOX, TEXT, BG);
-                System.out.print(HIDE_CUR);
+                System.out.println();
+                System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
+                System.out.println("║                        ATTENDANT DASHBOARD                          ║");
+                System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
 
-                int menuStartRow = 3;
-                int promptRow = drawDashboard(
-                        "ATTENDANT DASHBOARD",
-                        "Welcome, " + username,
-                        MENU, TEXT, BOX,
-                        null,
-                        menuStartRow
-                );
+                String welcomeMessage = "Welcome, " + username;
+                int totalWidth = 69;
+                int paddingLeft = (totalWidth - welcomeMessage.length()) / 2;
+                int paddingRight = totalWidth - welcomeMessage.length() - paddingLeft;
+                String formattedWelcome
+                        = String.format("║%" + paddingLeft + "s%s%" + paddingRight + "s║", "", welcomeMessage, "");
+                System.out.println(formattedWelcome);
 
-                System.out.print(SHOW_CUR);
+                System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+                System.out.println("║ [1] Handle Student Complaints                                       ║");
+                System.out.println("║ [2] Handle Worker Schedule                                          ║");
+                System.out.println("║ [3] Add Found Items                                                 ║");
+                System.out.println("║ [4] View Student Routine                                            ║");
+                System.out.println("║ [5] Announcements                                                   ║");
+                System.out.println("║ [6] Manage Emergency Contacts                                       ║");
+                System.out.println("║ [0] Logout                                                          ║");
+                System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
+
+                System.out.println();
+                System.out.print("Enter your choice: ");
                 int choice = FastInput.readInt();
-                System.out.print(RESET);
 
                 if (choice == 0) {
                     BackgroundFiller.applyAttendantTheme();

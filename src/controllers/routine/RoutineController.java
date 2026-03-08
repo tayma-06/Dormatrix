@@ -1,258 +1,475 @@
 package controllers.routine;
 
-import models.routine.RoutineEntry;
-import repo.file.FileRoutineRepository;
-import utils.ConsoleColors;
-import utils.TerminalUI;
+import libraries.collections.MyArrayList;
+import libraries.collections.MyOptional;
+import models.routine.StudentRoutineEntry;
+import models.users.Student;
+import models.users.StudentPublicInfo;
+import repo.file.FileStudentDirectoryRepository;
+import repo.file.FileStudentRoutineRepository;
 import utils.TimeManager;
 
 import java.time.DayOfWeek;
-import java.time.LocalTime;
-import java.util.List;
 
 public class RoutineController {
 
-    private static final DayOfWeek[] DAYS = {
-        DayOfWeek.MONDAY,
-        DayOfWeek.TUESDAY,
-        DayOfWeek.WEDNESDAY,
-        DayOfWeek.THURSDAY,
-        DayOfWeek.FRIDAY,
-        DayOfWeek.SATURDAY,
-        DayOfWeek.SUNDAY
+    public static final String[] FULL_SLOT_LABELS = {
+        "00-02", "02-04", "04-06", "06-08",
+        "08-10", "10-12", "12-14", "14-16",
+        "16-18", "18-20", "20-22", "22-24"
     };
 
-    private static final String[] DAY_LABELS = {
-        "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"
-    };
-
-    private static final String[] SLOT_LABELS = {
+    public static final String[] ATTENDANT_SLOT_LABELS = {
         "08-10", "10-12", "12-14", "14-16", "16-18", "18-20"
     };
 
-    private static final int TIME_WIDTH = 10;
+    private static final int TIME_COL_WIDTH = 10;
     private static final int CELL_WIDTH = 12;
-    private static final String MASK_FILLED = "████"; // change to "" if your console handles it well
 
-    private final FileRoutineRepository repository = new FileRoutineRepository();
+    private final FileStudentRoutineRepository routineRepo = new FileStudentRoutineRepository();
+    private final FileStudentDirectoryRepository studentRepo = new FileStudentDirectoryRepository();
 
-    /**
-     * Returns the total number of terminal lines the routine table occupies.
-     */
-    public int tableHeight() {
-        // top border + header + sep + (data row + sep) * slots - 1 last sep + bottom
-        // = 1 + 1 + 1 + SLOT_LABELS.length * 2 - 1 + 1 = 3 + len*2
-        return 3 + SLOT_LABELS.length * 2;
+    public MyOptional<String> resolveStudentId(String dashboardToken) {
+        return studentRepo.resolveStudentId(dashboardToken);
     }
 
-    public void setSlot(String studentId, int dayChoice, int slotChoice, String content) {
-        validate(dayChoice, slotChoice);
-        repository.upsert(studentId, DAYS[dayChoice - 1], slotChoice - 1, content);
+    public MyArrayList<StudentPublicInfo> findStudentsByRoom(String roomNumber) {
+        return studentRepo.findByRoom(roomNumber);
     }
 
-    public void clearSlot(String studentId, int dayChoice, int slotChoice) {
-        setSlot(studentId, dayChoice, slotChoice, "");
+    public MyOptional<StudentPublicInfo> findStudentPublicInfo(String studentId) {
+        return studentRepo.findPublicInfoById(studentId);
     }
 
-    public String getSlotContent(String studentId, int dayChoice, int slotChoice) {
-        validate(dayChoice, slotChoice);
-        return repository.getSlotContent(studentId, DAYS[dayChoice - 1], slotChoice - 1);
-    }
-
-    public void printStudentRoutine(String studentId) {
-        printCalendar(studentId, false);
-    }
-
-    public void printMaskedRoutine(String studentId) {
-        printCalendar(studentId, true);
-        System.out.println("Legend: BUSY = slot has a student schedule, blank = no saved item.");
-    }
-
-    public void printDayChoices() {
-        for (int i = 0; i < DAYS.length; i++) {
-            System.out.println((i + 1) + ". " + DAYS[i].name());
+    public boolean putSlot(String dashboardToken, DayOfWeek day, int fullSlotIndex, String content) {
+        MyOptional<String> studentIdOpt = resolveStudentId(dashboardToken);
+        if (studentIdOpt.isEmpty()) {
+            return false;
         }
+        return putSlotByStudentId(studentIdOpt.get(), day, fullSlotIndex, content);
     }
 
-    public void printSlotChoices() {
-        for (int i = 0; i < SLOT_LABELS.length; i++) {
-            System.out.println((i + 1) + ". " + SLOT_LABELS[i]);
+    public boolean putSlotByStudentId(String studentId, DayOfWeek day, int fullSlotIndex, String content) {
+        if (!isValidFullSlot(fullSlotIndex)) {
+            return false;
         }
+
+        if (content == null || content.trim().isEmpty()) {
+            routineRepo.deleteSlot(studentId, day, fullSlotIndex);
+            return true;
+        }
+
+        routineRepo.upsert(new StudentRoutineEntry(studentId, day, fullSlotIndex, content.trim()));
+        return true;
     }
 
-    private void printCalendar(String studentId, boolean masked) {
-        String[][] grid = buildGrid(studentId, masked);
-        int currentDayIndex = TimeManager.nowDay().getValue() - 1;
-        int currentSlotIndex = getCurrentSlotIndex();
-
-        String box = TerminalUI.getActiveBoxColor();
-        String txt = TerminalUI.getActiveTextColor();
-        String hi = ConsoleColors.Accent.HIGHLIGHT;   // current day/slot accent
-        String dim = ConsoleColors.Accent.MUTED;
-        String BG = TerminalUI.getActiveBgColor();
-        String R = ConsoleColors.RESET;
-        String BOLD = ConsoleColors.BOLD;
-
-        // Column widths (visible chars only)
-        int tw = TIME_WIDTH;   // 10
-        int cw = CELL_WIDTH;   // 12
-        int cols = DAY_LABELS.length; // 7
-
-        // Total visual width: │ + tw + (│ + cw) * cols + │
-        int tableW = 1 + tw + cols * (1 + cw) + 1;
-        int leftCol = TerminalUI.centerCol(tableW);
-
-        // Helper to emit one full table row at the centred column
-        // We use \u001B[col;G (column absolute) per line
-        java.util.function.Consumer<String> row = line -> {
-            System.out.print("\u001B[" + leftCol + "G" + line + R + "\n");
-            System.out.flush();
-        };
-
-        // ── top border ─────────────────────────────────────────────
-        row.accept(buildHBorder('┌', '┬', '┐', tw, cw, cols, BG + box));
-
-        // ── header row ─────────────────────────────────────────────
-        StringBuilder hdr = new StringBuilder(BG + box + "│" + R);
-        hdr.append(BG + BOLD + txt + padCenter("TIME", tw) + R);
-        for (int d = 0; d < cols; d++) {
-            boolean today = (d == currentDayIndex);
-            String lbl = today ? ("*" + DAY_LABELS[d] + "*") : DAY_LABELS[d];
-            String color = today ? BG + BOLD + hi : BG + txt;
-            hdr.append(BG + box + "│" + R + color + padCenter(lbl, cw) + R);
+    public boolean clearSlot(String dashboardToken, DayOfWeek day, int fullSlotIndex) {
+        MyOptional<String> studentIdOpt = resolveStudentId(dashboardToken);
+        if (studentIdOpt.isEmpty()) {
+            return false;
         }
-        hdr.append(BG + box + "│" + R);
-        row.accept(hdr.toString());
+        routineRepo.deleteSlot(studentIdOpt.get(), day, fullSlotIndex);
+        return true;
+    }
 
-        // ── separator ──────────────────────────────────────────────
-        row.accept(buildHBorder('├', '┼', '┤', tw, cw, cols, BG + box));
+    public boolean clearSlotByStudentId(String studentId, DayOfWeek day, int fullSlotIndex) {
+        if (!isValidFullSlot(fullSlotIndex)) {
+            return false;
+        }
+        routineRepo.deleteSlot(studentId, day, fullSlotIndex);
+        return true;
+    }
 
-        // ── data rows ──────────────────────────────────────────────
-        for (int r = 0; r < SLOT_LABELS.length; r++) {
-            boolean activeSlot = (r == currentSlotIndex);
-            String slotLabel = activeSlot ? (">" + SLOT_LABELS[r]) : SLOT_LABELS[r];
-            String slotColor = activeSlot ? BG + BOLD + hi : BG + dim;
+    public boolean writeComplaintVisit(String studentId, DayOfWeek day, int attendantSlotIndex, String complaintId, String label) {
+        if (attendantSlotIndex < 0 || attendantSlotIndex >= ATTENDANT_SLOT_LABELS.length) {
+            return false;
+        }
 
-            StringBuilder dataRow = new StringBuilder(BG + box + "│" + R);
-            dataRow.append(slotColor + padCenter(slotLabel, tw) + R);
-            for (int d = 0; d < cols; d++) {
-                String cell = trimToFit(grid[r][d], cw);
-                boolean todayCol = (d == currentDayIndex);
-                String cellColor = todayCol ? BG + txt : BG + dim;
-                dataRow.append(BG + box + "│" + R + cellColor + padCenter(cell, cw) + R);
+        int fullSlotIndex = attendantToFull(attendantSlotIndex);
+        String safeLabel = (label == null || label.trim().isEmpty()) ? "Complaint Visit" : label.trim();
+        String content = safeLabel + " " + complaintVisitToken(complaintId);
+        return putSlotByStudentId(studentId, day, fullSlotIndex, content);
+    }
+
+    public boolean clearComplaintVisitIfPresent(String studentId, DayOfWeek day, int attendantSlotIndex, String complaintId) {
+        if (attendantSlotIndex < 0 || attendantSlotIndex >= ATTENDANT_SLOT_LABELS.length) {
+            return false;
+        }
+
+        int fullSlotIndex = attendantToFull(attendantSlotIndex);
+        MyOptional<StudentRoutineEntry> entryOpt = routineRepo.findOne(studentId, day, fullSlotIndex);
+
+        if (entryOpt.isEmpty()) {
+            return false;
+        }
+
+        StudentRoutineEntry entry = entryOpt.get();
+        String content = entry.getContent();
+        if (content == null) {
+            return false;
+        }
+
+        if (complaintId == null || complaintId.trim().isEmpty()) {
+            routineRepo.deleteSlot(studentId, day, fullSlotIndex);
+            return true;
+        }
+
+        if (content.contains(complaintVisitToken(complaintId))) {
+            routineRepo.deleteSlot(studentId, day, fullSlotIndex);
+            return true;
+        }
+
+        return false;
+    }
+
+    public String renderStudentRoutine(String dashboardToken) {
+        MyOptional<String> studentIdOpt = resolveStudentId(dashboardToken);
+        if (studentIdOpt.isEmpty()) {
+            return "Could not resolve student identity for routine view.";
+        }
+        return renderStudentRoutineByStudentId(studentIdOpt.get());
+    }
+
+    public String renderStudentRoutineByStudentId(String studentId) {
+        String[][] cells = new String[12][7];
+        fillCells(cells, studentId, true);
+
+        String title = "STUDENT ROUTINE (24 HOURS)";
+        MyOptional<StudentPublicInfo> infoOpt = studentRepo.findPublicInfoById(studentId);
+        if (infoOpt.isPresent()) {
+            StudentPublicInfo info = infoOpt.get();
+            title += " - " + info.getName() + " / Room " + info.getRoomNo();
+        }
+
+        return buildTable(title, FULL_SLOT_LABELS, cells, true);
+    }
+
+    public String renderMaskedRoutineForStudent(String studentId) {
+        String[][] cells = new String[6][7];
+        fillAttendantCells(cells, studentId);
+
+        String title = "STUDENT ROUTINE (MASKED 08-20)";
+        MyOptional<StudentPublicInfo> infoOpt = studentRepo.findPublicInfoById(studentId);
+        if (infoOpt.isPresent()) {
+            StudentPublicInfo info = infoOpt.get();
+            title += " - " + info.getName() + " / Room " + info.getRoomNo();
+        }
+
+        return buildTable(title, ATTENDANT_SLOT_LABELS, cells, false) + buildStudentContactBlock(studentId);
+    }
+
+    public boolean hasExplicitEntry(String studentId, DayOfWeek day, int fullSlotIndex) {
+        MyOptional<StudentRoutineEntry> entry = routineRepo.findOne(studentId, day, fullSlotIndex);
+        return entry.isPresent() && entry.get().hasContent();
+    }
+
+    public boolean isBusyForAttendantWindow(String studentId, DayOfWeek day, int attendantSlotIndex) {
+        int fullSlotIndex = attendantToFull(attendantSlotIndex);
+        return hasExplicitEntry(studentId, day, fullSlotIndex);
+    }
+
+    public boolean isBusyForAttendantWindowExceptComplaint(String studentId,
+            DayOfWeek day,
+            int attendantSlotIndex,
+            String complaintId) {
+        if (attendantSlotIndex < 0 || attendantSlotIndex >= ATTENDANT_SLOT_LABELS.length) {
+            return true;
+        }
+
+        int fullSlotIndex = attendantToFull(attendantSlotIndex);
+        MyOptional<StudentRoutineEntry> entryOpt = routineRepo.findOne(studentId, day, fullSlotIndex);
+
+        if (entryOpt.isEmpty()) {
+            return false;
+        }
+
+        StudentRoutineEntry entry = entryOpt.get();
+        if (!entry.hasContent()) {
+            return false;
+        }
+
+        if (complaintId != null && entry.getContent() != null
+                && entry.getContent().contains(complaintVisitToken(complaintId))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean isPrivateByDefaultNightSlot(int fullSlotIndex) {
+        return fullSlotIndex == 0 || fullSlotIndex == 1 || fullSlotIndex == 10 || fullSlotIndex == 11;
+    }
+
+    public boolean isStudentBusy24(String studentId, DayOfWeek day, int fullSlotIndex) {
+        if (hasExplicitEntry(studentId, day, fullSlotIndex)) {
+            return true;
+        }
+        return isPrivateByDefaultNightSlot(fullSlotIndex);
+    }
+
+    private void fillCells(String[][] cells, String studentId, boolean studentView) {
+        MyArrayList<StudentRoutineEntry> entries = routineRepo.findByStudentId(studentId);
+
+        for (int r = 0; r < cells.length; r++) {
+            for (int c = 0; c < cells[r].length; c++) {
+                cells[r][c] = "";
             }
-            dataRow.append(BG + box + "│" + R);
-            row.accept(dataRow.toString());
+        }
 
-            if (r < SLOT_LABELS.length - 1) {
-                row.accept(buildHBorder('├', '┼', '┤', tw, cw, cols, BG + box));
+        for (int i = 0; i < entries.size(); i++) {
+            StudentRoutineEntry entry = entries.get(i);
+            int row = entry.getSlotIndex();
+            int col = dayToColumn(entry.getDay());
+
+            if (row >= 0 && row < cells.length && col >= 0 && col < 7) {
+                cells[row][col] = studentView ? entry.getContent() : "BUSY";
+            }
+        }
+    }
+
+    private void fillAttendantCells(String[][] cells, String studentId) {
+        for (int r = 0; r < cells.length; r++) {
+            for (int c = 0; c < cells[r].length; c++) {
+                DayOfWeek day = columnToDay(c);
+                boolean busy = isBusyForAttendantWindow(studentId, day, r);
+                cells[r][c] = busy ? "BUSY" : "";
+            }
+        }
+    }
+
+    private String buildStudentContactBlock(String studentId) {
+        MyOptional<Student> studentOpt = studentRepo.findById(studentId);
+        if (studentOpt.isEmpty()) {
+            return "";
+        }
+
+        Student s = studentOpt.get();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Student Contact\n");
+        sb.append("--------------\n");
+        sb.append("Name  : ").append(valueOrDash(s.getName())).append("\n");
+        sb.append("Room  : ").append(valueOrDash(s.getRoomNumber())).append("\n");
+        sb.append("Phone : ").append(valueOrDash(s.getPhoneNumber())).append("\n");
+        sb.append("Email : ").append(valueOrDash(s.getEmail())).append("\n");
+        return sb.toString();
+    }
+
+    private String buildTable(String title, String[] rowLabels, String[][] cells, boolean showRealContents) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(title).append("\n");
+        sb.append(buildBorder("┌", "┬", "┐")).append("\n");
+        sb.append("│").append(center("TIME", TIME_COL_WIDTH));
+
+        for (int i = 0; i < 7; i++) {
+            DayOfWeek day = columnToDay(i);
+            String label = dayShort(day);
+            if (day == TimeManager.nowDay()) {
+                label = "*" + label + "*";
+            }
+            sb.append("│").append(center(label, CELL_WIDTH));
+        }
+
+        sb.append("│\n");
+        sb.append(buildBorder("├", "┼", "┤")).append("\n");
+
+        for (int r = 0; r < rowLabels.length; r++) {
+            sb.append("│").append(center(rowLabels[r], TIME_COL_WIDTH));
+            for (int c = 0; c < 7; c++) {
+                String cell = cells[r][c] == null ? "" : cells[r][c];
+                sb.append("│").append(pad(clip(cell, CELL_WIDTH - 2), CELL_WIDTH));
+            }
+            sb.append("│\n");
+
+            if (r < rowLabels.length - 1) {
+                sb.append(buildBorder("├", "┼", "┤")).append("\n");
             }
         }
 
-        // ── bottom border ──────────────────────────────────────────
-        row.accept(buildHBorder('└', '┴', '┘', tw, cw, cols, BG + box));
+        sb.append(buildBorder("└", "┴", "┘")).append("\n");
+
+        if (!showRealContents) {
+            sb.append("Legend: BUSY = student already has something scheduled in that 2-hour slot.\n");
+            sb.append("Only 08:00-20:00 is shown to attendant. 20:00-04:00 stays private/busy by default.\n");
+        } else {
+            sb.append("Note: 20:00-04:00 remains private/busy by default for complaint scheduling.\n");
+        }
+
+        return sb.toString();
     }
 
-    /**
-     * Builds a horizontal border line: left + ─*tw + (mid + ─*cw)*cols + right
-     */
-    private static String buildHBorder(char left, char mid, char right,
-            int tw, int cw, int cols, String color) {
-        StringBuilder sb = new StringBuilder(color);
-        sb.append(left).append("─".repeat(tw));
-        for (int i = 0; i < cols; i++) {
-            sb.append(mid).append("─".repeat(cw));
+    private String complaintVisitToken(String complaintId) {
+        String safe = complaintId == null ? "" : complaintId.trim();
+        return "[" + safe + "]";
+    }
+
+    private int attendantToFull(int attendantSlotIndex) {
+        return attendantSlotIndex + 4;
+    }
+
+    private String valueOrDash(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return "(not set)";
+        }
+        return value.trim();
+    }
+
+    private String buildBorder(String left, String mid, String right) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(left).append(repeat("─", TIME_COL_WIDTH));
+        for (int i = 0; i < 7; i++) {
+            sb.append(mid).append(repeat("─", CELL_WIDTH));
         }
         sb.append(right);
         return sb.toString();
     }
 
-    private String[][] buildGrid(String studentId, boolean masked) {
-        String[][] grid = new String[SLOT_LABELS.length][DAY_LABELS.length];
-        for (int row = 0; row < SLOT_LABELS.length; row++) {
-            for (int col = 0; col < DAY_LABELS.length; col++) {
-                grid[row][col] = "";
-            }
-        }
-
-        List<RoutineEntry> entries = repository.findByStudent(studentId);
-        for (RoutineEntry entry : entries) {
-            int row = entry.getSlotIndex();
-            int col = entry.getDay().getValue() - 1;
-            if (row >= 0 && row < SLOT_LABELS.length && col >= 0 && col < DAY_LABELS.length) {
-                grid[row][col] = masked ? MASK_FILLED : entry.getContent();
-            }
-        }
-
-        return grid;
-    }
-
-    private int getCurrentSlotIndex() {
-        LocalTime now = TimeManager.nowTime();
-        LocalTime[] starts = {
-            LocalTime.of(8, 0),
-            LocalTime.of(10, 0),
-            LocalTime.of(12, 0),
-            LocalTime.of(14, 0),
-            LocalTime.of(16, 0),
-            LocalTime.of(18, 0)
-        };
-        LocalTime[] ends = {
-            LocalTime.of(10, 0),
-            LocalTime.of(12, 0),
-            LocalTime.of(14, 0),
-            LocalTime.of(16, 0),
-            LocalTime.of(18, 0),
-            LocalTime.of(20, 0)
-        };
-
-        for (int i = 0; i < starts.length; i++) {
-            if (!now.isBefore(starts[i]) && now.isBefore(ends[i])) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private void validate(int dayChoice, int slotChoice) {
-        if (dayChoice < 1 || dayChoice > DAYS.length) {
-            throw new IllegalArgumentException("Day must be between 1 and 7.");
-        }
-        if (slotChoice < 1 || slotChoice > SLOT_LABELS.length) {
-            throw new IllegalArgumentException("Slot must be between 1 and 6.");
+    private String dayShort(DayOfWeek day) {
+        switch (day) {
+            case MONDAY:
+                return "MON";
+            case TUESDAY:
+                return "TUE";
+            case WEDNESDAY:
+                return "WED";
+            case THURSDAY:
+                return "THU";
+            case FRIDAY:
+                return "FRI";
+            case SATURDAY:
+                return "SAT";
+            default:
+                return "SUN";
         }
     }
 
-    private String padCenter(String text, int width) {
-        if (text == null) {
-            text = "";
+    private int dayToColumn(DayOfWeek day) {
+        switch (day) {
+            case MONDAY:
+                return 0;
+            case TUESDAY:
+                return 1;
+            case WEDNESDAY:
+                return 2;
+            case THURSDAY:
+                return 3;
+            case FRIDAY:
+                return 4;
+            case SATURDAY:
+                return 5;
+            default:
+                return 6;
         }
-        if (text.length() >= width) {
-            return text.substring(0, width);
-        }
-        int left = (width - text.length()) / 2;
-        int right = width - text.length() - left;
-        return repeat(' ', left) + text + repeat(' ', right);
     }
 
-    private String trimToFit(String text, int width) {
-        if (text == null) {
+    private DayOfWeek columnToDay(int column) {
+        switch (column) {
+            case 0:
+                return DayOfWeek.MONDAY;
+            case 1:
+                return DayOfWeek.TUESDAY;
+            case 2:
+                return DayOfWeek.WEDNESDAY;
+            case 3:
+                return DayOfWeek.THURSDAY;
+            case 4:
+                return DayOfWeek.FRIDAY;
+            case 5:
+                return DayOfWeek.SATURDAY;
+            default:
+                return DayOfWeek.SUNDAY;
+        }
+    }
+
+    private boolean isValidFullSlot(int fullSlotIndex) {
+        return fullSlotIndex >= 0 && fullSlotIndex < FULL_SLOT_LABELS.length;
+    }
+
+    private String clip(String s, int max) {
+        if (s == null) {
             return "";
         }
-        if (text.length() <= width) {
-            return text;
+        if (s.length() <= max) {
+            return s;
         }
-        if (width <= 1) {
-            return text.substring(0, width);
+        if (max <= 1) {
+            return s.substring(0, max);
         }
-        return text.substring(0, width - 1) + "…";
+        return s.substring(0, max - 1) + "…";
     }
 
-    private String repeat(char ch, int count) {
+    private String center(String s, int width) {
+        if (s == null) {
+            s = "";
+        }
+        if (s.length() > width) {
+            return s.substring(0, width);
+        }
+
+        int left = (width - s.length()) / 2;
+        int right = width - s.length() - left;
+        return repeat(" ", left) + s + repeat(" ", right);
+    }
+
+    private String pad(String s, int width) {
+        if (s == null) {
+            s = "";
+        }
+        if (s.length() >= width) {
+            return s.substring(0, width);
+        }
+        return s + repeat(" ", width - s.length());
+    }
+
+    private String repeat(String s, int count) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < count; i++) {
-            sb.append(ch);
+            sb.append(s);
         }
         return sb.toString();
+    }
+
+    // ── convenience methods used by CLI ──
+    public void printStudentRoutine(String studentId) {
+        System.out.println(renderStudentRoutineByStudentId(studentId));
+    }
+
+    public void printMaskedRoutine(String studentId) {
+        System.out.println(renderMaskedRoutineForStudent(studentId));
+    }
+
+    public void printDayChoices() {
+        DayOfWeek[] days = {
+            DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+            DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY
+        };
+        for (int i = 0; i < days.length; i++) {
+            System.out.println("  " + (i + 1) + ". " + dayShort(days[i]));
+        }
+    }
+
+    public void printSlotChoices() {
+        for (int i = 0; i < FULL_SLOT_LABELS.length; i++) {
+            System.out.println("  " + (i + 1) + ". " + FULL_SLOT_LABELS[i]);
+        }
+    }
+
+    public void setSlot(String studentId, int day, int slot, String content) {
+        DayOfWeek dow = columnToDay(day - 1);
+        putSlotByStudentId(studentId, dow, slot - 1, content);
+    }
+
+    public void clearSlot(String studentId, int day, int slot) {
+        DayOfWeek dow = columnToDay(day - 1);
+        clearSlotByStudentId(studentId, dow, slot - 1);
+    }
+
+    public String getSlotContent(String studentId, int day, int slot) {
+        DayOfWeek dow = columnToDay(day - 1);
+        MyOptional<StudentRoutineEntry> entry = routineRepo.findOne(studentId, dow, slot - 1);
+        if (entry.isEmpty()) {
+            return null;
+        }
+        return entry.get().getContent();
     }
 }
