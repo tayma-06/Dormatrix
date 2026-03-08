@@ -6,80 +6,81 @@ public final class BackgroundFiller {
     }
 
     /**
-     * Fills every cell of the terminal with the current background color. Uses
-     * \e[2J then overwrites with spaces carrying the active bg attribute.
+     * Paints every terminal cell with the given background color by explicitly
+     * prepending the bgCode to every row. This is more reliable than relying on
+     * the SGR state being intact when \e[2J fires — each row carries its own
+     * explicit background attribute so no cell is left at the terminal default.
      */
-    private static void clearWithCurrentBackground() {
+    private static void fillBackground(String bgCode) {
         int w = TerminalUI.termW();
         int h = TerminalUI.termH();
-        // First clear using standard escape, then overwrite each row
-        // with spaces that carry the current SGR background attribute.
-        StringBuilder sb = new StringBuilder(w * h + h * 20 + 40);
-        sb.append("\u001B[2J");                    // erase display
-        sb.append("\u001B[H");                     // cursor home
-        String rowSpaces = " ".repeat(w);
+        // Each row explicitly re-emits bgCode so Windows / WezTerm cannot
+        // fall back to the terminal-default (white) background for any cell.
+        String rowPaint = bgCode + " ".repeat(w);
+        StringBuilder sb = new StringBuilder((bgCode.length() + w + 20) * h + 40);
+        sb.append("\u001B[2J\u001B[H");           // fast erase first
         for (int r = 1; r <= h; r++) {
-            sb.append("\u001B[").append(r).append(";1H").append(rowSpaces);
+            sb.append("\u001B[").append(r).append(";1H").append(rowPaint);
         }
-        sb.append("\u001B[H");                     // cursor home again
+        sb.append("\u001B[H");
         System.out.print(sb);
         System.out.flush();
     }
 
     public static void applyMainMenuTheme() {
-        System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(18, 12, 45));
-        System.out.print(ConsoleColors.ThemeText.SOFT_WHITE);
-        clearWithCurrentBackground();
+        String bg = ConsoleColors.bgRGB(18, 12, 45);
+        System.out.print(ConsoleColors.RESET + bg + ConsoleColors.ThemeText.SOFT_WHITE);
+        System.out.flush();
+        fillBackground(bg);
     }
 
     public static void applyStudentTheme() {
-        System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(8, 18, 60));
-        System.out.print(ConsoleColors.ThemeText.STUDENT_TEXT);
-        clearWithCurrentBackground();
+        String bg = ConsoleColors.bgRGB(8, 18, 60);
+        System.out.print(ConsoleColors.RESET + bg + ConsoleColors.ThemeText.STUDENT_TEXT);
+        System.out.flush();
+        fillBackground(bg);
     }
 
     public static void applyAttendantTheme() {
-        System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(5, 45, 42));
-        System.out.print(ConsoleColors.ThemeText.ATTENDANT_TEXT);
-        clearWithCurrentBackground();
+        String bg = ConsoleColors.bgRGB(5, 45, 42);
+        System.out.print(ConsoleColors.RESET + bg + ConsoleColors.ThemeText.ATTENDANT_TEXT);
+        System.out.flush();
+        fillBackground(bg);
     }
 
     public static void applyMaintenanceTheme() {
-        System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(15, 20, 60));
-        System.out.print(ConsoleColors.ThemeText.MAINTENANCE_TEXT);
-        clearWithCurrentBackground();
+        String bg = ConsoleColors.bgRGB(15, 20, 60);
+        System.out.print(ConsoleColors.RESET + bg + ConsoleColors.ThemeText.MAINTENANCE_TEXT);
+        System.out.flush();
+        fillBackground(bg);
     }
 
     public static void applyStoreInChargeTheme() {
-        System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(50, 28, 5));
-        System.out.print(ConsoleColors.ThemeText.STORE_TEXT);
-        clearWithCurrentBackground();
+        String bg = ConsoleColors.bgRGB(50, 28, 5);
+        System.out.print(ConsoleColors.RESET + bg + ConsoleColors.ThemeText.STORE_TEXT);
+        System.out.flush();
+        fillBackground(bg);
     }
 
     public static void applyHallOfficeTheme() {
-        System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(28, 12, 65));
-        System.out.print(ConsoleColors.ThemeText.HALL_TEXT);
-        clearWithCurrentBackground();
+        String bg = ConsoleColors.bgRGB(28, 12, 65);
+        System.out.print(ConsoleColors.RESET + bg + ConsoleColors.ThemeText.HALL_TEXT);
+        System.out.flush();
+        fillBackground(bg);
     }
 
     public static void applyAdminTheme() {
-        System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(55, 8, 22));
-        System.out.print(ConsoleColors.ThemeText.ADMIN_TEXT);
-        clearWithCurrentBackground();
+        String bg = ConsoleColors.bgRGB(55, 8, 22);
+        System.out.print(ConsoleColors.RESET + bg + ConsoleColors.ThemeText.ADMIN_TEXT);
+        System.out.flush();
+        fillBackground(bg);
     }
 
     public static void applyCafeteriaManagerTheme() {
-        System.out.print(ConsoleColors.RESET);
-        System.out.print(ConsoleColors.bgRGB(48, 38, 5));
-        System.out.print(ConsoleColors.ThemeText.CAFETERIA_TEXT);
-        clearWithCurrentBackground();
+        String bg = ConsoleColors.bgRGB(48, 38, 5);
+        System.out.print(ConsoleColors.RESET + bg + ConsoleColors.ThemeText.CAFETERIA_TEXT);
+        System.out.flush();
+        fillBackground(bg);
     }
 
     public static void resetTheme() {
