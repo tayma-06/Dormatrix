@@ -6,8 +6,8 @@ public final class BackgroundFiller {
     }
 
     /**
-     * Fills every cell of the terminal with the current background color.
-     * Uses \e[2J then overwrites with spaces carrying the active bg attribute.
+     * Fills every cell of the terminal with the current background color. Uses
+     * \e[2J then overwrites with spaces carrying the active bg attribute.
      */
     private static void clearWithCurrentBackground() {
         int w = TerminalUI.termW();
@@ -23,9 +23,6 @@ public final class BackgroundFiller {
         }
         sb.append("\u001B[H");                     // cursor home again
         System.out.print(sb);
-        // Re-emit the top-row background as the "current" background so that
-        // any immediately following text sits on a consistent dark surface.
-        System.out.print(ConsoleColors.bgRGB(top[0], top[1], top[2]) + fg);
         System.out.flush();
     }
 
