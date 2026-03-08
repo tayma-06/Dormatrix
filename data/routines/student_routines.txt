@@ -3,3 +3,6 @@
 230042141|SUNDAY|2|pray, sehri, prayer
 230042141|SUNDAY|3|Modify dormatrix scheduler
 230042141|SUNDAY|4|Study, get ready to teach
+230042110|MONDAY|8|Complaint Visit [C-7]
+230042141|MONDAY|8|Complaint Visit [C-13]
+230042141|SUNDAY|8|Complaint Visit [C-12]

@@ -3,6 +3,7 @@ package controllers.routine;
 import libraries.collections.MyArrayList;
 import libraries.collections.MyOptional;
 import models.routine.StudentRoutineEntry;
+import models.users.Student;
 import models.users.StudentPublicInfo;
 import repo.file.FileStudentDirectoryRepository;
 import repo.file.FileStudentRoutineRepository;
@@ -71,6 +72,40 @@ public class RoutineController {
         return true;
     }
 
+    public boolean writeComplaintVisit(String studentId, DayOfWeek day, int attendantSlotIndex, String complaintId, String label) {
+        if (attendantSlotIndex < 0 || attendantSlotIndex >= ATTENDANT_SLOT_LABELS.length) return false;
+
+        int fullSlotIndex = attendantToFull(attendantSlotIndex);
+        String safeLabel = (label == null || label.trim().isEmpty()) ? "Complaint Visit" : label.trim();
+        String content = safeLabel + " " + complaintVisitToken(complaintId);
+        return putSlotByStudentId(studentId, day, fullSlotIndex, content);
+    }
+
+    public boolean clearComplaintVisitIfPresent(String studentId, DayOfWeek day, int attendantSlotIndex, String complaintId) {
+        if (attendantSlotIndex < 0 || attendantSlotIndex >= ATTENDANT_SLOT_LABELS.length) return false;
+
+        int fullSlotIndex = attendantToFull(attendantSlotIndex);
+        MyOptional<StudentRoutineEntry> entryOpt = routineRepo.findOne(studentId, day, fullSlotIndex);
+
+        if (entryOpt.isEmpty()) return false;
+
+        StudentRoutineEntry entry = entryOpt.get();
+        String content = entry.getContent();
+        if (content == null) return false;
+
+        if (complaintId == null || complaintId.trim().isEmpty()) {
+            routineRepo.deleteSlot(studentId, day, fullSlotIndex);
+            return true;
+        }
+
+        if (content.contains(complaintVisitToken(complaintId))) {
+            routineRepo.deleteSlot(studentId, day, fullSlotIndex);
+            return true;
+        }
+
+        return false;
+    }
+
     public String renderStudentRoutine(String dashboardToken) {
         MyOptional<String> studentIdOpt = resolveStudentId(dashboardToken);
         if (studentIdOpt.isEmpty()) {
@@ -104,7 +139,7 @@ public class RoutineController {
             title += " - " + info.getName() + " / Room " + info.getRoomNo();
         }
 
-        return buildTable(title, ATTENDANT_SLOT_LABELS, cells, false);
+        return buildTable(title, ATTENDANT_SLOT_LABELS, cells, false) + buildStudentContactBlock(studentId);
     }
 
     public boolean hasExplicitEntry(String studentId, DayOfWeek day, int fullSlotIndex) {
@@ -113,8 +148,30 @@ public class RoutineController {
     }
 
     public boolean isBusyForAttendantWindow(String studentId, DayOfWeek day, int attendantSlotIndex) {
-        int fullSlotIndex = attendantSlotIndex + 4;
+        int fullSlotIndex = attendantToFull(attendantSlotIndex);
         return hasExplicitEntry(studentId, day, fullSlotIndex);
+    }
+
+    public boolean isBusyForAttendantWindowExceptComplaint(String studentId,
+                                                           DayOfWeek day,
+                                                           int attendantSlotIndex,
+                                                           String complaintId) {
+        if (attendantSlotIndex < 0 || attendantSlotIndex >= ATTENDANT_SLOT_LABELS.length) return true;
+
+        int fullSlotIndex = attendantToFull(attendantSlotIndex);
+        MyOptional<StudentRoutineEntry> entryOpt = routineRepo.findOne(studentId, day, fullSlotIndex);
+
+        if (entryOpt.isEmpty()) return false;
+
+        StudentRoutineEntry entry = entryOpt.get();
+        if (!entry.hasContent()) return false;
+
+        if (complaintId != null && entry.getContent() != null &&
+                entry.getContent().contains(complaintVisitToken(complaintId))) {
+            return false;
+        }
+
+        return true;
     }
 
     public boolean isPrivateByDefaultNightSlot(int fullSlotIndex) {
@@ -156,6 +213,21 @@ public class RoutineController {
         }
     }
 
+    private String buildStudentContactBlock(String studentId) {
+        MyOptional<Student> studentOpt = studentRepo.findById(studentId);
+        if (studentOpt.isEmpty()) return "";
+
+        Student s = studentOpt.get();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Student Contact\n");
+        sb.append("--------------\n");
+        sb.append("Name  : ").append(valueOrDash(s.getName())).append("\n");
+        sb.append("Room  : ").append(valueOrDash(s.getRoomNumber())).append("\n");
+        sb.append("Phone : ").append(valueOrDash(s.getPhoneNumber())).append("\n");
+        sb.append("Email : ").append(valueOrDash(s.getEmail())).append("\n");
+        return sb.toString();
+    }
+
     private String buildTable(String title, String[] rowLabels, String[][] cells, boolean showRealContents) {
         StringBuilder sb = new StringBuilder();
 
@@ -190,11 +262,26 @@ public class RoutineController {
 
         if (!showRealContents) {
             sb.append("Legend: BUSY = student already has something scheduled in that 2-hour slot.\n");
+            sb.append("Only 08:00-20:00 is shown to attendant. 20:00-04:00 stays private/busy by default.\n");
         } else {
-            sb.append("Night privacy default for attendant scheduling: 20:00-04:00 is treated as private/busy.\n");
+            sb.append("Note: 20:00-04:00 remains private/busy by default for complaint scheduling.\n");
         }
 
         return sb.toString();
+    }
+
+    private String complaintVisitToken(String complaintId) {
+        String safe = complaintId == null ? "" : complaintId.trim();
+        return "[" + safe + "]";
+    }
+
+    private int attendantToFull(int attendantSlotIndex) {
+        return attendantSlotIndex + 4;
+    }
+
+    private String valueOrDash(String value) {
+        if (value == null || value.trim().isEmpty()) return "(not set)";
+        return value.trim();
     }
 
     private String buildBorder(String left, String mid, String right) {

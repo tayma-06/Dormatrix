@@ -26,12 +26,12 @@ public class ComplaintView {
         System.out.println("═══════════════════════════════════════════════════════════════════════");
         System.out.println("║                      COMPLAINT(ATTENDANT)                           ║");
         System.out.println("═══════════════════════════════════════════════════════════════════════");
-        System.out.println("1. View ALL complaints");
-        System.out.println("2. View PENDING");
-        System.out.println("3. Reassign complaint (manual worker id)");
-        System.out.println("4. Resolve complaint");
-        System.out.println("5. View complaints by ROOM");
-        System.out.println("6. View complaints by COMPLAINT ID");
+        System.out.println("1. View all complaints");
+        System.out.println("2. View pending complaints");
+        System.out.println("3. View complaints by room");
+        System.out.println("4. View complaints by complaint id");
+        System.out.println("5. Reassign complaint (manual worker id)");
+        System.out.println("6. Resolve complaint");
         System.out.println("0. Back");
         System.out.print("Enter choice: ");
     }
@@ -42,7 +42,6 @@ public class ComplaintView {
         System.out.println("║                       TASK RELEVANT OPTIONS                          ║");
         System.out.println("════════════════════════════════════════════════════════════════════════");
         System.out.println("1. Update Progress");
-//        System.out.println("3. Mark Completed");
         System.out.println("0. Back");
         System.out.println();
         System.out.print("Enter choice: ");
@@ -276,20 +275,4 @@ public class ComplaintView {
         return lines.toArray(new String[0]);
     }
 
-//    public void details(Complaint c){
-//        String wid = c.getAssignedWorkerId();
-//        boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
-//
-//        System.out.println("\n------------------ COMPLAINT DETAILS ------------------");
-//        System.out.println("ID          : " + c.getComplaintId());
-//        System.out.println("Student ID  : " + c.getStudentId());
-//        System.out.println("Room        : " + c.getStudentRoomNo());
-//        System.out.println("Category    : " + c.getCategory().name());
-//        System.out.println("Priority    : " + c.getPriority().name());
-//        System.out.println("Status      : " + c.getStatus().name());
-//        System.out.println("Worker      : " + (blank ? "(none)" : wid));
-//        System.out.println("Description : " + c.getDescription());
-//        System.out.println("Notes/Tags  : " + (c.getTags() == null ? "" : c.getTags()));
-//        System.out.println("-------------------------------------------------------\n");
-//    }
 }

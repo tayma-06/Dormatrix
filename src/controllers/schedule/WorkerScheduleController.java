@@ -14,14 +14,16 @@ import repo.file.FileWorkerVisitRepository;
 import utils.TimeManager;
 
 import java.time.DayOfWeek;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalTime;
 
 public class WorkerScheduleController {
 
     public static final String[] SLOT_LABELS = {
             "08-10", "10-12", "12-14", "14-16", "16-18", "18-20"
     };
+
+    private static final int AUTO_SLOT_LATE_1 = 4;   // 16-18
+    private static final int AUTO_SLOT_LATE_2 = 5;   // 18-20
 
     private static final int TIME_COL_WIDTH = 10;
     private static final int CELL_WIDTH = 12;
@@ -36,20 +38,26 @@ public class WorkerScheduleController {
         if (cOpt.isEmpty()) return MyOptional.empty();
 
         Complaint c = cOpt.get();
+        if (c.getStatus() == ComplaintStatus.RESOLVED) return MyOptional.empty();
+
         String workerId = c.getAssignedWorkerId();
-
         if (workerId == null || workerId.trim().isEmpty()) return MyOptional.empty();
-        MyOptional<MaintenanceWorker> workerOpt = workerRepo.findById(workerId);
-        if (workerOpt.isEmpty()) return MyOptional.empty();
+        if (workerRepo.findById(workerId).isEmpty()) return MyOptional.empty();
 
-        MaintenanceWorker worker = workerOpt.get();
-        List<DayOfWeek> orderedDays = orderedSuggestionDays(worker);
+        WorkerVisitEntry previousVisit = null;
+        MyOptional<WorkerVisitEntry> oldVisitOpt = visitRepo.findByComplaintId(complaintId);
+        if (oldVisitOpt.isPresent()) previousVisit = oldVisitOpt.get();
 
-        for (int i = 0; i < orderedDays.size(); i++) {
-            DayOfWeek day = orderedDays.get(i);
-            for (int slot = 0; slot < SLOT_LABELS.length; slot++) {
-                if (routineController.isBusyForAttendantWindow(c.getStudentId(), day, slot)) continue;
+        for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
+            DayOfWeek day = TimeManager.nowDay().plus(dayOffset);
+            int[] candidateSlots = autoCandidateSlots(dayOffset);
+
+            for (int i = 0; i < candidateSlots.length; i++) {
+                int slot = candidateSlots[i];
+
                 if (visitRepo.hasConflict(workerId, day, slot, c.getComplaintId())) continue;
+                if (routineController.isBusyForAttendantWindowExceptComplaint(
+                        c.getStudentId(), day, slot, c.getComplaintId())) continue;
 
                 WorkerVisitEntry entry = new WorkerVisitEntry(
                         c.getComplaintId(),
@@ -62,9 +70,7 @@ public class WorkerScheduleController {
                         "AUTO"
                 );
 
-                visitRepo.upsert(entry);
-                c.appendTagNote("VISIT:" + day.name() + ":" + SLOT_LABELS[slot]);
-                complaintRepo.update(c);
+                saveOrRescheduleVisit(c, previousVisit, entry);
                 return MyOptional.of(entry);
             }
         }
@@ -84,8 +90,14 @@ public class WorkerScheduleController {
         String workerId = c.getAssignedWorkerId();
         if (workerId == null || workerId.trim().isEmpty()) return false;
 
+//        if (day == TimeManager.nowDay() && isSlotAlreadyStartedToday(slotIndex)) return false;
         if (visitRepo.hasConflict(workerId, day, slotIndex, c.getComplaintId())) return false;
-        if (routineController.isBusyForAttendantWindow(c.getStudentId(), day, slotIndex)) return false;
+        if (routineController.isBusyForAttendantWindowExceptComplaint(
+                c.getStudentId(), day, slotIndex, c.getComplaintId())) return false;
+
+        WorkerVisitEntry previousVisit = null;
+        MyOptional<WorkerVisitEntry> oldVisitOpt = visitRepo.findByComplaintId(complaintId);
+        if (oldVisitOpt.isPresent()) previousVisit = oldVisitOpt.get();
 
         WorkerVisitEntry entry = new WorkerVisitEntry(
                 c.getComplaintId(),
@@ -98,9 +110,8 @@ public class WorkerScheduleController {
                 note == null ? "" : note.trim()
         );
 
-        visitRepo.upsert(entry);
-        c.appendTagNote("VISIT:" + day.name() + ":" + SLOT_LABELS[slotIndex]);
-        return complaintRepo.update(c);
+        saveOrRescheduleVisit(c, previousVisit, entry);
+        return true;
     }
 
     public String renderPendingComplaintList() {
@@ -134,8 +145,19 @@ public class WorkerScheduleController {
     public String renderMaskedRoutineForComplaint(String complaintId) {
         MyOptional<Complaint> cOpt = complaintRepo.findById(complaintId);
         if (cOpt.isEmpty()) return "Complaint not found.";
+
         Complaint c = cOpt.get();
-        return routineController.renderMaskedRoutineForStudent(c.getStudentId());
+        StringBuilder sb = new StringBuilder();
+        sb.append("Complaint ID : ").append(c.getComplaintId()).append("\n");
+        sb.append("Category     : ").append(c.getCategory().name()).append("\n");
+        sb.append("Room         : ").append(c.getStudentRoomNo()).append("\n");
+        sb.append("Worker       : ")
+                .append(c.getAssignedWorkerId() == null || c.getAssignedWorkerId().trim().isEmpty()
+                        ? "(not assigned)"
+                        : c.getAssignedWorkerId())
+                .append("\n\n");
+        sb.append(routineController.renderMaskedRoutineForStudent(c.getStudentId()));
+        return sb.toString();
     }
 
     public String renderWorkerWeek(String workerToken) {
@@ -215,7 +237,17 @@ public class WorkerScheduleController {
     }
 
     public boolean markVisitDone(String complaintId) {
-        return visitRepo.markDone(complaintId);
+        MyOptional<WorkerVisitEntry> visitOpt = visitRepo.findByComplaintId(complaintId);
+        boolean ok = visitRepo.markDone(complaintId);
+
+        if (ok && visitOpt.isPresent()) {
+            WorkerVisitEntry v = visitOpt.get();
+            routineController.clearComplaintVisitIfPresent(
+                    v.getStudentId(), v.getDay(), v.getSlotIndex(), v.getComplaintId()
+            );
+        }
+
+        return ok;
     }
 
     public boolean isDefaultDutyDay(MaintenanceWorker worker, DayOfWeek day) {
@@ -227,25 +259,64 @@ public class WorkerScheduleController {
         return false;
     }
 
-    private List<DayOfWeek> orderedSuggestionDays(MaintenanceWorker worker) {
-        DayOfWeek start = TimeManager.nowDay();
-        List<DayOfWeek> nextSeven = new ArrayList<>();
-
-        for (int i = 0; i < 7; i++) {
-            nextSeven.add(start.plus(i));
+    private void saveOrRescheduleVisit(Complaint complaint,
+                                       WorkerVisitEntry previousVisit,
+                                       WorkerVisitEntry newVisit) {
+        if (previousVisit != null) {
+            routineController.clearComplaintVisitIfPresent(
+                    previousVisit.getStudentId(),
+                    previousVisit.getDay(),
+                    previousVisit.getSlotIndex(),
+                    previousVisit.getComplaintId()
+            );
         }
 
-        List<DayOfWeek> preferred = new ArrayList<>();
-        List<DayOfWeek> fallback = new ArrayList<>();
+        visitRepo.upsert(newVisit);
 
-        for (int i = 0; i < nextSeven.size(); i++) {
-            DayOfWeek day = nextSeven.get(i);
-            if (isDefaultDutyDay(worker, day)) preferred.add(day);
-            else fallback.add(day);
+        routineController.writeComplaintVisit(
+                complaint.getStudentId(),
+                newVisit.getDay(),
+                newVisit.getSlotIndex(),
+                complaint.getComplaintId(),
+                "Complaint Visit"
+        );
+
+        complaint.appendTagNote("VISIT:" + newVisit.getDay().name() + ":" + SLOT_LABELS[newVisit.getSlotIndex()]);
+        complaintRepo.update(complaint);
+    }
+
+    private int[] autoCandidateSlots(int dayOffset) {
+        if (dayOffset > 0) {
+            return new int[]{AUTO_SLOT_LATE_1, AUTO_SLOT_LATE_2};
         }
 
-        preferred.addAll(fallback);
-        return preferred;
+        LocalTime now = TimeManager.nowTime();
+
+        if (now.isBefore(LocalTime.of(16, 0))) {
+            return new int[]{AUTO_SLOT_LATE_1, AUTO_SLOT_LATE_2};
+        }
+
+        if (!now.isAfter(LocalTime.of(18, 0))) {
+            return new int[]{AUTO_SLOT_LATE_2};
+        }
+
+        return new int[0];
+    }
+
+    private boolean isSlotAlreadyStartedToday(int slotIndex) {
+        LocalTime now = TimeManager.nowTime();
+        LocalTime slotStart;
+
+        switch (slotIndex) {
+            case 0: slotStart = LocalTime.of(8, 0); break;
+            case 1: slotStart = LocalTime.of(10, 0); break;
+            case 2: slotStart = LocalTime.of(12, 0); break;
+            case 3: slotStart = LocalTime.of(14, 0); break;
+            case 4: slotStart = LocalTime.of(16, 0); break;
+            default: slotStart = LocalTime.of(18, 0); break;
+        }
+
+        return now.isAfter(slotStart);
     }
 
     private MyOptional<MaintenanceWorker> resolveWorker(String workerToken) {
