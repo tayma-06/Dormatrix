@@ -1,34 +1,59 @@
 {
+  "_note": "Each theme uses a 3-stop vertical gradient (top → mid → bottom). Mid is the glow centre.",
   "mainMenu": {
-    "bg": [242, 238, 253],
-    "fg": [55, 30, 100]
+    "comment": "Vivid cosmic — dark purple void / bright indigo glow",
+    "bgTop": [8, 3, 30],
+    "bgMid": [30, 12, 80],
+    "bgBottom": [5, 2, 18],
+    "fg": [220, 200, 255]
   },
   "student": {
-    "bg": [228, 238, 255],
-    "fg": [15, 45, 120]
+    "comment": "Electric blue — deep navy void / vivid cobalt glow",
+    "bgTop": [2, 6, 40],
+    "bgMid": [10, 30, 100],
+    "bgBottom": [1, 3, 25],
+    "fg": [120, 200, 255]
   },
   "attendant": {
-    "bg": [224, 248, 242],
-    "fg": [15, 75, 65]
+    "comment": "Vivid cyan — dark teal void / bright cyan glow",
+    "bgTop": [2, 22, 22],
+    "bgMid": [6, 65, 58],
+    "bgBottom": [1, 14, 16],
+    "fg": [80, 245, 225]
   },
   "maintenance": {
-    "bg": [232, 234, 244],
-    "fg": [35, 50, 80]
+    "comment": "Neon green — dark forest void / vivid green glow",
+    "bgTop": [2, 25, 8],
+    "bgMid": [10, 60, 25],
+    "bgBottom": [1, 15, 5],
+    "fg": [110, 255, 150]
   },
   "storeInCharge": {
-    "bg": [255, 243, 228],
-    "fg": [95, 55, 10]
+    "comment": "Bright orange — dark amber void / vivid orange glow",
+    "bgTop": [38, 14, 2],
+    "bgMid": [85, 35, 8],
+    "bgBottom": [22, 7, 1],
+    "fg": [255, 190, 90]
   },
   "hallOffice": {
-    "bg": [238, 230, 252],
-    "fg": [65, 35, 105]
+    "comment": "Hot pink — dark magenta void / vivid pink glow",
+    "bgTop": [30, 4, 25],
+    "bgMid": [70, 12, 55],
+    "bgBottom": [18, 2, 15],
+    "fg": [255, 150, 210]
   },
   "admin": {
-    "bg": [255, 234, 240],
-    "fg": [115, 15, 35]
+    "comment": "Vivid red — deep crimson void / bright scarlet glow",
+    "bgTop": [42, 5, 12],
+    "bgMid": [95, 14, 28],
+    "bgBottom": [25, 2, 8],
+    "fg": [255, 130, 130]
   },
   "cafeteriaManager": {
-    "bg": [255, 247, 228],
-    "fg": [95, 65, 5]
+    "comment": "Vivid yellow — dark gold void / bright yellow glow",
+    "bgTop": [38, 30, 2],
+    "bgMid": [82, 65, 8],
+    "bgBottom": [22, 16, 1],
+    "fg": [255, 240, 90]
   }
 }

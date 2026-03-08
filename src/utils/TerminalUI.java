@@ -641,6 +641,273 @@ public final class TerminalUI {
     }
 
     // ══════════════════════════════════════════════════════════════
+    //  GOODBYE BANNER (CONGESTED 6-LINE DORMATRIX STYLE)
+    // ══════════════════════════════════════════════════════════════
+    private static final String[] GOODBYE_BANNER = {
+        "▒██████╗▒▒██████╗▒▒██████╗▒██████╗▒██████╗▒██╗▒▒▒██╗███████╗▒",
+        "██╔════╝▒██╔═══██╗██╔═══██╗██╔══██╗██╔══██╗╚██╗▒██╔╝██╔════╝▒",
+        "██║▒▒███╗██║▒▒▒██║██║▒▒▒██║██║▒▒██║██████╔╝▒╚████╔╝▒█████╗▒▒▒",
+        "██║▒▒▒██║██║▒▒▒██║██║▒▒▒██║██║▒▒██║██╔══██╗▒▒╚██╔╝▒▒██╔══╝▒▒▒",
+        "╚██████╔╝╚██████╔╝╚██████╔╝██████╔╝██████╔╝▒▒▒██║▒▒▒███████╗▒",
+        "▒╚═════╝▒▒╚═════╝▒▒╚═════╝▒╚═════╝▒╚═════╝▒▒▒▒╚═╝▒▒▒╚══════╝▒"
+    };
+    private static final int GOODBYE_W = 64;
+
+    // Red rain colour palette
+    private static final int[] GB_BG = {10, 0, 0};    // near-black red bg
+    private static final int[] GB_HEAD = {255, 230, 200}; // hot white-orange tip
+    private static final int[] GB_MID = {255, 60, 20};  // bright orange-red trail
+    private static final int[] GB_SETTLE = {180, 10, 10};  // deep crimson settled
+
+    // Glitch characters used for distortion frames
+    private static final char[] GLITCH_CHARS = {
+        '█', '▓', '▒', '░', '╬', '╪', '╫', '╩', '╦', '╠', '═', '║', '╔', '╗', '╚', '╝',
+        '▀', '▄', '▌', '▐', '◘', '◙', '◦', '•', '‡', '†', '§', '¶', 'Ω', 'Φ'
+    };
+
+    /**
+     * Exit animation: deep-red column rain reveals the GOODBYE banner, then two
+     * glitch passes shake it before it fades to black.
+     */
+    public static void goodbyeRain() throws InterruptedException {
+        lastTermProbeMs = 0L;
+        int w = termW();
+        int h = termH();
+        java.util.Random rng = new java.util.Random();
+
+        int artH = GOODBYE_BANNER.length;
+        int artW = 0;
+        for (String row : GOODBYE_BANNER) {
+            artW = Math.max(artW, row.length());
+        }
+
+        char[][] art = new char[artH][artW];
+        for (int r = 0; r < artH; r++) {
+            String line = GOODBYE_BANNER[r];
+            for (int c = 0; c < artW; c++) {
+                art[r][c] = c < line.length() ? line.charAt(c) : ' ';
+            }
+        }
+
+        // Centre the banner vertically with a little padding above
+        int artStartRow = Math.max(1, (h - artH) / 2 - 1);
+        int artStartCol = Math.max(1, (w - artW) / 2 + 1);
+
+        // ── 1. Paint deep-red canvas ──────────────────────────────────
+        String bgCode = ConsoleColors.bgRGB(GB_BG[0], GB_BG[1], GB_BG[2]);
+        System.out.print(HIDE_CUR + bgCode + "\u001B[2J\u001B[H");
+        StringBuilder init = new StringBuilder();
+        for (int r = 1; r <= h + 8; r++) {
+            init.append("\u001B[").append(r).append(";1H").append(bgCode).append("\u001B[2K");
+        }
+        System.out.print(init);
+        System.out.flush();
+
+        // ── 2. Column rain ────────────────────────────────────────────
+        int[] head = new int[artW];
+        int[] delay = new int[artW];
+        boolean[] done = new boolean[artW];
+        for (int c = 0; c < artW; c++) {
+            head[c] = 0;
+            delay[c] = c / 2;   // stagger so columns start quickly but not all at once
+        }
+
+        long end = System.currentTimeMillis() + 2600;
+        while (System.currentTimeMillis() < end) {
+            StringBuilder frame = new StringBuilder(artW * h * 28);
+            boolean anyActive = false;
+
+            for (int c = 0; c < artW; c++) {
+                if (done[c]) {
+                    continue;
+                }
+                if (delay[c] > 0) {
+                    delay[c]--;
+                    anyActive = true;
+                    continue;
+                }
+                anyActive = true;
+
+                int tc = artStartCol + c;
+                int r = head[c];
+
+                // head — only render inside the art's row range
+                if (r >= artStartRow && r < artStartRow + artH) {
+                    int ar = r - artStartRow;
+                    char ch = art[ar][c];
+                    if (ch != ' ') {
+                        frame.append("\u001B[").append(r).append(";").append(tc).append("H")
+                                .append(bgCode)
+                                .append(ConsoleColors.fgRGB(GB_HEAD[0], GB_HEAD[1], GB_HEAD[2]))
+                                .append(BOLD).append(ch).append("\u001B[22m");
+                    }
+                }
+                // mid trail
+                int trail = r - 1;
+                if (trail >= 1 && trail <= h) {
+                    int ar = trail - artStartRow;
+                    boolean hasDot = ar >= 0 && ar < artH && art[ar][c] != ' ';
+                    frame.append("\u001B[").append(trail).append(";").append(tc).append("H")
+                            .append(bgCode);
+                    if (hasDot) {
+                        frame.append(ConsoleColors.fgRGB(GB_MID[0], GB_MID[1], GB_MID[2]))
+                                .append(art[ar][c]);
+                    } else {
+                        frame.append(' ');
+                    }
+                }
+                // settle
+                int settle = r - 2;
+                if (settle >= 1 && settle <= h) {
+                    int ar = settle - artStartRow;
+                    boolean hasDot = ar >= 0 && ar < artH && art[ar][c] != ' ';
+                    frame.append("\u001B[").append(settle).append(";").append(tc).append("H")
+                            .append(bgCode);
+                    if (hasDot) {
+                        frame.append(ConsoleColors.fgRGB(GB_SETTLE[0], GB_SETTLE[1], GB_SETTLE[2]))
+                                .append(art[ar][c]);
+                    } else {
+                        frame.append(' ');
+                    }
+                }
+
+                head[c]++;
+                if (head[c] > artStartRow + artH + 2) {
+                    done[c] = true;
+                    for (int ar = 0; ar < artH; ar++) {
+                        char ch = art[ar][c];
+                        if (ch != ' ') {
+                            frame.append("\u001B[").append(artStartRow + ar).append(";").append(tc).append("H")
+                                    .append(bgCode)
+                                    .append(ConsoleColors.fgRGB(GB_SETTLE[0], GB_SETTLE[1], GB_SETTLE[2]))
+                                    .append(ch);
+                        }
+                    }
+                    int below = artStartRow + artH;
+                    if (below <= h) {
+                        frame.append("\u001B[").append(below).append(";").append(tc).append("H")
+                                .append(bgCode).append(' ');
+                    }
+                }
+            }
+            System.out.print(frame);
+            System.out.flush();
+            if (!anyActive) {
+                break;
+            }
+            Thread.sleep(18);
+        }
+
+        // ── 3. Typewrite "Exiting Dormatrix..." below the banner ────────
+        String exitMsg = "Exiting Dormatrix...";
+        int exitRow = artStartRow + artH + 2;
+        int exitCol = Math.max(1, (w - exitMsg.length()) / 2 + 1);
+        String exitFg = ConsoleColors.fgRGB(200, 30, 30);
+        StringBuilder msgBuf = new StringBuilder();
+        for (int i = 0; i < exitMsg.length(); i++) {
+            msgBuf.append("\u001B[").append(exitRow).append(";").append(exitCol + i).append("H")
+                    .append(bgCode).append(exitFg).append(exitMsg.charAt(i));
+            System.out.print(msgBuf);
+            msgBuf.setLength(0);
+            System.out.flush();
+            Thread.sleep(70);
+        }
+        // Hold the banner + message visible for 2 s
+        Thread.sleep(2000);
+
+        // ── 4. Bright pulse ───────────────────────────────────────────
+        for (int step = 0; step <= 10; step++) {
+            float t = step <= 5 ? step / 5f : 1f - (step - 5) / 5f;
+            int fr = lerp(GB_SETTLE[0], 255, t);
+            int fg = lerp(GB_SETTLE[1], 80, t);
+            int fb = lerp(GB_SETTLE[2], 40, t);
+            StringBuilder frame = new StringBuilder();
+            for (int r = 0; r < artH; r++) {
+                for (int c = 0; c < artW; c++) {
+                    char ch = art[r][c];
+                    if (ch == ' ') {
+                        continue;
+                    }
+                    frame.append("\u001B[").append(artStartRow + r).append(";").append(artStartCol + c).append("H")
+                            .append(bgCode).append(ConsoleColors.fgRGB(fr, fg, fb)).append(ch);
+                }
+            }
+            System.out.print(frame);
+            System.out.flush();
+            Thread.sleep(35);
+        }
+
+        // ── 5. Glitch effect ──────────────────────────────────────────
+        for (int glitchPass = 0; glitchPass < 3; glitchPass++) {
+            // glitch frame: randomly replace some glyph cells
+            StringBuilder gFrame = new StringBuilder();
+            for (int r = 0; r < artH; r++) {
+                for (int c = 0; c < artW; c++) {
+                    char ch = art[r][c];
+                    if (ch == ' ') {
+                        continue;
+                    }
+                    char render = rng.nextDouble() < 0.45
+                            ? GLITCH_CHARS[rng.nextInt(GLITCH_CHARS.length)]
+                            : ch;
+                    // glitch colors: cycle between blood-red, orange, near-white
+                    int[] gc = (rng.nextInt(3) == 0)
+                            ? new int[]{255, 220, 180}
+                            : (rng.nextInt(2) == 0 ? new int[]{255, 40, 10} : GB_SETTLE);
+                    gFrame.append("\u001B[").append(artStartRow + r).append(";").append(artStartCol + c).append("H")
+                            .append(bgCode).append(ConsoleColors.fgRGB(gc[0], gc[1], gc[2])).append(render);
+                }
+            }
+            System.out.print(gFrame);
+            System.out.flush();
+            Thread.sleep(80);
+
+            // restore frame
+            StringBuilder restore = new StringBuilder();
+            for (int r = 0; r < artH; r++) {
+                for (int c = 0; c < artW; c++) {
+                    char ch = art[r][c];
+                    if (ch == ' ') {
+                        continue;
+                    }
+                    restore.append("\u001B[").append(artStartRow + r).append(";").append(artStartCol + c).append("H")
+                            .append(bgCode).append(ConsoleColors.fgRGB(GB_SETTLE[0], GB_SETTLE[1], GB_SETTLE[2])).append(ch);
+                }
+            }
+            System.out.print(restore);
+            System.out.flush();
+            Thread.sleep(60);
+        }
+
+        // ── 6. Fade to black ──────────────────────────────────────────
+        for (int step = 0; step <= 12; step++) {
+            float t = step / 12f;
+            int fr = lerp(GB_SETTLE[0], 0, t);
+            int fg = lerp(GB_SETTLE[1], 0, t);
+            int fb = lerp(GB_SETTLE[2], 0, t);
+            String fadeBg = ConsoleColors.bgRGB(
+                    lerp(GB_BG[0], 0, t), lerp(GB_BG[1], 0, t), lerp(GB_BG[2], 0, t));
+            StringBuilder frame = new StringBuilder();
+            for (int r = 0; r < artH; r++) {
+                for (int c = 0; c < artW; c++) {
+                    char ch = art[r][c];
+                    if (ch == ' ') {
+                        continue;
+                    }
+                    frame.append("\u001B[").append(artStartRow + r).append(";").append(artStartCol + c).append("H")
+                            .append(fadeBg).append(ConsoleColors.fgRGB(fr, fg, fb)).append(ch);
+                }
+            }
+            System.out.print(frame);
+            System.out.flush();
+            Thread.sleep(40);
+        }
+        Thread.sleep(120);
+        System.out.print(SHOW_CUR);
+        System.out.flush();
+    }
+
+    // ══════════════════════════════════════════════════════════════
     //  COLOR INTERPOLATION
     // ══════════════════════════════════════════════════════════════
     public static int lerp(int a, int b, float t) {
@@ -665,12 +932,12 @@ public final class TerminalUI {
     //  BANNER  — violet→cyan gradient, animated line by line
     // ══════════════════════════════════════════════════════════════
     private static final String[] BANNER_LINES = {
-        "██████╗  ██████╗ ██████╗ ███╗   ███╗ █████╗ ████████╗██████╗ ██╗██╗  ██╗",
-        "██╔══██╗██╔═══██╗██╔══██╗████╗ ████║██╔══██╗╚══██╔══╝██╔══██╗██║╚██╗██╔╝",
-        "██║  ██║██║   ██║██████╔╝██╔████╔██║███████║   ██║   ██████╔╝██║ ╚███╔╝ ",
-        "██║  ██║██║   ██║██╔══██╗██║╚██╔╝██║██╔══██║   ██║   ██╔══██╗██║ ██╔██╗ ",
-        "██████╔╝╚██████╔╝██║  ██║██║ ╚═╝ ██║██║  ██║   ██║   ██║  ██║██║██╔╝ ██╗",
-        "╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝"
+        "██████╗▒▒██████╗▒██████╗▒███╗▒▒▒███╗▒█████╗▒████████╗██████╗▒██╗██╗▒▒██╗",
+        "██╔══██╗██╔═══██╗██╔══██╗████╗▒████║██╔══██╗╚══██╔══╝██╔══██╗██║╚██╗██╔╝",
+        "██║▒▒██║██║▒▒▒██║██████╔╝██╔████╔██║███████║▒▒▒██║▒▒▒██████╔╝██║▒╚███╔╝▒",
+        "██║▒▒██║██║▒▒▒██║██╔══██╗██║╚██╔╝██║██╔══██║▒▒▒██║▒▒▒██╔══██╗██║▒██╔██╗▒",
+        "██████╔╝╚██████╔╝██║▒▒██║██║▒╚═╝▒██║██║▒▒██║▒▒▒██║▒▒▒██║▒▒██║██║██╔╝▒██╗",
+        "╚═════╝▒▒╚═════╝▒╚═╝▒▒╚═╝╚═╝▒▒▒▒▒╚═╝╚═╝▒▒╚═╝▒▒▒╚═╝▒▒▒╚═╝▒▒╚═╝╚═╝╚═╝▒▒╚═╝"
     };
 
     // ══════════════════════════════════════════════════════════════
@@ -696,8 +963,8 @@ public final class TerminalUI {
         return startRow;   // row directly after last banner line
     }
     private static final int BANNER_W = 73;
-    private static final int[] GRAD_A = {100, 40, 200};  // vivid violet
-    private static final int[] GRAD_B = {20, 160, 170};  // deep cyan-teal
+    private static final int[] GRAD_A = {120, 50, 220};  // brighter violet
+    private static final int[] GRAD_B = {30, 180, 190};  // brighter cyan-teal
 
     // ══════════════════════════════════════════════════════════════
     //  TYPEWRITER
@@ -1405,11 +1672,10 @@ public final class TerminalUI {
      * Print a themed success message in a centered box.
      */
     public static void tSuccess(String msg) {
-        String successColor = ConsoleColors.Accent.SUCCESS;
         tBoxTop();
         int col = centerCol(DASH_W);
         writeRow("\u001B[" + col + "G" + activeBoxColor + activeBgColor + "║"
-                + successColor + activeBgColor + padC(trimToWidth(msg, DASH_IW), DASH_IW)
+                + activeTextColor + activeBgColor + padC(trimToWidth(msg, DASH_IW), DASH_IW)
                 + activeBoxColor + activeBgColor + "║");
         tBoxBottom();
     }

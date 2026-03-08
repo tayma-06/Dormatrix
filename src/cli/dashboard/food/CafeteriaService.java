@@ -285,6 +285,9 @@ public class CafeteriaService {
     }
 
     public void showSpecialEventUI() {
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
         TerminalUI.tEmpty();
         TerminalUI.tBoxTop();
         TerminalUI.tBoxTitle("SCHEDULE SPECIAL EVENT");

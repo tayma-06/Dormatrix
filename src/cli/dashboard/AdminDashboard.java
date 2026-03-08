@@ -9,9 +9,9 @@ public class AdminDashboard implements Dashboard {
     private final AdminDashboardController controller = new AdminDashboardController();
     private boolean firstShow = true;
 
-    private static final String BOX = ConsoleColors.Accent.BOX;
+    private static final String BOX = ConsoleColors.fgRGB(255, 60, 60);    // bright red box
     private static final String TEXT = ConsoleColors.ThemeText.ADMIN_TEXT;
-    private static final String BG = ConsoleColors.bgRGB(61, 0, 8);
+    private static final String BG = ConsoleColors.bgRGB(48, 0, 5);
     private static final String MUTED = ConsoleColors.Accent.MUTED;
 
     private static final MenuItem[] MENU = {

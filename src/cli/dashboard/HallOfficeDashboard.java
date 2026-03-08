@@ -9,9 +9,9 @@ public class HallOfficeDashboard implements Dashboard {
     private final HallOfficeDashboardController controller = new HallOfficeDashboardController();
     private boolean firstShow = true;
 
-    private static final String BOX = ConsoleColors.Accent.BOX;
+    private static final String BOX = ConsoleColors.fgRGB(255, 80, 190);   // hot pink box
     private static final String TEXT = ConsoleColors.ThemeText.HALL_TEXT;
-    private static final String BG = ConsoleColors.bgRGB(31, 24, 38);
+    private static final String BG = ConsoleColors.bgRGB(35, 0, 25);
     private static final String MUTED = ConsoleColors.Accent.MUTED;
 
     private static final MenuItem[] MENU = {

@@ -10,9 +10,9 @@ public class StoreInChargeDashboard implements Dashboard {
             = new StoreInChargeDashboardController();
     private boolean firstShow = true;
 
-    private static final String BOX = ConsoleColors.Accent.BOX;
+    private static final String BOX = ConsoleColors.fgRGB(255, 150, 40);   // bright orange box
     private static final String TEXT = ConsoleColors.ThemeText.STORE_TEXT;
-    private static final String BG = ConsoleColors.bgRGB(45, 25, 10);
+    private static final String BG = ConsoleColors.bgRGB(40, 16, 0);
     private static final String MUTED = ConsoleColors.Accent.MUTED;
 
     private static final MenuItem[] MENU = {

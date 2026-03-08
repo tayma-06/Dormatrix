@@ -48,14 +48,14 @@ public final class ConsoleColors {
         private ThemeText() {
         }
 
-        public static final String SOFT_WHITE = fgRGB(210, 190, 255);  // light lavender  (main menu)
-        public static final String STUDENT_TEXT = fgRGB(140, 195, 255);  // light azure
-        public static final String ATTENDANT_TEXT = fgRGB(100, 235, 210);  // bright teal
-        public static final String MAINTENANCE_TEXT = fgRGB(160, 180, 255);  // periwinkle
-        public static final String STORE_TEXT = fgRGB(255, 200, 110);  // warm gold
-        public static final String HALL_TEXT = fgRGB(215, 175, 255);  // soft violet
-        public static final String ADMIN_TEXT = fgRGB(255, 155, 180);  // rose pink
-        public static final String CAFETERIA_TEXT = fgRGB(255, 220, 110);  // warm amber
+        public static final String SOFT_WHITE = fgRGB(220, 200, 255);  // bright lavender (main menu)
+        public static final String STUDENT_TEXT = fgRGB(120, 200, 255);  // electric azure
+        public static final String ATTENDANT_TEXT = fgRGB(80, 245, 225);  // vivid cyan
+        public static final String MAINTENANCE_TEXT = fgRGB(110, 255, 150);  // neon green
+        public static final String STORE_TEXT = fgRGB(255, 190, 90);  // bright orange
+        public static final String HALL_TEXT = fgRGB(255, 150, 210);  // hot pink
+        public static final String ADMIN_TEXT = fgRGB(255, 130, 130);  // bright red
+        public static final String CAFETERIA_TEXT = fgRGB(255, 240, 90);  // vivid yellow
     }
 
     public static final class Accent {
@@ -63,7 +63,7 @@ public final class ConsoleColors {
         private Accent() {
         }
 
-        public static final String BOX = fgRGB(150, 110, 240);  // bright purple (box borders)
+        public static final String BOX = fgRGB(170, 120, 255);  // bright purple (box borders, main menu default)
         public static final String EXIT = fgRGB(240, 100, 135);  // bright rose
         public static final String INPUT = fgRGB(80, 215, 205);  // bright teal
         public static final String BANNER = fgRGB(80, 215, 205);  // bright teal

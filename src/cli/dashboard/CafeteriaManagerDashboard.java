@@ -9,9 +9,9 @@ public class CafeteriaManagerDashboard implements Dashboard {
     private final CafeteriaDashboardController mainController = new CafeteriaDashboardController();
     private boolean firstShow = true;
 
-    private static final String BOX = ConsoleColors.Accent.BOX;
+    private static final String BOX = ConsoleColors.fgRGB(255, 210, 30);   // bright yellow box
     private static final String TEXT = ConsoleColors.ThemeText.CAFETERIA_TEXT;
-    private static final String BG = ConsoleColors.bgRGB(45, 25, 10);
+    private static final String BG = ConsoleColors.bgRGB(35, 28, 0);
     private static final String MUTED = ConsoleColors.Accent.MUTED;
 
     private static final MenuItem[] MENU = {

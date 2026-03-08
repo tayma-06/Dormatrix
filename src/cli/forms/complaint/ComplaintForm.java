@@ -2,36 +2,46 @@ package cli.forms.complaint;
 
 import java.util.Scanner;
 import models.enums.ComplaintCategory;
+import utils.ConsoleUtil;
 import utils.TerminalUI;
 
 public class ComplaintForm {
+
     private final Scanner sc;
 
-    public ComplaintForm(Scanner sc){ this.sc = sc; }
+    public ComplaintForm(Scanner sc) {
+        this.sc = sc;
+    }
 
-    public int readInt(){
-        while(true){
+    public int readInt() {
+        while (true) {
             String line = sc.nextLine();
-            try { return Integer.parseInt(line.trim()); }
-            catch(Exception e){ TerminalUI.tPrompt("Invalid input. Enter again: "); }
+            try {
+                return Integer.parseInt(line.trim());
+            } catch (Exception e) {
+                TerminalUI.tPrompt("Invalid input. Enter again: ");
+            }
         }
     }
 
-    public String readLine(String prompt){
+    public String readLine(String prompt) {
         TerminalUI.tPrompt(prompt);
         return sc.nextLine();
     }
 
-    public String readNonEmpty(String prompt){
-        while(true){
+    public String readNonEmpty(String prompt) {
+        while (true) {
             TerminalUI.tPrompt(prompt);
             String s = sc.nextLine().trim();
-            if(!s.isEmpty()) return s;
+            if (!s.isEmpty()) {
+                return s;
+            }
             TerminalUI.tError("Input cannot be empty.");
         }
     }
 
-    public ComplaintCategory readCategory(){
+    public ComplaintCategory readCategory() {
+        ConsoleUtil.clearScreen();
         TerminalUI.tEmpty();
         TerminalUI.tSubDashboard("SELECT COMPLAINT CATEGORY", new String[]{
             "[1] Electricity",
@@ -42,14 +52,19 @@ public class ComplaintForm {
         });
         int x = readInt();
 
-        switch(x){
-            case 1: return ComplaintCategory.ELECTRICITY;
-            case 2: return ComplaintCategory.PLUMBING;
-            case 3: return ComplaintCategory.INTERNET;
-            case 4: return ComplaintCategory.CLEANING;
+        switch (x) {
+            case 1:
+                return ComplaintCategory.ELECTRICITY;
+            case 2:
+                return ComplaintCategory.PLUMBING;
+            case 3:
+                return ComplaintCategory.INTERNET;
+            case 4:
+                return ComplaintCategory.CLEANING;
 //            case 5: return ComplaintCategory.SECURITY;
 //            case 6: return ComplaintCategory.OTHER;
-            case 0: return null;
+            case 0:
+                return null;
             default:
                 TerminalUI.tError("Invalid category.");
                 return readCategory();

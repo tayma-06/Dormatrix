@@ -11,9 +11,9 @@ public class MaintenanceWorkerDashboard implements Dashboard {
             = new MaintenanceWorkerDashboardController();
     private boolean firstShow = true;
 
-    private static final String BOX = ConsoleColors.Accent.BOX;
+    private static final String BOX = ConsoleColors.fgRGB(60, 230, 100);   // neon green box
     private static final String TEXT = ConsoleColors.ThemeText.MAINTENANCE_TEXT;
-    private static final String BG = ConsoleColors.bgRGB(27, 31, 40);
+    private static final String BG = ConsoleColors.bgRGB(0, 25, 8);
     private static final String MUTED = ConsoleColors.Accent.MUTED;
 
     private static final MenuItem[] MENU = {

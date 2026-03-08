@@ -39,10 +39,21 @@ public class AttendantRoutineCLI {
                 }
 
                 if (choice == 1) {
+                    ConsoleUtil.clearScreen();
+                    BackgroundFiller.applyAttendantTheme();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+                    TerminalUI.tBoxTop();
+                    TerminalUI.tBoxTitle("VIEW STUDENT ROUTINE");
+                    TerminalUI.tBoxBottom();
                     tPrompt("Enter student ID/username: ");
                     String studentId = FastInput.readNonEmptyLine();
-                    System.out.println();
+                    ConsoleUtil.clearScreen();
+                    BackgroundFiller.applyAttendantTheme();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(3, 1);
                     controller.printMaskedRoutine(studentId);
+                    tEmpty();
                     tPause();
                 } else {
                     tError("Invalid choice.");
