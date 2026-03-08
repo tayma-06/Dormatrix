@@ -44,8 +44,14 @@ public class AttendantComplaintCLI {
                 view.attendantList(module.findPending());
                 ConsoleUtil.pause();
             } //            else if (ch == 3) view.list(module.findMishaps());
-            else if (ch == 3) {
+            else if (ch == 5) {
                 String cid = form.readNonEmpty("Complaint ID: ");
+                MyOptional<Complaint> cOpt = repo.findById(cid);
+                if (cOpt.isEmpty()) {
+                    view.error("Invalid complaint ID.");
+                    ConsoleUtil.pause();
+                    continue;
+                }
                 String wid = form.readNonEmpty("Worker ID: ");
                 if (isWorkerFieldMatch(cid, wid)) {
                     view.msg(module.reassignComplaint(cid, wid) ? "Reassigned successfully." : "Failed.");
@@ -53,12 +59,18 @@ public class AttendantComplaintCLI {
                     view.msg("The worker is not from the same WorkerField as the original worker. Please choose a different worker.");
                 }
                 ConsoleUtil.pause();
-            } else if (ch == 4) {
+            } else if (ch == 6) {
                 String cid = form.readNonEmpty("Complaint ID: ");
+                MyOptional<Complaint> cOpt = repo.findById(cid);
+                if (cOpt.isEmpty()) {
+                    view.error("Invalid complaint ID.");
+                    ConsoleUtil.pause();
+                    continue;
+                }
                 String note = form.readLine("Resolution note: ");
                 view.msg(module.resolveByAttendant(cid, note) ? "Resolved successfully." : "Failed.");
                 ConsoleUtil.pause();
-            } else if (ch == 5) {
+            } else if (ch == 3) {
                 String room = form.readNonEmpty("Enter room number: ");
                 MyArrayList<Complaint> all = repo.findAll();
                 MyArrayList<Complaint> out = new MyArrayList<>();
@@ -69,7 +81,7 @@ public class AttendantComplaintCLI {
                 }
                 view.attendantList(out);
                 ConsoleUtil.pause();
-            } else if (ch == 6) {
+            } else if (ch == 4) {
                 String cid = form.readNonEmpty("Complaint ID: ");
                 MyOptional<Complaint> cOpt = repo.findById(cid);
                 if (cOpt.isEmpty()) {

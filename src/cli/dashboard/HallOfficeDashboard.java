@@ -1,7 +1,11 @@
 package cli.dashboard;
 
 import controllers.dashboard.HallOfficeDashboardController;
-import utils.*;
+import cli.announcement.AnnouncementBoardCLI;
+import utils.BackgroundFiller;
+import utils.ConsoleUtil;
+import utils.FastInput;
+iport utils.*;
 import static utils.TerminalUI.*;
 
 public class HallOfficeDashboard implements Dashboard {

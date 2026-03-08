@@ -5,6 +5,7 @@ import cli.forms.complaint.ComplaintForm;
 import cli.views.complaint.ComplaintView;
 
 import libraries.collections.MyOptional;
+import libraries.collections.MyArrayList;
 
 import models.complaints.Complaint;
 
@@ -34,8 +35,17 @@ public class WorkerComplaintCLI {
                 ConsoleUtil.pause();
                 continue;
             }
+//            if (list == null || list.size() == 0) {
+//                System.out.println("\n(No complaints found)\n");
+//                return;
+//            }
+            MyArrayList<Complaint> list = repo.findUnresolvedByAssignedWorker(wid);
+            view.workerList(list);
+            if (list == null || list.size() == 0) {
+                ConsoleUtil.pause();
 
-            view.workerList(repo.findUnresolvedByAssignedWorker(wid));
+                return;
+            }
 
             view.workerMenu();
             int ch = form.readInt();
@@ -44,11 +54,7 @@ public class WorkerComplaintCLI {
                 return;
             }
 
-//            if (ch == 1){
-//                view.workerList(repo.findByAssignedWorker(wid));
-//
-//            } else
-//
+
             if (ch == 1) {
                 String cid = form.readNonEmpty("Complaint ID: ");
                 MyOptional<Complaint> cOpt = repo.findById(cid);
@@ -68,10 +74,6 @@ public class WorkerComplaintCLI {
                 update(wid, cid, note);
                 ConsoleUtil.pause();
 
-//            } else if (ch == 3){
-//                String cid = form.readNonEmpty("Complaint ID: ");
-//                String note = form.readLine("Completion note: ");
-//                update(wid, cid, note, true);
             } else {
                 view.error("Invalid choice.");
                 ConsoleUtil.pause();
@@ -93,7 +95,11 @@ public class WorkerComplaintCLI {
         c.setStatus(models.enums.ComplaintStatus.IN_PROGRESS);
         c.appendTagNote(("WORKER_PROGRESS:") + (note == null ? "" : note));
 
-        view.msg(repo.update(c) ? "Updated successfully." : "Failed to update file.");
+        boolean ok = repo.update(c);
+        if (ok) {
+            new repo.file.FileWorkerVisitRepository().markDone(complaintId);
+        }
+        view.msg(ok ? "Updated successfully." : "Failed to update file.");
     }
 
     // -------------------- Helper: NAME/ID -> Worker ID --------------------
