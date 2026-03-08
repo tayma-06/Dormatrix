@@ -20,12 +20,12 @@ public class ComplaintView {
 
     public void attendantMenu() {
         TerminalUI.tSubDashboard("COMPLAINT (ATTENDANT)", new String[]{
-            "[1] View ALL complaints",
-            "[2] View PENDING",
-            "[3] Reassign complaint (manual worker id)",
-            "[4] Resolve complaint",
-            "[5] View complaints by ROOM",
-            "[6] View complaints by COMPLAINT ID",
+            "[1] View all complaints",
+            "[2] View pending complaints",
+            "[3] View complaints by room",
+            "[4] View complaints by complaint id",
+            "[5] Reassign complaint (manual worker id)",
+            "[6] Resolve complaint",
             "[0] Back"
         });
     }

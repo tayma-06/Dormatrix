@@ -2,6 +2,8 @@ package cli.dashboard;
 
 import controllers.dashboard.StudentDashboardController;
 import utils.*;
+import utils.TerminalUI.MenuItem;
+
 import static utils.TerminalUI.*;
 
 public class StudentDashboard implements Dashboard {
@@ -25,6 +27,7 @@ public class StudentDashboard implements Dashboard {
         new MenuItem(7, "Weekly Routine"),
         new MenuItem(8, "View Announcements"),
         new MenuItem(9, "Store Shopping Cart"),
+        new MenuItem(10, "Emergency Contacts"),
         new MenuItem(0, "Logout"),};
 
     @Override

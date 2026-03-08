@@ -73,7 +73,10 @@ public class WorkerComplaintCLI {
                 String note = form.readLine("Progress note: ");
                 update(wid, cid, note);
                 ConsoleUtil.pause();
-
+                //            } else if (ch == 3){
+//                String cid = form.readNonEmpty("Complaint ID: ");
+//                String note = form.readLine("Completion note: ");
+//                update(wid, cid, note, true);
             } else {
                 view.error("Invalid choice.");
                 ConsoleUtil.pause();
@@ -94,7 +97,6 @@ public class WorkerComplaintCLI {
 
         c.setStatus(models.enums.ComplaintStatus.IN_PROGRESS);
         c.appendTagNote(("WORKER_PROGRESS:") + (note == null ? "" : note));
-
         boolean ok = repo.update(c);
         if (ok) {
             new repo.file.FileWorkerVisitRepository().markDone(complaintId);
