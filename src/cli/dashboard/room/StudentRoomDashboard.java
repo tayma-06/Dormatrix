@@ -50,10 +50,10 @@ public class StudentRoomDashboard implements Dashboard {
         TerminalUI.tBoxTop();
         TerminalUI.tBoxTitle("COMPLAINTS FOR ROOM " + roomNumber);
         TerminalUI.tBoxSep();
-        TerminalUI.tBoxLine("ID                 | Status     | Assigned Worker | Category");
+        TerminalUI.tBoxLine("ID                | Status      | Assigned Worker | Category");
         TerminalUI.tBoxSep();
         if (list.size() == 0) {
-            TerminalUI.tBoxLine(String.format("%-18s | %-10s | %-15s | %-18s", "(none)", "(none)", "(none)", "(none)"));
+            TerminalUI.tBoxLine(String.format("%-17s | %-11s | %-15s | %-18s", "(none)", "(none)", "(none)", "(none)"));
         } else {
             for (int i = 0; i < list.size(); i++) {
                 Complaint c = list.get(i);
@@ -61,7 +61,7 @@ public class StudentRoomDashboard implements Dashboard {
                 boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
 
                 TerminalUI.tBoxLine(String.format(
-                        "%-18s | %-10s | %-15s | %-18s",
+                        "%-17s | %-11s | %-15s | %-18s",
                         c.getComplaintId(),
                         c.getStatus().name(),
                         (blank ? "(none)" : wid),

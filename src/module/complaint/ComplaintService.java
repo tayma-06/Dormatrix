@@ -159,10 +159,15 @@ public class ComplaintService {
         MyOptional<Complaint> cOpt = complaints.findById(complaintId);
         if (cOpt.isEmpty()) return false;
 
+        Complaint c = cOpt.get();
+        if(c.getStatus() == ComplaintStatus.RESOLVED){ return false; }
+
+        WorkerField expected = comPolicy.recommendedWorkerField(c.getCategory());
+        if(workers.findById(workerId).get().getField() != expected){ return false;}
+
         // validate worker exists
         if (workers.findById(workerId).isEmpty()) return false;
 
-        Complaint c = cOpt.get();
         c.assignTo(workerId);
         c.appendTagNote("ATTENDANT_REASSIGNED_TO:" + workerId);
         return complaints.update(c);
@@ -191,6 +196,7 @@ public class ComplaintService {
         if (cOpt.isEmpty()) return false;
 
         Complaint c = cOpt.get();
+        if(c.getStatus() == ComplaintStatus.RESOLVED){ return false;}
         c.setStatus(ComplaintStatus.RESOLVED);
         c.appendTagNote("ATTENDANT_RESOLVED:" + (note == null ? "" : note));
         return complaints.update(c);

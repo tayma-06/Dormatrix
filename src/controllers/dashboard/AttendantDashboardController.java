@@ -63,27 +63,27 @@ public class AttendantDashboardController {
         }
     }
 
-    private void printList(MyArrayList<Complaint> list) {
-        if (list.size() == 0) {
-            System.out.println("\n(No complaints found)\n");
-            return;
-        }
-
-        System.out.println("\n------------------ LIST ------------------");
-        for (int i = 0; i < list.size(); i++) {
-            Complaint c = list.get(i);
-            String wid = c.getAssignedWorkerId();
-            boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
-            System.out.println(
-                    "ID: " + c.getComplaintId()
-                    + " | Student: " + c.getStudentId()
-                    + " | Room: " + c.getStudentRoomNo()
-                    + " | Cat: " + c.getCategory().name()
-                    + " | Status: " + c.getStatus().name()
-                    + " | Worker: " + (blank ? "(none)" : wid)
-                    + " | Priority: " + c.getPriority().name()
-            );
-        }
-        System.out.println("------------------------------------------\n");
-    }
+//    private void printList(MyArrayList<Complaint> list) {
+//        if (list.size() == 0) {
+//            System.out.println("\n(No complaints found)\n");
+//            return;
+//        }
+//
+//        System.out.println("\n------------------ LIST ------------------");
+//        for (int i = 0; i < list.size(); i++) {
+//            Complaint c = list.get(i);
+//            String wid = c.getAssignedWorkerId();
+//            boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
+//            System.out.println(
+//                    "ID: " + c.getComplaintId()
+//                    + " | Student: " + c.getStudentId()
+//                    + " | Room: " + c.getStudentRoomNo()
+//                    + " | Cat: " + c.getCategory().name()
+//                    + " | Status: " + c.getStatus().name()
+//                    + " | Worker: " + (blank ? "(none)" : wid)
+//                    + " | Priority: " + c.getPriority().name()
+//            );
+//        }
+//        System.out.println("------------------------------------------\n");
+//    }
 }

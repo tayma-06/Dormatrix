@@ -71,14 +71,14 @@ public class ComplaintView {
         TerminalUI.tBoxSep();
         TerminalUI.tBoxLine("Total Complaints: " + list.size());
         TerminalUI.tBoxSep();
-        TerminalUI.tBoxLine("ID                  | STATUS     | CATEGORY        | WORKER");
+        TerminalUI.tBoxLine("ID                 | STATUS      | CATEGORY        | WORKER");
         TerminalUI.tBoxSep();
 
         for (int i = 0; i < list.size(); i++) {
             Complaint c = list.get(i);
             String wid = c.getAssignedWorkerId();
             boolean blank = (wid == null) || new MyString(wid).trim().isEmpty();
-            TerminalUI.tBoxLine(String.format("%-19s | %-10s | %-15s | %s",
+            TerminalUI.tBoxLine(String.format("%-18s | %-11s | %-15s | %s",
                     c.getComplaintId(), c.getStatus().name(),
                     c.getCategory().name(), (blank ? "(none)" : wid)));
         }
