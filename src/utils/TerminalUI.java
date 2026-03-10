@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
  */
 public final class TerminalUI {
 
+    private static org.jline.terminal.Terminal sharedJLineTerminal = null;
+
     private TerminalUI() {
     }
 
@@ -659,10 +661,19 @@ public final class TerminalUI {
     private static final int[] GB_MID = {255, 60, 20};  // bright orange-red trail
     private static final int[] GB_SETTLE = {180, 10, 10};  // deep crimson settled
 
-    // Glitch characters used for distortion frames
+    // Each glitch pass cycles through one name's characters in order across replaced cells
+    private static final String[] GLITCH_NAMES = {
+        "DORMATRIX KHADIZA SULTANA",
+        "AYMAN BINTE ALTAF NONDINY",
+        "SAYMA TASNIM",
+        "PROCHETA SILVIE"
+    };
+    // Fallback pool (kept for any future use)
     private static final char[] GLITCH_CHARS = {
-        '█', '▓', '▒', '░', '╬', '╪', '╫', '╩', '╦', '╠', '═', '║', '╔', '╗', '╚', '╝',
-        '▀', '▄', '▌', '▐', '◘', '◙', '◦', '•', '‡', '†', '§', '¶', 'Ω', 'Φ'
+        'D', 'O', 'R', 'M', 'A', 'T', 'R', 'I', 'X', 'K', 'H', 'A', 'D', 'I', 'Z', 'A', 'S', 'U', 'L', 'T', 'A', 'N', 'A',
+        'A', 'Y', 'M', 'A', 'N', 'B', 'I', 'N', 'T', 'E', 'A', 'L', 'T', 'A', 'F', 'N', 'O', 'N', 'D', 'I', 'N', 'Y',
+        'S', 'A', 'Y', 'M', 'A', 'T', 'A', 'S', 'N', 'I', 'M',
+        'P', 'R', 'O', 'C', 'H', 'E', 'T', 'A', 'S', 'I', 'L', 'V', 'I', 'E'
     };
 
     /**
@@ -837,9 +848,13 @@ public final class TerminalUI {
             Thread.sleep(35);
         }
 
-        // ── 5. Glitch effect ──────────────────────────────────────────
-        for (int glitchPass = 0; glitchPass < 3; glitchPass++) {
-            // glitch frame: randomly replace some glyph cells
+        // ── 5. Glitch effect — each pass cycles through one name ──────
+        for (int glitchPass = 0; glitchPass < GLITCH_NAMES.length; glitchPass++) {
+            String name = GLITCH_NAMES[glitchPass];
+            int nameLen = name.length();
+            int namePos = 0;
+
+            // glitch frame: replace ~45% of glyph cells with name characters in order
             StringBuilder gFrame = new StringBuilder();
             for (int r = 0; r < artH; r++) {
                 for (int c = 0; c < artW; c++) {
@@ -847,9 +862,19 @@ public final class TerminalUI {
                     if (ch == ' ') {
                         continue;
                     }
-                    char render = rng.nextDouble() < 0.45
-                            ? GLITCH_CHARS[rng.nextInt(GLITCH_CHARS.length)]
-                            : ch;
+                    char render;
+                    if (rng.nextDouble() < 0.45) {
+                        // skip spaces in the name so only letters/digits show
+                        char nc = name.charAt(namePos % nameLen);
+                        namePos++;
+                        if (nc == ' ') {
+                            nc = name.charAt(namePos % nameLen);
+                            namePos++;
+                        }
+                        render = nc;
+                    } else {
+                        render = ch;
+                    }
                     // glitch colors: cycle between blood-red, orange, near-white
                     int[] gc = (rng.nextInt(3) == 0)
                             ? new int[]{255, 220, 180}
@@ -1073,21 +1098,19 @@ public final class TerminalUI {
 
         // ── Input field row ──────────────────────────────────────
         String inputLabel = "Your choice  : ";
-        int fieldW = iw - inputLabel.length() - 2;     // 2 = outer padding
-        boxRow(startRow, col,
+        int fieldW = iw - inputLabel.length() - 2;
+        inputFieldRow = startRow;
+        inputFieldCol = col + 2 + inputLabel.length();
+        boxRow(startRow++, col,
                 boxColor + "║ " + RESET
                 + ConsoleColors.FG_WHITE + inputLabel + RESET
                 + " ".repeat(Math.max(0, fieldW))
                 + boxColor + " ║" + RESET);
-        int inputRow = startRow++;
-
         // ── Bottom ───────────────────────────────────────────────
         boxRow(startRow++, col, boxColor + "╚" + "═".repeat(iw) + "╝" + RESET);
+        notifyRow = startRow;
 
-        // Position cursor inside the input field
-        at(inputRow, col + 2 + inputLabel.length());
         System.out.flush();
-
         return startRow;   // row after box
     }
 
@@ -1096,6 +1119,67 @@ public final class TerminalUI {
         System.out.print(content);
         System.out.flush();
         Thread.sleep(8);
+    }
+
+    private static void updateInputField(String text) {
+        if (inputFieldRow < 0) {
+            return;
+        }
+        clearNotify();
+        int fieldW = Math.max(0, innerW() - "Your choice  : ".length() - 2);
+        at(inputFieldRow, inputFieldCol);
+        System.out.print(ConsoleColors.FG_WHITE + ConsoleColors.BOLD + text + RESET
+                + " ".repeat(Math.max(0, fieldW - text.length())));
+        at(inputFieldRow, inputFieldCol + text.length());
+        System.out.flush();
+    }
+
+    private static void updateInputFieldError(String text) {
+        // Clear the typed value from the input field
+        if (inputFieldRow >= 0) {
+            int fieldW = Math.max(0, innerW() - "Your choice  : ".length() - 2);
+            at(inputFieldRow, inputFieldCol);
+            System.out.print(activeBgColor + " ".repeat(fieldW) + RESET);
+            System.out.flush();
+        }
+        paintNotifyError(text);
+        // Put cursor back at the input field for next input
+        if (inputFieldRow >= 0) {
+            at(inputFieldRow, inputFieldCol);
+        }
+    }
+
+    private static void paintNotifyError(String text) {
+        if (notifyRow < 0) {
+            return;
+        }
+        int col    = boxCol();
+        int iw     = innerW();
+        String err = ConsoleColors.Accent.ERROR;
+        String box = activeBoxColor;
+        String bg  = activeBgColor;
+        String line = padC(trimToWidth(text, iw), iw);
+        at(notifyRow, col);
+        System.out.print(box + bg + "╔" + "═".repeat(iw) + "╗" + RESET);
+        at(notifyRow + 1, col);
+        System.out.print(box + bg + "║" + err + bg + BOLD + line + RESET + box + bg + "║" + RESET);
+        at(notifyRow + 2, col);
+        System.out.print(box + bg + "╚" + "═".repeat(iw) + "╝" + RESET);
+        System.out.flush();
+    }
+
+    private static void clearNotify() {
+        if (notifyRow < 0) {
+            return;
+        }
+        int col = boxCol();
+        int bw  = boxW();
+        String bg = activeBgColor;
+        for (int r = notifyRow; r <= notifyRow + 2; r++) {
+            at(r, col);
+            System.out.print(bg + " ".repeat(bw) + RESET);
+        }
+        System.out.flush();
     }
 
     // strip ANSI for length measurement
@@ -1194,6 +1278,9 @@ public final class TerminalUI {
 
     private static final List<Region> REGIONS = new ArrayList<>();
     private static final List<ItemData> ITEM_DATA = new ArrayList<>();
+    private static int inputFieldRow = -1;
+    private static int inputFieldCol = -1;
+    private static int notifyRow     = -1;
 
     public static void clearRegions() {
         REGIONS.clear();
@@ -1201,6 +1288,9 @@ public final class TerminalUI {
 
     public static void clearItemData() {
         ITEM_DATA.clear();
+        inputFieldRow = -1;
+        inputFieldCol = -1;
+        notifyRow     = -1;
     }
 
     private static void registerItem(int row, int num, String label, String theme, String box) {
@@ -1818,5 +1908,246 @@ public final class TerminalUI {
         // Move cursor up 2 rows (input row is above the bottom border row)
         System.out.print(SHOW_CUR + "\u001B[2A\u001B[" + (col + 2 + inputLabel.length()) + "G");
         System.out.flush();
+    }
+
+    /**
+     * Renders an interactive menu where one item is highlighted.
+     */
+    public static void tInteractiveDashboard(String title, String[] items, int selectedIndex) {
+        tBoxTop();
+        tBoxTitle(title);
+        tBoxSep();
+
+        for (int i = 0; i < items.length; i++) {
+            boolean isSelected = (i == selectedIndex);
+            boolean isExit = items[i].toLowerCase().contains("exit");
+            tInteractiveBoxLine(items[i], isSelected, isExit);
+        }
+
+        tBoxBottom();
+    }
+
+    /**
+     * Draws a single line for the interactive menu, applying background
+     * highlights.
+     */
+    private static void tInteractiveBoxLine(String text, boolean isSelected, boolean isExit) {
+        int col = centerCol(DASH_W);
+        String b = activeBoxColor + activePanelBgColor;
+        String r = RESET;
+
+        // Define styles for selected vs unselected
+        String prefix = isSelected ? "  > " : "    ";
+        String rowBg = isSelected ? ConsoleColors.bgRGB(60, 60, 80) : activePanelBgColor;
+        String textColor = isExit ? ConsoleColors.Accent.EXIT : (isSelected ? ConsoleColors.FG_WHITE + ConsoleColors.BOLD : ConsoleColors.FG_WHITE);
+
+        String content = prefix + text;
+        int padLen = Math.max(0, DASH_IW - content.length() - 2);
+
+        System.out.print(
+                "\u001B[" + col + "G" // Position cursor
+                + b + "║ " + r
+                + rowBg + textColor + content + " ".repeat(padLen) + r
+                + b + " ║" + r + "\n"
+        );
+    }
+
+    // ══════════════════════════════════════════════════════════════
+//  ARROW-KEY MENU NAVIGATION
+//  ↑ / ↓  move selection,  Enter confirms,  digits still work.
+//  Raw mode is engaged for the duration of this call only.
+// ══════════════════════════════════════════════════════════════
+    public static int readChoiceArrow() throws Exception {
+        if (ITEM_DATA.isEmpty()) {
+            return -1;
+        }
+
+        int selected = 0;
+        StringBuilder inputBuffer = new StringBuilder();
+        System.out.print(HIDE_CUR);
+        renderHighlight(ITEM_DATA.get(selected).row(), true);
+        updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
+        System.out.print(SHOW_CUR);
+        System.out.flush();
+
+        // ── JLine path (Windows + Unix) ───────────────────────────────
+        if (sharedJLineTerminal != null) {
+            org.jline.terminal.Attributes saved = sharedJLineTerminal.enterRawMode();
+            org.jline.utils.NonBlockingReader reader = sharedJLineTerminal.reader();
+            try {
+                while (true) {
+                    int c = reader.read();           // blocks until a key
+                    if (c == -1) {
+                        continue;
+                    }
+
+                    if (c == 27) {                   // ESC — start of arrow sequence
+                        int n1 = reader.read(100);   // 100 ms timeout
+                        if (n1 == '[' || n1 == 'O') {
+                            int n2 = reader.read(100);
+                            switch (n2) {
+                                case 'A' -> {    // ↑ Up
+                                    renderHighlight(ITEM_DATA.get(selected).row(), false);
+                                    selected = (selected - 1 + ITEM_DATA.size()) % ITEM_DATA.size();
+                                    renderHighlight(ITEM_DATA.get(selected).row(), true);
+                                    inputBuffer.setLength(0);
+                                    updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
+                                    System.out.flush();
+                                }
+                                case 'B' -> {    // ↓ Down
+                                    renderHighlight(ITEM_DATA.get(selected).row(), false);
+                                    selected = (selected + 1) % ITEM_DATA.size();
+                                    renderHighlight(ITEM_DATA.get(selected).row(), true);
+                                    inputBuffer.setLength(0);
+                                    updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
+                                    System.out.flush();
+                                }
+                            }
+                        }
+                        continue;
+                    }
+
+                    if (c == 13 || c == 10) {        // Enter — confirm
+                        if (inputBuffer.length() > 0) {
+                            try {
+                                int typed = Integer.parseInt(inputBuffer.toString());
+                                for (ItemData d : ITEM_DATA) {
+                                    if (d.number() == typed) {
+                                        renderHighlight(ITEM_DATA.get(selected).row(), false);
+                                        return typed;
+                                    }
+                                }
+                            } catch (NumberFormatException ignored) {
+                            }
+                            // invalid — show error in field, wait for next key
+                            inputBuffer.setLength(0);
+                            updateInputFieldError("Invalid choice input");
+                        } else {
+                            renderHighlight(ITEM_DATA.get(selected).row(), false);
+                            return ITEM_DATA.get(selected).number();
+                        }
+                    }
+
+                    if (c == 3) {                    // Ctrl+C — treat as exit
+                        renderHighlight(ITEM_DATA.get(selected).row(), false);
+                        return 0;
+                    }
+
+                    if (c == 127 || c == 8) {        // Backspace
+                        if (inputBuffer.length() > 0) {
+                            inputBuffer.deleteCharAt(inputBuffer.length() - 1);
+                            updateInputField(inputBuffer.length() > 0
+                                    ? inputBuffer.toString()
+                                    : String.valueOf(ITEM_DATA.get(selected).number()));
+                            System.out.flush();
+                        }
+                        continue;
+                    }
+
+                    if (c >= '0' && c <= '9') {      // accumulate digit
+                        inputBuffer.append((char) c);
+                        updateInputField(inputBuffer.toString());
+                        System.out.flush();
+                    }
+                }
+            } finally {
+                sharedJLineTerminal.setAttributes(saved);   // restore BEFORE password read
+                System.out.print(SHOW_CUR);
+                System.out.flush();
+            }
+        }
+
+        // ── stty fallback (Unix without JLine) ────────────────────────
+        setRaw();
+        InputStream in = System.in;
+        try {
+            while (true) {
+                int b = in.read();
+                if (b == -1) {
+                    continue;
+                }
+                if (b == 27) {
+                    if (in.available() == 0) {
+                        continue;
+                    }
+                    int b2 = in.read();
+                    if (b2 != '[') {
+                        continue;
+                    }
+                    int b3 = in.read();
+                    switch (b3) {
+                        case 'A' -> {    // ↑ Up
+                            renderHighlight(ITEM_DATA.get(selected).row(), false);
+                            selected = (selected - 1 + ITEM_DATA.size()) % ITEM_DATA.size();
+                            renderHighlight(ITEM_DATA.get(selected).row(), true);
+                            inputBuffer.setLength(0);
+                            updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
+                            System.out.flush();
+                        }
+                        case 'B' -> {    // ↓ Down
+                            renderHighlight(ITEM_DATA.get(selected).row(), false);
+                            selected = (selected + 1) % ITEM_DATA.size();
+                            renderHighlight(ITEM_DATA.get(selected).row(), true);
+                            inputBuffer.setLength(0);
+                            updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
+                            System.out.flush();
+                        }
+                    }
+                    continue;
+                }
+                if (b == 13 || b == 10) {            // Enter — confirm
+                    if (inputBuffer.length() > 0) {
+                        try {
+                            int typed = Integer.parseInt(inputBuffer.toString());
+                            for (ItemData d : ITEM_DATA) {
+                                if (d.number() == typed) {
+                                    renderHighlight(ITEM_DATA.get(selected).row(), false);
+                                    return typed;
+                                }
+                            }
+                        } catch (NumberFormatException ignored) {
+                        }
+                        inputBuffer.setLength(0);
+                        updateInputFieldError("Invalid choice input");
+                    } else {
+                        renderHighlight(ITEM_DATA.get(selected).row(), false);
+                        return ITEM_DATA.get(selected).number();
+                    }
+                }
+                if (b == 127 || b == 8) {            // Backspace
+                    if (inputBuffer.length() > 0) {
+                        inputBuffer.deleteCharAt(inputBuffer.length() - 1);
+                        updateInputField(inputBuffer.length() > 0
+                                ? inputBuffer.toString()
+                                : String.valueOf(ITEM_DATA.get(selected).number()));
+                        System.out.flush();
+                    }
+                    continue;
+                }
+                if (b >= '0' && b <= '9') {          // accumulate digit
+                    inputBuffer.append((char) b);
+                    updateInputField(inputBuffer.toString());
+                    System.out.flush();
+                }
+            }
+        } finally {
+            setCooked();
+            System.out.print(SHOW_CUR);
+            System.out.flush();
+        }
+    }
+
+    public static void setJLineTerminal(org.jline.terminal.Terminal t) {
+        sharedJLineTerminal = t;
+    }
+
+    // ── Public bridge so MainDashboard can highlight by item number ──
+    public static void highlightItem(int number, boolean on) {
+        for (ItemData d : ITEM_DATA) {
+            if (d.number() == number) {
+                renderHighlight(d.row(), on);
+                return;
+            }
+        }
     }
 }

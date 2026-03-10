@@ -38,7 +38,7 @@ public class AdminDashboard implements Dashboard {
                 System.out.print(HIDE_CUR);
 
                 int menuStartRow = 3;
-                int promptRow = drawDashboard(
+                drawDashboard(
                         "ADMIN DASHBOARD",
                         "Welcome, " + username,
                         MENU, TEXT, BOX,
@@ -46,8 +46,7 @@ public class AdminDashboard implements Dashboard {
                         menuStartRow
                 );
 
-                System.out.print(SHOW_CUR);
-                int choice = FastInput.readInt();
+                int choice = readChoiceArrow();
                 System.out.print(RESET);
 
                 if (choice == 0) {

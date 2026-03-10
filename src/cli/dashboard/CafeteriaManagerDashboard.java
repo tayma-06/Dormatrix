@@ -33,6 +33,7 @@ public class CafeteriaManagerDashboard implements Dashboard {
 
         while (true) {
             try {
+                CafeteriaAsciiUI.stopBarAnimation();   // stop before every redraw
                 BackgroundFiller.applyCafeteriaManagerTheme();
                 setActiveTheme(BOX, TEXT, BG);
                 System.out.print(HIDE_CUR);
@@ -46,7 +47,7 @@ public class CafeteriaManagerDashboard implements Dashboard {
                 };
 
                 int menuStartRow = 3;
-                int promptRow = drawDashboard(
+                drawDashboard(
                         "CAFETERIA MANAGER DASHBOARD",
                         "Welcome, " + username,
                         MENU, TEXT, BOX,
@@ -54,8 +55,16 @@ public class CafeteriaManagerDashboard implements Dashboard {
                         menuStartRow
                 );
 
-                System.out.print(SHOW_CUR);
-                int choice = FastInput.readInt();
+                // Row layout: top(3) title(4) sep(5) welcome(6) nowLine(7) bar(8)
+                int nowRow = menuStartRow + 4;
+                int barRow = menuStartRow + 5;
+                CafeteriaAsciiUI.startBarAnimation(
+                        barRow, nowRow, boxCol(), innerW(),
+                        TimeManager.getCurrentMealSlot()
+                );
+
+                int choice = readChoiceArrow();
+                CafeteriaAsciiUI.stopBarAnimation();
                 System.out.print(RESET);
 
                 if (choice == 0) {
@@ -72,6 +81,7 @@ public class CafeteriaManagerDashboard implements Dashboard {
                 FastInput.readLine();
 
             } catch (Exception e) {
+                CafeteriaAsciiUI.stopBarAnimation();
                 cleanup();
                 System.err.println("[CafeteriaManagerDashboard] " + e.getMessage());
             }

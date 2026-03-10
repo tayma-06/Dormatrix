@@ -39,34 +39,20 @@ public class AttendantDashboard implements Dashboard {
 
         while (true) {
             try {
-                ConsoleUtil.clearScreen();
                 BackgroundFiller.applyAttendantTheme();
-                System.out.println();
-                System.out.println("╔═════════════════════════════════════════════════════════════════════╗");
-                System.out.println("║                        ATTENDANT DASHBOARD                          ║");
-                System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
+                setActiveTheme(BOX, TEXT, BG);
+                System.out.print(HIDE_CUR);
 
-                String welcomeMessage = "Welcome, " + username;
-                int totalWidth = 69;
-                int paddingLeft = (totalWidth - welcomeMessage.length()) / 2;
-                int paddingRight = totalWidth - welcomeMessage.length() - paddingLeft;
-                String formattedWelcome
-                        = String.format("║%" + paddingLeft + "s%s%" + paddingRight + "s║", "", welcomeMessage, "");
-                System.out.println(formattedWelcome);
+                int menuStartRow = 3;
+                drawDashboard(
+                        "ATTENDANT DASHBOARD",
+                        "Welcome, " + username,
+                        MENU, TEXT, BOX,
+                        null,
+                        menuStartRow
+                );
 
-                System.out.println("╠═════════════════════════════════════════════════════════════════════╣");
-                System.out.println("║ [1] Handle Student Complaints                                       ║");
-                System.out.println("║ [2] Handle Worker Schedule                                          ║");
-                System.out.println("║ [3] Add Found Items                                                 ║");
-                System.out.println("║ [4] View Student Routine                                            ║");
-                System.out.println("║ [5] Announcements                                                   ║");
-                System.out.println("║ [6] Manage Emergency Contacts                                       ║");
-                System.out.println("║ [0] Logout                                                          ║");
-                System.out.println("╚═════════════════════════════════════════════════════════════════════╝");
-
-                System.out.println();
-                System.out.print("Enter your choice: ");
-                int choice = FastInput.readInt();
+                int choice = readChoiceArrow();
 
                 if (choice == 0) {
                     BackgroundFiller.applyAttendantTheme();

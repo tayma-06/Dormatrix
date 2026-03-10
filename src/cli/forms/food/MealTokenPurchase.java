@@ -19,6 +19,7 @@ public class MealTokenPurchase {
 
     public void show(String username) {
         while (true) {
+            utils.CafeteriaAsciiUI.stopTokenScreenAnimation();
             ConsoleUtil.clearScreen();
             TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
             TerminalUI.at(2, 1);
@@ -66,7 +67,9 @@ public class MealTokenPurchase {
             TerminalUI.tEmpty();
             TerminalUI.tPrompt("Enter choice: ");
 
+            utils.CafeteriaAsciiUI.startTokenScreenAnimation(5);
             int choice = FastInput.readInt();
+            utils.CafeteriaAsciiUI.stopTokenScreenAnimation();
             if (choice == 0) {
                 ConsoleUtil.clearScreen();
                 break;

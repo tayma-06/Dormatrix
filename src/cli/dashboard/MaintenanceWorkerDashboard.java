@@ -19,7 +19,7 @@ public class MaintenanceWorkerDashboard implements Dashboard {
     private static final MenuItem[] MENU = {
         new MenuItem(1, "Work Field"),
         new MenuItem(2, "Task Queue"),
-            new MenuItem(3, "Weekly Schedule"),
+        new MenuItem(3, "Weekly Schedule"),
         new MenuItem(0, "Logout"),};
 
     @Override
@@ -39,7 +39,7 @@ public class MaintenanceWorkerDashboard implements Dashboard {
                 System.out.print(HIDE_CUR);
 
                 int menuStartRow = 3;
-                int promptRow = drawDashboard(
+                drawDashboard(
                         "MAINTENANCE WORKER DASHBOARD",
                         "Welcome, " + username,
                         MENU, TEXT, BOX,
@@ -47,8 +47,7 @@ public class MaintenanceWorkerDashboard implements Dashboard {
                         menuStartRow
                 );
 
-                System.out.print(SHOW_CUR);
-                int choice = FastInput.readInt();
+                int choice = readChoiceArrow();
                 System.out.print(RESET);
 
                 if (choice == 0) {

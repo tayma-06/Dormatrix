@@ -1,6 +1,7 @@
 package cli.announcement;
 
 import controllers.announcement.AnnouncementController;
+import static utils.TerminalUI.tPause;
 
 public class AnnouncementBoardCLI {
 
@@ -9,5 +10,6 @@ public class AnnouncementBoardCLI {
     public void show() {
         System.out.println();
         System.out.println(controller.renderBoard());
+        tPause();
     }
 }
