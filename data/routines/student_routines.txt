@@ -3,9 +3,10 @@
 230042141|SUNDAY|2|pray, sehri, prayer
 230042141|SUNDAY|3|Modify dormatrix scheduler
 230042141|SUNDAY|4|Study, get ready to teach
-230042110|MONDAY|8|Complaint Visit [C-7]
 230042141|MONDAY|8|Complaint Visit [C-13]
 230042141|SUNDAY|8|Complaint Visit [C-12]
-Ayman Binta Altaf Nondiny|MONDAY|0|something
 230042141|MONDAY|1|abcd
-230042141|TUESDAY|8|Complaint Visit [C-3]
+230042110|TUESDAY|8|Complaint Visit [C-7]
+230042135|WEDNESDAY|8|Complaint Visit [C-5]
+230042115|TUESDAY|8|Complaint Visit [C-6]
+230042141|TUESDAY|9|Complaint Visit [C-3]

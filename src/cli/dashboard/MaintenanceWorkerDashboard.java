@@ -19,6 +19,7 @@ public class MaintenanceWorkerDashboard implements Dashboard {
     private static final MenuItem[] MENU = {
         new MenuItem(1, "Work Field"),
         new MenuItem(2, "Task Queue"),
+            new MenuItem(3, "Weekly Schedule"),
         new MenuItem(0, "Logout"),};
 
     @Override

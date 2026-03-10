@@ -4,6 +4,7 @@ import libraries.collections.MyArrayList;
 import libraries.collections.MyString;
 import models.complaints.Complaint;
 import utils.TerminalUI;
+import models.users.MaintenanceWorker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -248,6 +249,107 @@ public class ComplaintView {
         }
 
         return lines.toArray(new String[0]);
+    }
+
+
+
+    public void stringList(String title, MyArrayList<String> list) {
+        if (list == null || list.size() == 0) {
+            TerminalUI.tEmpty();
+            TerminalUI.tPrint("(No items found)");
+            TerminalUI.tEmpty();
+            return;
+        }
+
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle(title);
+        TerminalUI.tBoxSep();
+
+        for (int i = 0; i < list.size(); i++) {
+            TerminalUI.tBoxLine((i + 1) + ". " + list.get(i));
+        }
+
+        TerminalUI.tBoxBottom();
+    }
+
+    public void reassignPreview(MyArrayList<Complaint> list) {
+        if (list == null || list.size() == 0) {
+            TerminalUI.tEmpty();
+            TerminalUI.tPrint("(No unresolved complaints found)");
+            TerminalUI.tEmpty();
+            return;
+        }
+
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("PENDING COMPLAINTS");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("COMPLAINT ID       | TYPE           | ASSIGNED WORKER");
+        TerminalUI.tBoxSep();
+
+        for (int i = 0; i < list.size(); i++) {
+            Complaint c = list.get(i);
+            String wid = c.getAssignedWorkerId();
+            if (wid == null || wid.trim().isEmpty()) wid = "(none)";
+
+            TerminalUI.tBoxLine(String.format("%-18s | %-14s | %s",
+                    c.getComplaintId(),
+                    c.getCategory().name(),
+                    wid));
+        }
+
+        TerminalUI.tBoxBottom();
+    }
+
+    public void resolvePreview(MyArrayList<Complaint> list) {
+        if (list == null || list.size() == 0) {
+            TerminalUI.tEmpty();
+            TerminalUI.tPrint("(No unresolved complaints found)");
+            TerminalUI.tEmpty();
+            return;
+        }
+
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("UNRESOLVED COMPLAINTS");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("COMPLAINT ID       | ASSIGNED WORKER");
+        TerminalUI.tBoxSep();
+
+        for (int i = 0; i < list.size(); i++) {
+            Complaint c = list.get(i);
+            String wid = c.getAssignedWorkerId();
+            if (wid == null || wid.trim().isEmpty()) wid = "(none)";
+
+            TerminalUI.tBoxLine(String.format("%-18s | %s",
+                    c.getComplaintId(),
+                    wid));
+        }
+
+        TerminalUI.tBoxBottom();
+    }
+
+    public void workerChoices(MyArrayList<MaintenanceWorker> list) {
+        if (list == null || list.size() == 0) {
+            TerminalUI.tEmpty();
+            TerminalUI.tPrint("(No matching workers found)");
+            TerminalUI.tEmpty();
+            return;
+        }
+
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("AVAILABLE WORKERS OF SAME TYPE");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("WORKER ID     | NAME                 | FIELD");
+        TerminalUI.tBoxSep();
+
+        for (int i = 0; i < list.size(); i++) {
+            MaintenanceWorker w = list.get(i);
+            TerminalUI.tBoxLine(String.format("%-13s | %-20s | %s",
+                    w.getId(),
+                    w.getName(),
+                    w.getField().name()));
+        }
+
+        TerminalUI.tBoxBottom();
     }
 
 //    public void details(Complaint c){
