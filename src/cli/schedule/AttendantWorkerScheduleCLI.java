@@ -1,67 +1,267 @@
 package cli.schedule;
 
 import cli.Input;
+import cli.forms.complaint.ComplaintForm;
+import cli.views.complaint.ComplaintView;
 import controllers.schedule.WorkerScheduleController;
 import libraries.collections.MyOptional;
 import models.schedule.WorkerVisitEntry;
+import utils.BackgroundFiller;
+import utils.ConsoleUtil;
+import utils.FastInput;
+import utils.TerminalUI;
+import static utils.TerminalUI.*;
 
 import java.time.DayOfWeek;
 import java.util.Scanner;
+
+import static utils.TerminalUI.tSubDashboard;
 
 public class AttendantWorkerScheduleCLI {
 
     private final WorkerScheduleController controller = new WorkerScheduleController();
     private final Scanner sc = Input.SC;
+    private final ComplaintView view = new ComplaintView();
+    private final ComplaintForm form = new ComplaintForm(Input.SC);
 
+    private static final MenuItem[] MENU = {
+            new MenuItem(1, "View unresolved complaints"),
+            new MenuItem(2, "Preview student routine from complaint"),
+            new MenuItem(3, "Auto-schedule a complaint visit"),
+            new MenuItem(4, "Manually schedule a complaint visit"),
+            new MenuItem(5, "View worker weekly schedule"),
+            new MenuItem(0, "Back"),
+    };
     public void show(String username) {
         while (true) {
-            System.out.println();
-            System.out.println("══════════════════════════════════════════════");
-            System.out.println("        WORKER SCHEDULING (ATTENDANT)");
-            System.out.println("══════════════════════════════════════════════");
-            System.out.println("1. View unresolved complaints");
-            System.out.println("2. Preview student routine from complaint");
-            System.out.println("3. Auto-schedule a complaint visit");
-            System.out.println("4. Manually schedule a complaint visit");
-            System.out.println("5. View worker weekly schedule");
-            System.out.println("0. Back");
-            System.out.print("Enter choice: ");
+            try {
+                ConsoleUtil.clearScreen();
+                BackgroundFiller.applyAttendantTheme();
+                System.out.print(HIDE_CUR);
 
-            int ch = readInt();
-            if (ch == 0) return;
+                TerminalUI.at(3, 1);
 
-            if (ch == 1) {
-                System.out.println(controller.renderPendingComplaintList());
-            } else if (ch == 2) {
-                String complaintId = readNonEmpty("Complaint ID: ");
-                System.out.println(controller.renderMaskedRoutineForComplaint(complaintId));
-            } else if (ch == 3) {
-                String complaintId = readNonEmpty("Complaint ID: ");
-                MyOptional<WorkerVisitEntry> visitOpt = controller.autoPlanComplaint(complaintId);
-                if (visitOpt.isPresent()) {
-                    WorkerVisitEntry v = visitOpt.get();
-                    System.out.println("Scheduled: " + v.getDay().name() + " " +
-                            WorkerScheduleController.SLOT_LABELS[v.getSlotIndex()] +
-                            " | Worker " + v.getWorkerId() +
-                            " | Room " + v.getRoomNo());
-                } else {
-                    System.out.println("Could not auto-schedule. The complaint may be unassigned or every suitable slot is busy.");
+                int menuStartRow = 4;
+                int promptRow = drawDashboard(
+                        "WORKER SCHEDULING",
+                        "Attendant: " + username,
+                        MENU,
+                        TerminalUI.getActiveTextColor(),
+                        TerminalUI.getActiveBoxColor(),
+                        null,
+                        menuStartRow
+                );
+
+                System.out.print(SHOW_CUR);
+                int choice = FastInput.readInt();
+
+
+                switch (choice) {
+                    case 0 -> { return; }
+                    case 1 -> handleViewUnresolvedComplaints();
+                    case 2 -> handlePreviewStudentRoutine();
+                    case 3 -> handleAutoScheduleComplaint();
+                    case 4 -> handleManualScheduleComplaint();
+                    case 5 -> handleViewWorkerSchedule();
+                    default -> {
+                        tError("Invalid choice.");
+                        tPause();
+                    }
                 }
-            } else if (ch == 4) {
-                String complaintId = readNonEmpty("Complaint ID: ");
-                System.out.println(controller.renderMaskedRoutineForComplaint(complaintId));
-                DayOfWeek day = readDay();
-                int slot = readSlot();
-                String note = readLine("Note (optional): ");
-                boolean ok = controller.manualPlanComplaint(complaintId, day, slot, note);
-                System.out.println(ok ? "Visit scheduled." : "Could not schedule. Student may be busy or worker already has a conflict.");
-            } else if (ch == 5) {
-                String workerToken = readNonEmpty("Enter worker ID or name: ");
-                System.out.println(controller.renderWorkerWeek(workerToken));
-            } else {
-                System.out.println("Invalid choice.");
+
+            } catch (Exception e) {
+                cleanup();
+                System.err.println("[AttendantWorkerScheduleCLI] " + e.getMessage());
+                tPause();
             }
+
+//            System.out.println();
+//            System.out.println("╔════════════════════════════════════════════════════╗");
+//            System.out.println("║            WORKER SCHEDULING (ATTENDANT)           ║");
+//            System.out.println("╠════════════════════════════════════════════════════╣");
+//            System.out.println("║ [1] View unresolved complaints                     ║");
+//            System.out.println("║ [2] Preview student routine from complaint         ║");
+//            System.out.println("║ [3] Auto-schedule a complaint visit                ║");
+//            System.out.println("║ [4] Manually schedule a complaint visit            ║");
+//            System.out.println("║ [5] View worker weekly schedule                    ║");
+//            System.out.println("║ [0] Back                                           ║");
+//            System.out.println("╚════════════════════════════════════════════════════╝");
+//            System.out.print("Enter choice:                            ");
+
+//            int ch = readInt();
+//            if (ch == 0) return;
+//
+//            if (ch == 1) {
+//                clearAndRefresh();
+//                System.out.println(controller.renderPendingComplaintList());
+//            } else if (ch == 2) {
+//                clearAndRefresh();
+//                tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly() );
+////                view.msg(controller.renderUnresolvedComplaintIdsOnly());
+//
+//                String cid = FastInput.readNonEmptyLine();
+//
+//                if (!controller.complaintExists(cid)) {
+//                    view.error("Invalid complaint ID.");
+//                    ConsoleUtil.pause();
+//                    continue;
+//                }
+//
+//                if (controller.isResolvedComplaint(cid)) {
+//                    view.error("This complaint is already resolved.");
+//                    ConsoleUtil.pause();
+//                    continue;
+//                }
+//                System.out.println(controller.renderMaskedRoutineForComplaint(cid));
+//            } else if (ch == 3) {
+//                clearAndRefresh();
+//                tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly() );
+//
+//                String cid = FastInput.readNonEmptyLine();
+//
+//                if (!controller.complaintExists(cid)) {
+//                    view.error("Invalid complaint ID.");
+//                    ConsoleUtil.pause();
+//                    continue;
+//                }
+//
+//                if (controller.isResolvedComplaint(cid)) {
+//                    view.error("This complaint is already resolved.");
+//                    ConsoleUtil.pause();
+//                    continue;
+//                }
+//
+//                MyOptional<WorkerVisitEntry> visitOpt = controller.autoPlanComplaint(cid);
+//                if (visitOpt.isPresent()) {
+//                    WorkerVisitEntry v = visitOpt.get();
+//                    System.out.println("Scheduled: " + v.getDay().name() + " " +
+//                            WorkerScheduleController.SLOT_LABELS[v.getSlotIndex()] +
+//                            " | Worker " + v.getWorkerId() +
+//                            " | Room " + v.getRoomNo());
+//                } else {
+//                    System.out.println("Could not auto-schedule. The complaint may be unassigned or every suitable slot is busy.");
+//                }
+//            } else if (ch == 4) {
+//                clearAndRefresh();
+//                tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly() );
+//
+//                String cid = FastInput.readNonEmptyLine();
+//
+//                if (!controller.complaintExists(cid)) {
+//                    view.error("Invalid complaint ID.");
+//                    ConsoleUtil.pause();
+//                    continue;
+//                }
+//
+//                if (controller.isResolvedComplaint(cid)) {
+//                    view.error("This complaint is already resolved.");
+//                    ConsoleUtil.pause();
+//                    continue;
+//                }
+//
+//
+//                System.out.println(controller.renderMaskedRoutineForComplaint(cid));
+//                DayOfWeek day = readDay();
+//                int slot = readSlot();
+//                String note = readLine("Note (optional): ");
+//                boolean ok = controller.manualPlanComplaint(cid, day, slot, note);
+//                System.out.println(ok ? "Visit scheduled." : "Could not schedule. Student may be busy or worker already has a conflict.");
+//            } else if (ch == 5) {
+//                clearAndRefresh();
+//                tSubDashboard("WORKER IDs", controller.renderAllWorkerIds());
+//                String workerToken = readNonEmpty("Enter worker ID or name: ");
+//                System.out.println(controller.renderWorkerWeek(workerToken));
+//            } else {
+//                System.out.println("Invalid choice.");
+//            }
         }
+    }
+
+    private void handleViewUnresolvedComplaints() {
+        clearAndRefresh();
+        System.out.println(controller.renderPendingComplaintList());
+        tPause();
+    }
+
+    private void handlePreviewStudentRoutine() {
+        clearAndRefresh();
+        tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly());
+        String cid = FastInput.readNonEmptyLine();
+        if (!validateComplaint(cid)) return;
+        System.out.println(controller.renderMaskedRoutineForComplaint(cid));
+        tPause();
+    }
+
+    private void handleAutoScheduleComplaint() {
+        clearAndRefresh();
+        tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly());
+        String cid = FastInput.readNonEmptyLine();
+        if (!validateComplaint(cid)) return;
+
+        MyOptional<WorkerVisitEntry> visitOpt = controller.autoPlanComplaint(cid);
+        if (visitOpt.isPresent()) {
+            WorkerVisitEntry v = visitOpt.get();
+
+            String result = new StringBuilder()
+                    .append("Scheduled: ").append(v.getDay().name())
+                    .append(" ").append(WorkerScheduleController.SLOT_LABELS[v.getSlotIndex()])
+                    .append(" | Worker ").append(v.getWorkerId())
+                    .append(" | Room ").append(v.getRoomNo())
+                    .toString();
+//            System.out.println(result);
+
+            TerminalUI.at(17, 1);
+            TerminalUI.tBoxTop();
+            TerminalUI.tBoxLine(result);
+            TerminalUI.tBoxBottom();
+
+//            System.out.println("Scheduled: " + v.getDay().name() + " " +
+//                    WorkerScheduleController.SLOT_LABELS[v.getSlotIndex()] +
+//                    " | Worker " + v.getWorkerId() +
+//                    " | Room " + v.getRoomNo());
+            tPause();
+        } else {
+            System.out.println("Could not auto-schedule. The complaint may be unassigned or every suitable slot is busy.");
+            tPause();
+        }
+    }
+
+    private void handleManualScheduleComplaint() {
+        clearAndRefresh();
+        tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly());
+        String cid = FastInput.readNonEmptyLine();
+        if (!validateComplaint(cid)) return;
+
+        System.out.println(controller.renderMaskedRoutineForComplaint(cid));
+        DayOfWeek day = readDay();
+        int slot = readSlot();
+        String note = readLine("Note (optional): ");
+        boolean ok = controller.manualPlanComplaint(cid, day, slot, note);
+        System.out.println(ok ? "Visit scheduled." : "Could not schedule. Student may be busy or worker already has a conflict.");
+        tPause();
+    }
+
+    private void handleViewWorkerSchedule() {
+        clearAndRefresh();
+        tSubDashboard("WORKER IDs", controller.renderAllWorkerIds());
+        String workerToken = readNonEmpty("");
+        System.out.println(controller.renderWorkerWeek(workerToken));
+
+        tPause();
+    }
+
+    private boolean validateComplaint(String cid) {
+        if (!controller.complaintExists(cid)) {
+            view.error("Invalid complaint ID.");
+            ConsoleUtil.pause();
+            return false;
+        }
+        if (controller.isResolvedComplaint(cid)) {
+            view.error("This complaint is already resolved.");
+            ConsoleUtil.pause();
+            return false;
+        }
+        return true;
     }
 
     private int readInt() {
@@ -125,5 +325,13 @@ public class AttendantWorkerScheduleCLI {
             }
             System.out.println("Invalid slot.");
         }
+    }
+
+
+    private void clearAndRefresh() {
+        ConsoleUtil.clearScreen();
+        BackgroundFiller.applyAttendantTheme();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
     }
 }

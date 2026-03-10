@@ -15,6 +15,7 @@ import utils.TimeManager;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.ArrayList;
 
 public class WorkerScheduleController {
 
@@ -118,8 +119,27 @@ public class WorkerScheduleController {
         MyArrayList<Complaint> all = complaintRepo.findAll();
         StringBuilder sb = new StringBuilder();
 
+        // Column widths
+        int idW     = 12;
+        int roomW   = 6;
+        int catW    = 16;
+        int workerW = 12;
+        int statusW = 14;
+
+        // Row segment builder helper
+        // top, mid (header divider), inner (row divider), bottom
+        String top = "╔" + "═".repeat(idW+2) + "╦" + "═".repeat(roomW+2) + "╦" + "═".repeat(catW+2)
+                + "╦" + "═".repeat(workerW+2) + "╦" + "═".repeat(statusW+2) + "╗\n";
+        String mid = "╠" + "═".repeat(idW+2) + "╬" + "═".repeat(roomW+2) + "╬" + "═".repeat(catW+2)
+                + "╬" + "═".repeat(workerW+2) + "╬" + "═".repeat(statusW+2) + "╣\n";
+        String bot = "╚" + "═".repeat(idW+2) + "╩" + "═".repeat(roomW+2) + "╩" + "═".repeat(catW+2)
+                + "╩" + "═".repeat(workerW+2) + "╩" + "═".repeat(statusW+2) + "╝\n";
+
         sb.append("PENDING / UNRESOLVED COMPLAINTS\n");
-        sb.append("--------------------------------------------------------------\n");
+        sb.append(top);
+        sb.append(String.format("║ %-"+idW+"s ║ %-"+roomW+"s ║ %-"+catW+"s ║ %-"+workerW+"s ║ %-"+statusW+"s ║\n",
+                "Complaint ID", "Room", "Category", "Worker", "Status"));
+        sb.append(mid);
 
         boolean found = false;
         for (int i = 0; i < all.size(); i++) {
@@ -130,16 +150,26 @@ public class WorkerScheduleController {
             String worker = c.getAssignedWorkerId();
             if (worker == null || worker.trim().isEmpty()) worker = "(none)";
 
-            sb.append("Complaint: ").append(c.getComplaintId())
-                    .append(" | Room: ").append(c.getStudentRoomNo())
-                    .append(" | Category: ").append(c.getCategory().name())
-                    .append(" | Worker: ").append(worker)
-                    .append(" | Status: ").append(c.getStatus().name())
-                    .append("\n");
+            sb.append(String.format("║ %-"+idW+"s ║ %-"+roomW+"s ║ %-"+catW+"s ║ %-"+workerW+"s ║ %-"+statusW+"s ║\n",
+                    truncate(c.getComplaintId(),    idW),
+                    truncate(c.getStudentRoomNo(),  roomW),
+                    truncate(c.getCategory().name(),catW),
+                    truncate(worker,                workerW),
+                    truncate(c.getStatus().name(),  statusW)));
         }
 
-        if (!found) sb.append("(No unresolved complaints)\n");
+        if (!found) {
+            int totalWidth = idW + roomW + catW + workerW + statusW + 14;
+            sb.append(String.format("║ %-"+totalWidth+"s ║\n", "(No unresolved complaints)"));
+        }
+
+        sb.append(bot);
         return sb.toString();
+    }
+
+    private String truncate(String s, int max) {
+        if (s == null) return "";
+        return s.length() <= max ? s : s.substring(0, max - 1) + "…";
     }
 
     public String renderMaskedRoutineForComplaint(String complaintId) {
@@ -337,6 +367,58 @@ public class WorkerScheduleController {
         }
 
         return MyOptional.empty();
+    }
+
+    public String[] renderAllWorkerIds()
+    {
+        MyArrayList<MaintenanceWorker> all = workerRepo.findAll();
+        StringBuilder sb = new StringBuilder();
+        ArrayList<String> workerIds = new ArrayList<>();
+        boolean found = false;
+        for (int i = 0; i < all.size(); i++) {
+            MaintenanceWorker w = all.get(i);
+            found = true;
+            workerIds.add(w.getId());
+        }
+        String[] s = workerIds.toArray(String[]::new);
+        if (!found) sb.append("(No worker listed)\n");
+        return s;
+    }
+
+
+    public String[] renderUnresolvedComplaintIdsOnly() {
+        MyArrayList<Complaint> all = complaintRepo.findAll();
+        StringBuilder sb = new StringBuilder();
+
+//        sb.append("UNRESOLVED COMPLAINT IDS\n");
+//        sb.append("------------------------\n");
+
+        ArrayList<String> ids = new ArrayList<>();
+        boolean found = false;
+        int j = 0;
+        for (int i = 0; i < all.size(); i++) {
+            Complaint c = all.get(i);
+            if (c.getStatus() == ComplaintStatus.RESOLVED) continue;
+
+            found = true;
+            j++;
+            ids.add(c.getComplaintId());
+//            sb.append("["+(i+1)+"]").append(c.getComplaintId()).append("\t");
+        }
+
+        String[] s = ids.toArray(String[]::new);
+        if (!found) sb.append("(No unresolved complaints)\n");
+        return s;
+    }
+
+    public boolean complaintExists(String complaintId) {
+        return complaintRepo.findById(complaintId).isPresent();
+    }
+
+    public boolean isResolvedComplaint(String complaintId) {
+        MyOptional<Complaint> cOpt = complaintRepo.findById(complaintId);
+        if (cOpt.isEmpty()) return false;
+        return cOpt.get().getStatus() == ComplaintStatus.RESOLVED;
     }
 
     private int dayToColumn(DayOfWeek day) {

@@ -1,6 +1,7 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
+import cli.schedule.WorkerVisitBoardCLI;
 import controllers.authentication.AuthController;
 
 import java.io.BufferedReader;
@@ -43,8 +44,11 @@ public class MaintenanceWorkerDashboardController {
     // Returns false is user chooses to logout
     public void handleInput(int choice, String username)
     {
+
+        String wid = resolveWorkerId(username);
         switch (choice)
         {
+
 //            case 1:
 //                System.out.println("Viewing work field...");
 //                viewWorkField(username);
@@ -56,6 +60,9 @@ public class MaintenanceWorkerDashboardController {
 //            case 3:
 //                viewComplaintUpdates(username);
 //                break;
+            case 3:
+                new WorkerVisitBoardCLI().show(wid);
+                break;
             case 0:
                 mainDashboard.show();
                 break;

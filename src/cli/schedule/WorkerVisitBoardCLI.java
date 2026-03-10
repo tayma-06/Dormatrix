@@ -1,6 +1,7 @@
 package cli.schedule;
 
 import controllers.schedule.WorkerScheduleController;
+import utils.TerminalUI;
 
 public class WorkerVisitBoardCLI {
 
@@ -9,5 +10,6 @@ public class WorkerVisitBoardCLI {
     public void show(String workerToken) {
         System.out.println();
         System.out.println(controller.renderWorkerWeek(workerToken));
+        TerminalUI.tPause();
     }
 }
