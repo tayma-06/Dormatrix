@@ -6,8 +6,8 @@ A Java-based dormitory management system with a command-line interface for manag
 
 - **Room Management** — View and manage room assignments
 - **Facility Booking** — Reserve laundry slots, study rooms, etc.
-- **Food System** — Weekly menus, meal tokens, and shopping cart
-- **Store & Inventory** — Account balances and dues tracking
+- **Food System** — Weekly menus, meal tokens
+- **Store & Inventory** — Account balances and dues tracking, and shopping cart
 - **Lost & Found** — Report and search for lost items
 - **Complaints** — Submit and track complaints
 - **Routines** — View and manage weekly schedules
