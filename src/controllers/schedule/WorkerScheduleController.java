@@ -421,6 +421,30 @@ public class WorkerScheduleController {
         return cOpt.get().getStatus() == ComplaintStatus.RESOLVED;
     }
 
+    public String[] getUnresolvedComplaintLabels() {
+        MyArrayList<Complaint> all = complaintRepo.findAll();
+        ArrayList<String> labels = new ArrayList<>();
+        int n = 1;
+
+        for (int i = 0; i < all.size(); i++) {
+            Complaint c = all.get(i);
+            if (c.getStatus() == ComplaintStatus.RESOLVED) continue;
+
+            String room = (c.getStudentRoomNo() == null || c.getStudentRoomNo().trim().isEmpty())
+                    ? "?"
+                    : c.getStudentRoomNo().trim();
+
+            String category = c.getCategory() == null ? "UNKNOWN" : c.getCategory().name();
+
+            labels.add(n + ".  " + c.getComplaintId()
+                    + "  |  " + category
+                    + "  |  Room " + room);
+            n++;
+        }
+
+        return labels.toArray(String[]::new);
+    }
+
     private int dayToColumn(DayOfWeek day) {
         switch (day) {
             case MONDAY: return 0;
