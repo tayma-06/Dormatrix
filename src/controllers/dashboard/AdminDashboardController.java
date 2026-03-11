@@ -28,20 +28,25 @@ public class AdminDashboardController {
 
     public AdminDashboardController() {
         this.accountManager = new AccountManager();
+
         RoomService roomService = new RoomService();
+
         CreateAccountController createAccountController = new CreateAccountController(accountManager);
         DeleteAccountController deleteAccountController = new DeleteAccountController(accountManager);
         ViewAccountController viewAccountController = new ViewAccountController(accountManager);
         SearchUserController searchUserController = new SearchUserController(accountManager);
+
         this.createAccountForm = new CreateAccount(createAccountController);
         this.deleteAccountForm = new DeleteAccount(deleteAccountController);
 
         ViewAccount viewAccountView = new ViewAccount(viewAccountController);
         SearchUser searchUserView = new SearchUser(searchUserController);
+
         AccountDashboardController accountDashboardController =
                 new AccountDashboardController(viewAccountView, searchUserView);
 
         this.accountDashboard = new AccountDashboard(accountDashboardController);
+
         RoomDashboardController roomDashboardController =
                 new RoomDashboardController(roomService);
 
@@ -54,7 +59,8 @@ public class AdminDashboardController {
             case 2 -> deleteAccountForm.show();
             case 3 -> accountDashboard.show(username);
             case 4 -> roomDashboard.show(username);
-            default -> System.out.println("Invalid choice. Please try again...");
+            default -> {
+            }
         }
     }
 }

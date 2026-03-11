@@ -17,6 +17,51 @@ import java.util.regex.Pattern;
  */
 public final class TerminalUI {
 
+    // Unified color constants for UI panels
+    public static final String MUTED = "\u001B[38;2;110;85;170m";
+    public static final String ACCENT = "\u001B[38;2;185;140;255m";
+    public static final String ERROR = "\u001B[38;2;255;100;100m";
+    public static final String HL_BG = "\u001B[48;2;60;40;100m";
+    public static final String HL_FG = "\u001B[38;2;230;210;255m";
+    public static final String ARROW = "\u001B[38;2;200;160;255m";
+    public static final String SEARCH_FG = "\u001B[38;2;140;110;200m";
+
+    // Reusable UI helpers
+    public static String padC(String s, int w) {
+        int p = Math.max(0, w - s.length());
+        return " ".repeat(p / 2) + s + " ".repeat(p - p / 2);
+    }
+
+    public static String padL(String s, int w) {
+        if (s == null) {
+            s = "";
+        }
+        if (s.length() >= w) {
+            return s.substring(0, w);
+        }
+        return s + " ".repeat(w - s.length());
+    }
+
+    public static String truncate(String s, int max) {
+        if (s == null) {
+            return "";
+        }
+        return s.length() > max ? s.substring(0, max) : s;
+    }
+
+    public static String stripAnsi(String s) {
+        return s == null ? "" : s.replaceAll("\u001B\\[[;\\d]*m", "");
+    }
+
+    public static String topBorder(String label, int innerW, String accent) {
+        int dashes = innerW - label.length() - 3;
+        return "╭─ " + accent + label + MUTED + " " + "─".repeat(Math.max(0, dashes)) + "╮";
+    }
+
+    public static String botBorder(int innerW) {
+        return "╰" + "─".repeat(innerW) + "╯";
+    }
+
     private static org.jline.terminal.Terminal sharedJLineTerminal = null;
 
     private TerminalUI() {
@@ -1153,11 +1198,11 @@ public final class TerminalUI {
         if (notifyRow < 0) {
             return;
         }
-        int col    = boxCol();
-        int iw     = innerW();
+        int col = boxCol();
+        int iw = innerW();
         String err = ConsoleColors.Accent.ERROR;
         String box = activeBoxColor;
-        String bg  = activeBgColor;
+        String bg = activeBgColor;
         String line = padC(trimToWidth(text, iw), iw);
         at(notifyRow, col);
         System.out.print(box + bg + "╔" + "═".repeat(iw) + "╗" + RESET);
@@ -1173,7 +1218,7 @@ public final class TerminalUI {
             return;
         }
         int col = boxCol();
-        int bw  = boxW();
+        int bw = boxW();
         String bg = activeBgColor;
         for (int r = notifyRow; r <= notifyRow + 2; r++) {
             at(r, col);
@@ -1280,7 +1325,7 @@ public final class TerminalUI {
     private static final List<ItemData> ITEM_DATA = new ArrayList<>();
     private static int inputFieldRow = -1;
     private static int inputFieldCol = -1;
-    private static int notifyRow     = -1;
+    private static int notifyRow = -1;
 
     public static void clearRegions() {
         REGIONS.clear();
@@ -1290,7 +1335,7 @@ public final class TerminalUI {
         ITEM_DATA.clear();
         inputFieldRow = -1;
         inputFieldCol = -1;
-        notifyRow     = -1;
+        notifyRow = -1;
     }
 
     private static void registerItem(int row, int num, String label, String theme, String box) {
@@ -1469,24 +1514,7 @@ public final class TerminalUI {
     // ══════════════════════════════════════════════════════════════
     //  STRING HELPERS
     // ══════════════════════════════════════════════════════════════
-    /**
-     * Center-pad s to exactly w characters.
-     */
-    public static String padC(String s, int w) {
-        int p = Math.max(0, w - s.length());
-        return " ".repeat(p / 2) + s + " ".repeat(p - p / 2);
-    }
-
-    /**
-     * Left-pad s (pad trailing spaces) to exactly w characters.
-     */
-    public static String padL(String s, int w) {
-        if (s.length() >= w) {
-            return s.substring(0, w);
-        }
-        return s + " ".repeat(w - s.length());
-    }
-
+    // ...existing code...
     // ══════════════════════════════════════════════════════════════
     //  CENTERED DASHBOARD HELPERS
     //  For consistent centered output across all dashboards

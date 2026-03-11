@@ -2,11 +2,45 @@ package controllers.account;
 
 import controllers.authentication.AccountManager;
 import libraries.collections.MyString;
-import utils.TerminalUI;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ViewAccountController {
+
+    public static class AccountSummary {
+        private final String id;
+        private final String name;
+        private final String role;
+        private final String rawData;
+
+        public AccountSummary(String id, String name, String role, String rawData) {
+            this.id = id;
+            this.name = name;
+            this.role = role;
+            this.rawData = rawData;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getRole() {
+            return role;
+        }
+
+        public String getRawData() {
+            return rawData;
+        }
+    }
 
     private final AccountManager manager;
 
@@ -14,75 +48,86 @@ public class ViewAccountController {
         this.manager = manager;
     }
 
-    public void handleViewChoice(int choice) {
-        if (choice == 7) {
-            viewAll();
-        } else {
-            viewRole(getRoleFromChoice(choice));
+    public List<AccountSummary> getAccountsByChoice(int choice) {
+        if (choice == 8) {
+            return getAllAccounts();
         }
+
+        MyString role = getRoleFromChoice(choice);
+        if ("UNKNOWN".equals(role.getValue())) {
+            return new ArrayList<>();
+        }
+
+        return readRoleFile(role.getValue());
     }
 
-    private void viewRole(MyString role) {
-        if (role.getValue().equals("UNKNOWN")) {
-            TerminalUI.tError("Invalid role choice!");
-            return;
-        }
+    public String formatAccountDetails(String rawData) {
+        return AccountRecordParser.formatDetails(rawData);
+    }
 
-        MyString filename = manager.getFilename(role);
+    private List<AccountSummary> getAllAccounts() {
+        String[] roles = {
+                "STUDENT",
+                "HALL_ATTENDANT",
+                "MAINTENANCE_WORKER",
+                "STORE_IN_CHARGE",
+                "HALL_OFFICER",
+                "ADMIN",
+                "CAFETERIA_MANAGER"
+        };
+
+        List<AccountSummary> all = new ArrayList<>();
+        for (String role : roles) {
+            all.addAll(readRoleFile(role));
+        }
+        return all;
+    }
+
+    private List<AccountSummary> readRoleFile(String role) {
+        List<AccountSummary> list = new ArrayList<>();
+
+        MyString filename = manager.getFilename(new MyString(role));
         File file = new File(filename.getValue());
 
-        TerminalUI.tEmpty();
-        TerminalUI.tBoxTop();
-        TerminalUI.tBoxTitle(role.getValue());
-        TerminalUI.tBoxSep();
-
         if (!file.exists()) {
-            TerminalUI.tBoxLine("(No records found)");
-            TerminalUI.tBoxBottom();
-            return;
+            return list;
         }
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                MyString[] parts = new MyString(line).split('|');
-                if (parts.length >= 2) {
-                    TerminalUI.tBoxLine("ID: " + parts[0].getValue() +
-                            " | Name: " + parts[1].getValue());
+                if (line.trim().isEmpty()) {
+                    continue;
                 }
+
+                AccountRecordParser.ParsedAccount parsed = AccountRecordParser.parse(line);
+                if (parsed == null) {
+                    continue;
+                }
+
+                list.add(new AccountSummary(
+                        parsed.getId(),
+                        parsed.getName(),
+                        parsed.getRole(),
+                        line
+                ));
             }
-        } catch (IOException e) {
-            TerminalUI.tError("Error reading file.");
-            return;
+        } catch (IOException ignored) {
         }
 
-        TerminalUI.tBoxBottom();
-    }
-
-    private void viewAll() {
-        MyString[] roles = {
-                new MyString("STUDENT"),
-                new MyString("HALL_ATTENDANT"),
-                new MyString("MAINTENANCE_WORKER"),
-                new MyString("STORE_IN_CHARGE"),
-                new MyString("HALL_OFFICER"),
-                new MyString("ADMIN")
-        };
-
-        for (MyString role : roles) {
-            viewRole(role);
-        }
+        return list;
     }
 
     private MyString getRoleFromChoice(int choice) {
-        return switch (choice) {
-            case 1 -> new MyString("STUDENT");
-            case 2 -> new MyString("HALL_ATTENDANT");
-            case 3 -> new MyString("MAINTENANCE_WORKER");
-            case 4 -> new MyString("STORE_IN_CHARGE");
-            case 5 -> new MyString("HALL_OFFICER");
-            case 6 -> new MyString("ADMIN");
-            default -> new MyString("UNKNOWN");
-        };
+        switch (choice) {
+            case 1: return new MyString("STUDENT");
+            case 2: return new MyString("HALL_ATTENDANT");
+            case 3: return new MyString("MAINTENANCE_WORKER");
+            case 4: return new MyString("STORE_IN_CHARGE");
+            case 5: return new MyString("HALL_OFFICER");
+            case 6: return new MyString("ADMIN");
+            case 7: return new MyString("CAFETERIA_MANAGER");
+            default: return new MyString("UNKNOWN");
+        }
     }
 }
