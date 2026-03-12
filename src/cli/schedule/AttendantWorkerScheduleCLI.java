@@ -11,6 +11,7 @@ import utils.ConsoleUtil;
 import utils.FastInput;
 import utils.TerminalUI;
 import static utils.TerminalUI.*;
+import static utils.TerminalUIExtras.*;
 
 import java.time.DayOfWeek;
 import java.util.Scanner;
@@ -53,7 +54,7 @@ public class AttendantWorkerScheduleCLI {
                 );
 
                 System.out.print(SHOW_CUR);
-                int choice = FastInput.readInt();
+                int choice = readChoiceArrow();
 
 
                 switch (choice) {
@@ -75,105 +76,7 @@ public class AttendantWorkerScheduleCLI {
                 tPause();
             }
 
-//            System.out.println();
-//            System.out.println("╔════════════════════════════════════════════════════╗");
-//            System.out.println("║            WORKER SCHEDULING (ATTENDANT)           ║");
-//            System.out.println("╠════════════════════════════════════════════════════╣");
-//            System.out.println("║ [1] View unresolved complaints                     ║");
-//            System.out.println("║ [2] Preview student routine from complaint         ║");
-//            System.out.println("║ [3] Auto-schedule a complaint visit                ║");
-//            System.out.println("║ [4] Manually schedule a complaint visit            ║");
-//            System.out.println("║ [5] View worker weekly schedule                    ║");
-//            System.out.println("║ [0] Back                                           ║");
-//            System.out.println("╚════════════════════════════════════════════════════╝");
-//            System.out.print("Enter choice:                            ");
-
-//            int ch = readInt();
-//            if (ch == 0) return;
 //
-//            if (ch == 1) {
-//                clearAndRefresh();
-//                System.out.println(controller.renderPendingComplaintList());
-//            } else if (ch == 2) {
-//                clearAndRefresh();
-//                tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly() );
-////                view.msg(controller.renderUnresolvedComplaintIdsOnly());
-//
-//                String cid = FastInput.readNonEmptyLine();
-//
-//                if (!controller.complaintExists(cid)) {
-//                    view.error("Invalid complaint ID.");
-//                    ConsoleUtil.pause();
-//                    continue;
-//                }
-//
-//                if (controller.isResolvedComplaint(cid)) {
-//                    view.error("This complaint is already resolved.");
-//                    ConsoleUtil.pause();
-//                    continue;
-//                }
-//                System.out.println(controller.renderMaskedRoutineForComplaint(cid));
-//            } else if (ch == 3) {
-//                clearAndRefresh();
-//                tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly() );
-//
-//                String cid = FastInput.readNonEmptyLine();
-//
-//                if (!controller.complaintExists(cid)) {
-//                    view.error("Invalid complaint ID.");
-//                    ConsoleUtil.pause();
-//                    continue;
-//                }
-//
-//                if (controller.isResolvedComplaint(cid)) {
-//                    view.error("This complaint is already resolved.");
-//                    ConsoleUtil.pause();
-//                    continue;
-//                }
-//
-//                MyOptional<WorkerVisitEntry> visitOpt = controller.autoPlanComplaint(cid);
-//                if (visitOpt.isPresent()) {
-//                    WorkerVisitEntry v = visitOpt.get();
-//                    System.out.println("Scheduled: " + v.getDay().name() + " " +
-//                            WorkerScheduleController.SLOT_LABELS[v.getSlotIndex()] +
-//                            " | Worker " + v.getWorkerId() +
-//                            " | Room " + v.getRoomNo());
-//                } else {
-//                    System.out.println("Could not auto-schedule. The complaint may be unassigned or every suitable slot is busy.");
-//                }
-//            } else if (ch == 4) {
-//                clearAndRefresh();
-//                tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly() );
-//
-//                String cid = FastInput.readNonEmptyLine();
-//
-//                if (!controller.complaintExists(cid)) {
-//                    view.error("Invalid complaint ID.");
-//                    ConsoleUtil.pause();
-//                    continue;
-//                }
-//
-//                if (controller.isResolvedComplaint(cid)) {
-//                    view.error("This complaint is already resolved.");
-//                    ConsoleUtil.pause();
-//                    continue;
-//                }
-//
-//
-//                System.out.println(controller.renderMaskedRoutineForComplaint(cid));
-//                DayOfWeek day = readDay();
-//                int slot = readSlot();
-//                String note = readLine("Note (optional): ");
-//                boolean ok = controller.manualPlanComplaint(cid, day, slot, note);
-//                System.out.println(ok ? "Visit scheduled." : "Could not schedule. Student may be busy or worker already has a conflict.");
-//            } else if (ch == 5) {
-//                clearAndRefresh();
-//                tSubDashboard("WORKER IDs", controller.renderAllWorkerIds());
-//                String workerToken = readNonEmpty("Enter worker ID or name: ");
-//                System.out.println(controller.renderWorkerWeek(workerToken));
-//            } else {
-//                System.out.println("Invalid choice.");
-//            }
         }
     }
 
@@ -183,72 +86,211 @@ public class AttendantWorkerScheduleCLI {
         tPause();
     }
 
+    /**
+     * Shows an arrow-key picker of unresolved complaints, then displays
+     * the masked student routine for the selected one.
+     */
     private void handlePreviewStudentRoutine() {
         clearAndRefresh();
-        tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly());
-        String cid = FastInput.readNonEmptyLine();
-        if (!validateComplaint(cid)) return;
+        String cid = pickComplaint();
+        if (cid == null) return;
+
+        clearAndRefresh();
         System.out.println(controller.renderMaskedRoutineForComplaint(cid));
         tPause();
     }
 
+//    private void handleAutoScheduleComplaint() {
+//        clearAndRefresh();
+//        tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly());
+//        String cid = FastInput.readNonEmptyLine();
+//        if (!validateComplaint(cid)) return;
+//
+//        MyOptional<WorkerVisitEntry> visitOpt = controller.autoPlanComplaint(cid);
+//        if (visitOpt.isPresent()) {
+//            WorkerVisitEntry v = visitOpt.get();
+//
+//            String result = new StringBuilder()
+//                    .append("Scheduled: ").append(v.getDay().name())
+//                    .append(" ").append(WorkerScheduleController.SLOT_LABELS[v.getSlotIndex()])
+//                    .append(" | Worker ").append(v.getWorkerId())
+//                    .append(" | Room ").append(v.getRoomNo())
+//                    .toString();
+////            System.out.println(result);
+//
+//            TerminalUI.at(17, 1);
+//            TerminalUI.tBoxTop();
+//            TerminalUI.tBoxLine(result);
+//            TerminalUI.tBoxBottom();
+//
+////            System.out.println("Scheduled: " + v.getDay().name() + " " +
+////                    WorkerScheduleController.SLOT_LABELS[v.getSlotIndex()] +
+////                    " | Worker " + v.getWorkerId() +
+////                    " | Room " + v.getRoomNo());
+//            tPause();
+//        } else {
+//            System.out.println("Could not auto-schedule. The complaint may be unassigned or every suitable slot is busy.");
+//            tPause();
+//        }
+//    }
+
+    /**
+     * Shows an arrow-key picker, then auto-schedules the selected complaint.
+     */
     private void handleAutoScheduleComplaint() {
         clearAndRefresh();
-        tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly());
-        String cid = FastInput.readNonEmptyLine();
-        if (!validateComplaint(cid)) return;
+        String cid = pickComplaint();
+        if (cid == null) return;
 
         MyOptional<WorkerVisitEntry> visitOpt = controller.autoPlanComplaint(cid);
+        clearAndRefresh();
+
         if (visitOpt.isPresent()) {
             WorkerVisitEntry v = visitOpt.get();
-
-            String result = new StringBuilder()
-                    .append("Scheduled: ").append(v.getDay().name())
-                    .append(" ").append(WorkerScheduleController.SLOT_LABELS[v.getSlotIndex()])
-                    .append(" | Worker ").append(v.getWorkerId())
-                    .append(" | Room ").append(v.getRoomNo())
-                    .toString();
-//            System.out.println(result);
-
-            TerminalUI.at(17, 1);
+            String result = "Scheduled: " + v.getDay().name()
+                    + "  " + WorkerScheduleController.SLOT_LABELS[v.getSlotIndex()]
+                    + "  |  Worker " + v.getWorkerId()
+                    + "  |  Room "   + v.getRoomNo();
             TerminalUI.tBoxTop();
             TerminalUI.tBoxLine(result);
             TerminalUI.tBoxBottom();
-
-//            System.out.println("Scheduled: " + v.getDay().name() + " " +
-//                    WorkerScheduleController.SLOT_LABELS[v.getSlotIndex()] +
-//                    " | Worker " + v.getWorkerId() +
-//                    " | Room " + v.getRoomNo());
-            tPause();
         } else {
-            System.out.println("Could not auto-schedule. The complaint may be unassigned or every suitable slot is busy.");
-            tPause();
+            tError("Could not auto-schedule. Complaint may be unassigned or all slots are busy.");
         }
-    }
-
-    private void handleManualScheduleComplaint() {
-        clearAndRefresh();
-        tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly());
-        String cid = FastInput.readNonEmptyLine();
-        if (!validateComplaint(cid)) return;
-
-        System.out.println(controller.renderMaskedRoutineForComplaint(cid));
-        DayOfWeek day = readDay();
-        int slot = readSlot();
-        String note = readLine("Note (optional): ");
-        boolean ok = controller.manualPlanComplaint(cid, day, slot, note);
-        System.out.println(ok ? "Visit scheduled." : "Could not schedule. Student may be busy or worker already has a conflict.");
         tPause();
     }
+
+
+//    private void handleManualScheduleComplaint() {
+//        clearAndRefresh();
+//        tSubDashboard("UNRESOLVED COMPLAINT IDs", controller.renderUnresolvedComplaintIdsOnly());
+//        String cid = FastInput.readNonEmptyLine();
+//        if (!validateComplaint(cid)) return;
+//
+//        System.out.println(controller.renderMaskedRoutineForComplaint(cid));
+//        DayOfWeek day = readDay();
+//        int slot = readSlot();
+//        String note = readLine("Note (optional): ");
+//        boolean ok = controller.manualPlanComplaint(cid, day, slot, note);
+//        System.out.println(ok ? "Visit scheduled." : "Could not schedule. Student may be busy or worker already has a conflict.");
+//        tPause();
+//    }
+
+
+    /**
+     * Shows an arrow-key picker, displays the student routine, then lets the
+     * attendant pick a day/slot manually.
+     */
+    private void handleManualScheduleComplaint() {
+        clearAndRefresh();
+        String cid = pickComplaint();
+        if (cid == null) return;
+
+        clearAndRefresh();
+        System.out.println(controller.renderMaskedRoutineForComplaint(cid));
+
+        DayOfWeek day  = readDay();
+        int slot       = readSlot();
+        String note    = readLine("Note (optional): ");
+
+        boolean ok = controller.manualPlanComplaint(cid, day, slot, note);
+        if (ok) {
+            tBoxTop();
+            tBoxLine("Visit scheduled successfully.");
+            tBoxBottom();
+        } else {
+            tError("Could not schedule. Student may be busy or worker has a conflict.");
+        }
+        tPause();
+    }
+
+
+
+//    private void handleViewWorkerSchedule() {
+//        clearAndRefresh();
+//        tSubDashboard("WORKER IDs", controller.renderAllWorkerIds());
+//        String workerToken = readNonEmpty("");
+//        System.out.println(controller.renderWorkerWeek(workerToken));
+//
+//        tPause();
+//    }
 
     private void handleViewWorkerSchedule() {
         clearAndRefresh();
-        tSubDashboard("WORKER IDs", controller.renderAllWorkerIds());
-        String workerToken = readNonEmpty("");
-        System.out.println(controller.renderWorkerWeek(workerToken));
+        String[] workerIds = controller.renderAllWorkerIds();
 
+        // Add numbers to labels
+        String[] numbered = new String[workerIds.length];
+        for (int i = 0; i < workerIds.length; i++) {
+            numbered[i] = String.format("%-4s %s", (i + 1) + ".", workerIds[i]);
+        }
+
+        int idx;
+        try {
+            idx = tArrowSelect("WORKER IDs", numbered);
+        } catch (InterruptedException e) {
+            return;
+        }
+        if (idx < 0 || idx >= workerIds.length) return;
+
+        clearAndRefresh();
+        System.out.println(controller.renderWorkerWeek(workerIds[idx]));
         tPause();
     }
+
+
+    // ── Arrow-key complaint picker ────────────────────────────────
+
+    /**
+     * Presents an interactive arrow-key list of unresolved complaints.
+     *
+     * Title:  "UNRESOLVED COMPLAINTS"   (no "IDs")
+     * Rows:   "1.  C-3  |  ELECTRICAL  |  Room 101"
+     * Prompt: "Your choice no: "  (shown in the hint bar)
+     *
+     * @return the selected complaint ID string, or null if cancelled / invalid.
+     */
+    private String pickComplaint() {
+        String[] labels = controller.getUnresolvedComplaintLabels();
+        String[] ids    = controller.renderUnresolvedComplaintIdsOnly();
+
+        if (ids.length == 0) {
+            clearAndRefresh();
+            tBoxTop();
+            tBoxTitle("UNRESOLVED COMPLAINTS");
+            tBoxSep();
+            tBoxLine("No unresolved complaints found.");
+            tBoxBottom();
+            tPause();
+            return null;
+        }
+
+        int idx;
+        try {
+            idx = tArrowSelect("UNRESOLVED COMPLAINTS", labels);
+        } catch (InterruptedException e) {
+            return null;
+        }
+
+        if (idx < 0 || idx >= ids.length) return null;
+
+        String cid = ids[idx];
+
+        // Validate after selection (defensive — list should only contain valid IDs)
+        if (!controller.complaintExists(cid)) {
+            tError("Invalid complaint ID.");
+            tPause();
+            return null;
+        }
+        if (controller.isResolvedComplaint(cid)) {
+            tError("This complaint is already resolved.");
+            tPause();
+            return null;
+        }
+
+        return cid;
+    }
+
 
     private boolean validateComplaint(String cid) {
         if (!controller.complaintExists(cid)) {

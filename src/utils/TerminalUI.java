@@ -2113,4 +2113,8 @@ public final class TerminalUI {
             }
         }
     }
+
+    public static org.jline.terminal.Terminal getJLineTerminal() {
+        return sharedJLineTerminal;
+    }
 }

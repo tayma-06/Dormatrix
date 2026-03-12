@@ -24,6 +24,13 @@ import controllers.authentication.AccountManager;
 import utils.RoleMapper;
 import utils.TimeManager;
 
+import models.routine.StudentRoutineEntry;
+import models.schedule.WorkerVisitEntry;
+import models.enums.WorkerField;
+import models.users.MaintenanceWorker;
+import controllers.routine.RoutineController;
+import controllers.schedule.WorkerScheduleController;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -1316,5 +1323,662 @@ public class UnitTests {
     // Helper: mirrors TimeManager.isBetween
     private static boolean isTimeBetween(LocalTime now, String start, String end) {
         return !now.isBefore(LocalTime.parse(start)) && !now.isAfter(LocalTime.parse(end));
+    }
+
+    // ─── RoutineEntry Model Tests ─────────────────────────────
+
+    @Test
+    public void routineEntry_toFileString_formatsCorrectly() {
+        RoutineEntry entry = new RoutineEntry("STU001", DayOfWeek.MONDAY, 4, "Class");
+        String result = entry.toFileString();
+        assertEquals("STU001|MONDAY|4|Class", result);
+    }
+
+    @Test
+    public void routineEntry_fromFileString_parsesCorrectly() {
+        RoutineEntry entry = RoutineEntry.fromFileString("STU001|TUESDAY|3|Lab Work");
+        assertNotNull(entry);
+        assertEquals("STU001", entry.getStudentId());
+        assertEquals(DayOfWeek.TUESDAY, entry.getDay());
+        assertEquals(3, entry.getSlotIndex());
+        assertEquals("Lab Work", entry.getContent());
+    }
+
+    @Test
+    public void routineEntry_fromFileString_nullInputReturnsNull() {
+        RoutineEntry entry = RoutineEntry.fromFileString(null);
+        assertNull(entry);
+    }
+
+    @Test
+    public void routineEntry_fromFileString_emptyStringReturnsNull() {
+        RoutineEntry entry = RoutineEntry.fromFileString("");
+        assertNull(entry);
+    }
+
+    @Test
+    public void routineEntry_fromFileString_tooFewPartsReturnsNull() {
+        RoutineEntry entry = RoutineEntry.fromFileString("STU001|MONDAY|3");
+        assertNull(entry);
+    }
+
+    @Test
+    public void routineEntry_fromFileString_invalidDayReturnsNull() {
+        RoutineEntry entry = RoutineEntry.fromFileString("STU001|FUNDAY|3|Class");
+        assertNull(entry);
+    }
+
+    @Test
+    public void routineEntry_fromFileString_invalidSlotIndexReturnsNull() {
+        RoutineEntry entry = RoutineEntry.fromFileString("STU001|MONDAY|abc|Class");
+        assertNull(entry);
+    }
+
+    @Test
+    public void routineEntry_pipeInContent_isReplacedWithSlash() {
+        RoutineEntry entry = new RoutineEntry("STU001", DayOfWeek.MONDAY, 0, "Math|Science");
+        assertEquals("Math/Science", entry.getContent());
+    }
+
+    @Test
+    public void routineEntry_nullContent_isAllowed() {
+        RoutineEntry entry = new RoutineEntry("STU001", DayOfWeek.MONDAY, 0, null);
+        assertNull(entry.getContent());
+    }
+
+    @Test
+    public void routineEntry_roundTrip_preservesData() {
+        RoutineEntry original = new RoutineEntry("STU042", DayOfWeek.FRIDAY, 7, "Gym");
+        RoutineEntry parsed = RoutineEntry.fromFileString(original.toFileString());
+        assertNotNull(parsed);
+        assertEquals(original.getStudentId(), parsed.getStudentId());
+        assertEquals(original.getDay(), parsed.getDay());
+        assertEquals(original.getSlotIndex(), parsed.getSlotIndex());
+        assertEquals(original.getContent(), parsed.getContent());
+    }
+
+    // ─── StudentRoutineEntry Tests ────────────────────────────
+
+    @Test
+    public void studentRoutineEntry_hasContent_trueWhenContentSet() {
+        StudentRoutineEntry entry = new StudentRoutineEntry("STU001", DayOfWeek.MONDAY, 4, "Lecture");
+        assertTrue(entry.hasContent());
+    }
+
+    @Test
+    public void studentRoutineEntry_hasContent_falseWhenNull() {
+        StudentRoutineEntry entry = new StudentRoutineEntry("STU001", DayOfWeek.MONDAY, 4, null);
+        assertFalse(entry.hasContent());
+    }
+
+    @Test
+    public void studentRoutineEntry_hasContent_falseWhenBlank() {
+        StudentRoutineEntry entry = new StudentRoutineEntry("STU001", DayOfWeek.MONDAY, 4, "   ");
+        assertFalse(entry.hasContent());
+    }
+
+    @Test
+    public void studentRoutineEntry_hasContent_falseWhenEmpty() {
+        StudentRoutineEntry entry = new StudentRoutineEntry("STU001", DayOfWeek.MONDAY, 4, "");
+        assertFalse(entry.hasContent());
+    }
+
+    @Test
+    public void studentRoutineEntry_getters_returnCorrectValues() {
+        StudentRoutineEntry entry = new StudentRoutineEntry("STU002", DayOfWeek.WEDNESDAY, 6, "Tutorial");
+        assertEquals("STU002", entry.getStudentId());
+        assertEquals(DayOfWeek.WEDNESDAY, entry.getDay());
+        assertEquals(6, entry.getSlotIndex());
+        assertEquals("Tutorial", entry.getContent());
+    }
+
+    // ─── WorkerVisitEntry Tests ───────────────────────────────
+
+    @Test
+    public void workerVisitEntry_getters_returnCorrectValues() {
+        WorkerVisitEntry entry = new WorkerVisitEntry(
+                "CMP001", "WRK01", "STU001", "101",
+                DayOfWeek.THURSDAY, 4, "PLANNED", "AUTO"
+        );
+        assertEquals("CMP001", entry.getComplaintId());
+        assertEquals("WRK01", entry.getWorkerId());
+        assertEquals("STU001", entry.getStudentId());
+        assertEquals("101", entry.getRoomNo());
+        assertEquals(DayOfWeek.THURSDAY, entry.getDay());
+        assertEquals(4, entry.getSlotIndex());
+        assertEquals("PLANNED", entry.getStatus());
+        assertEquals("AUTO", entry.getNote());
+    }
+
+    @Test
+    public void workerVisitEntry_nullNote_isAllowed() {
+        WorkerVisitEntry entry = new WorkerVisitEntry(
+                "CMP002", "WRK02", "STU002", "202",
+                DayOfWeek.FRIDAY, 5, "DONE", null
+        );
+        assertNull(entry.getNote());
+    }
+
+    @Test
+    public void workerVisitEntry_slotIndex_boundsAreRespected() {
+        WorkerVisitEntry first = new WorkerVisitEntry("C1","W1","S1","R1", DayOfWeek.MONDAY, 0, "PLANNED", "");
+        WorkerVisitEntry last  = new WorkerVisitEntry("C2","W2","S2","R2", DayOfWeek.MONDAY, 5, "PLANNED", "");
+        assertEquals(0, first.getSlotIndex());
+        assertEquals(5, last.getSlotIndex());
+    }
+
+    // ─── RoutineController — Slot Index Logic Tests ───────────
+
+    @Test
+    public void routineController_fullSlotLabels_has12Entries() {
+        assertEquals(12, RoutineController.FULL_SLOT_LABELS.length);
+    }
+
+    @Test
+    public void routineController_attendantSlotLabels_has6Entries() {
+        assertEquals(6, RoutineController.ATTENDANT_SLOT_LABELS.length);
+    }
+
+    @Test
+    public void routineController_attendantSlotLabels_startAt0800() {
+        assertEquals("08-10", RoutineController.ATTENDANT_SLOT_LABELS[0]);
+    }
+
+    @Test
+    public void routineController_attendantSlotLabels_endAt2000() {
+        assertEquals("18-20", RoutineController.ATTENDANT_SLOT_LABELS[5]);
+    }
+
+    @Test
+    public void routineController_fullSlotLabels_startsAtMidnight() {
+        assertEquals("00-02", RoutineController.FULL_SLOT_LABELS[0]);
+    }
+
+    @Test
+    public void routineController_isPrivateByDefaultNightSlot_trueForSlot0() {
+        RoutineController rc = new RoutineController();
+        assertTrue(rc.isPrivateByDefaultNightSlot(0));
+    }
+
+    @Test
+    public void routineController_isPrivateByDefaultNightSlot_trueForSlot1() {
+        RoutineController rc = new RoutineController();
+        assertTrue(rc.isPrivateByDefaultNightSlot(1));
+    }
+
+    @Test
+    public void routineController_isPrivateByDefaultNightSlot_trueForSlot10() {
+        RoutineController rc = new RoutineController();
+        assertTrue(rc.isPrivateByDefaultNightSlot(10));
+    }
+
+    @Test
+    public void routineController_isPrivateByDefaultNightSlot_trueForSlot11() {
+        RoutineController rc = new RoutineController();
+        assertTrue(rc.isPrivateByDefaultNightSlot(11));
+    }
+
+    @Test
+    public void routineController_isPrivateByDefaultNightSlot_falseForDaytimeSlot() {
+        RoutineController rc = new RoutineController();
+        // Slots 2-9 are NOT private by default
+        for (int i = 2; i <= 9; i++) {
+            assertFalse("Slot " + i + " should not be private by default",
+                    rc.isPrivateByDefaultNightSlot(i));
+        }
+    }
+
+    @Test
+    public void routineController_isStudentBusy24_trueForNightSlotEvenWithNoEntry() {
+        RoutineController rc = new RoutineController();
+        // Slot 0 (00-02) should always be busy — private by default
+        // No file entry needed; default night logic alone makes it busy
+        assertTrue(rc.isStudentBusy24("GHOST_STUDENT", DayOfWeek.MONDAY, 0));
+    }
+
+    @Test
+    public void routineController_isStudentBusy24_trueForSlot11() {
+        RoutineController rc = new RoutineController();
+        assertTrue(rc.isStudentBusy24("GHOST_STUDENT", DayOfWeek.FRIDAY, 11));
+    }
+
+    // ─── WorkerScheduleController — isDefaultDutyDay Tests ───
+
+    @Test
+    public void isDefaultDutyDay_saturdayAlwaysTrue_forAnyWorker() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        MaintenanceWorker w = new MaintenanceWorker("W1", "Ali", "MAINTENANCE_WORKER", "pass", "01700000001", WorkerField.ELECTRICIAN);
+        assertTrue(wsc.isDefaultDutyDay(w, DayOfWeek.SATURDAY));
+    }
+
+    @Test
+    public void isDefaultDutyDay_sundayAlwaysTrue_forAnyWorker() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        MaintenanceWorker w = new MaintenanceWorker("W2", "Rahim", "MAINTENANCE_WORKER", "pass", "01700000002", WorkerField.PLUMBER);
+        assertTrue(wsc.isDefaultDutyDay(w, DayOfWeek.SUNDAY));
+    }
+
+    @Test
+    public void isDefaultDutyDay_cleaningWorker_tuesdayIsTrue() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        MaintenanceWorker w = new MaintenanceWorker("W3", "Karim", "MAINTENANCE_WORKER", "pass", "01700000003", WorkerField.CLEANING);
+        assertTrue(wsc.isDefaultDutyDay(w, DayOfWeek.TUESDAY));
+    }
+
+    @Test
+    public void isDefaultDutyDay_cleaningWorker_thursdayIsTrue() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        MaintenanceWorker w = new MaintenanceWorker("W4", "Nadia", "MAINTENANCE_WORKER", "pass", "01700000004", WorkerField.CLEANING);
+        assertTrue(wsc.isDefaultDutyDay(w, DayOfWeek.THURSDAY));
+    }
+
+    @Test
+    public void isDefaultDutyDay_nonCleaningWorker_tuesdayIsFalse() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        MaintenanceWorker w = new MaintenanceWorker("W5", "Reza", "MAINTENANCE_WORKER", "pass", "01700000005", WorkerField.ELECTRICIAN);
+        assertFalse(wsc.isDefaultDutyDay(w, DayOfWeek.TUESDAY));
+    }
+
+    @Test
+    public void isDefaultDutyDay_nonCleaningWorker_mondayIsFalse() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        MaintenanceWorker w = new MaintenanceWorker("W6", "Salam", "MAINTENANCE_WORKER", "pass", "01700000006", WorkerField.PLUMBER);
+        assertFalse(wsc.isDefaultDutyDay(w, DayOfWeek.MONDAY));
+    }
+
+    @Test
+    public void isDefaultDutyDay_cleaningWorker_mondayIsFalse() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        MaintenanceWorker w = new MaintenanceWorker("W7", "Nasrin", "MAINTENANCE_WORKER", "pass", "01700000007", WorkerField.CLEANING);
+        // MONDAY is not SATURDAY, SUNDAY, TUESDAY, or THURSDAY → false
+        assertFalse(wsc.isDefaultDutyDay(w, DayOfWeek.MONDAY));
+    }
+
+    // ─── WorkerScheduleController — Slot Labels Tests ─────────
+
+    @Test
+    public void workerScheduleController_slotLabels_hasSixEntries() {
+        assertEquals(6, WorkerScheduleController.SLOT_LABELS.length);
+    }
+
+    @Test
+    public void workerScheduleController_slotLabels_firstIs0810() {
+        assertEquals("08-10", WorkerScheduleController.SLOT_LABELS[0]);
+    }
+
+    @Test
+    public void workerScheduleController_slotLabels_lastIs1820() {
+        assertEquals("18-20", WorkerScheduleController.SLOT_LABELS[5]);
+    }
+
+    @Test
+    public void workerScheduleController_manualPlan_invalidSlotIndexReturnsFalse() {
+        // slotIndex < 0 should be rejected before any repo lookup
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        boolean result = wsc.manualPlanComplaint("NONEXISTENT", DayOfWeek.MONDAY, -1, "test");
+        assertFalse(result);
+    }
+
+    @Test
+    public void workerScheduleController_manualPlan_outOfBoundsSlotReturnsFalse() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        boolean result = wsc.manualPlanComplaint("NONEXISTENT", DayOfWeek.MONDAY, 99, "test");
+        assertFalse(result);
+    }
+
+    @Test
+    public void workerScheduleController_manualPlan_nonExistentComplaintReturnsFalse() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        boolean result = wsc.manualPlanComplaint("COMPLAINT_DOES_NOT_EXIST_XYZ", DayOfWeek.MONDAY, 4, "note");
+        assertFalse(result);
+    }
+
+    @Test
+    public void workerScheduleController_autoPlan_nonExistentComplaintReturnsEmpty() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        assertTrue(wsc.autoPlanComplaint("COMPLAINT_DOES_NOT_EXIST_XYZ").isEmpty());
+    }
+
+    @Test
+    public void workerScheduleController_complaintExists_nonExistentReturnsFalse() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        assertFalse(wsc.complaintExists("COMPLAINT_DOES_NOT_EXIST_XYZ"));
+    }
+
+    @Test
+    public void workerScheduleController_isResolvedComplaint_nonExistentReturnsFalse() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        assertFalse(wsc.isResolvedComplaint("COMPLAINT_DOES_NOT_EXIST_XYZ"));
+    }
+
+    // ─── RoutineEntry — All Days Round-Trip ───────────────────
+
+    @Test
+    public void routineEntry_roundTrip_allDaysOfWeek() {
+        DayOfWeek[] days = DayOfWeek.values();
+        for (DayOfWeek day : days) {
+            RoutineEntry original = new RoutineEntry("STU001", day, 4, "Test");
+            RoutineEntry parsed = RoutineEntry.fromFileString(original.toFileString());
+            assertNotNull("Round-trip failed for day: " + day, parsed);
+            assertEquals(day, parsed.getDay());
+        }
+    }
+
+    @Test
+    public void routineEntry_fromFileString_allSlotIndices_parseCorrectly() {
+        for (int slot = 0; slot <= 11; slot++) {
+            RoutineEntry entry = RoutineEntry.fromFileString("STU001|MONDAY|" + slot + "|Content");
+            assertNotNull("Failed for slot: " + slot, entry);
+            assertEquals(slot, entry.getSlotIndex());
+        }
+    }
+
+    @Test
+    public void routineEntry_toFileString_slotZero_formatsCorrectly() {
+        RoutineEntry entry = new RoutineEntry("STU010", DayOfWeek.SUNDAY, 0, "Sleep");
+        assertEquals("STU010|SUNDAY|0|Sleep", entry.toFileString());
+    }
+
+    @Test
+    public void routineEntry_toFileString_slotEleven_formatsCorrectly() {
+        RoutineEntry entry = new RoutineEntry("STU010", DayOfWeek.SATURDAY, 11, "Rest");
+        assertEquals("STU010|SATURDAY|11|Rest", entry.toFileString());
+    }
+
+    @Test
+    public void routineEntry_multiplePipesInContent_allReplacedWithSlash() {
+        RoutineEntry entry = new RoutineEntry("STU001", DayOfWeek.MONDAY, 4, "A|B|C");
+        assertEquals("A/B/C", entry.getContent());
+    }
+
+    @Test
+    public void routineEntry_fromFileString_emptyContent_parsesAsEmpty() {
+        RoutineEntry entry = RoutineEntry.fromFileString("STU001|MONDAY|4|");
+        assertNotNull(entry);
+        assertEquals("", entry.getContent());
+    }
+
+    // ─── StudentRoutineEntry — Day & Slot Variation Tests ────
+
+    @Test
+    public void studentRoutineEntry_allDaysOfWeek_storeCorrectly() {
+        DayOfWeek[] days = DayOfWeek.values();
+        for (DayOfWeek day : days) {
+            StudentRoutineEntry entry = new StudentRoutineEntry("STU001", day, 4, "Class");
+            assertEquals(day, entry.getDay());
+        }
+    }
+
+    @Test
+    public void studentRoutineEntry_slotZero_isValid() {
+        StudentRoutineEntry entry = new StudentRoutineEntry("STU001", DayOfWeek.MONDAY, 0, "Sleep");
+        assertEquals(0, entry.getSlotIndex());
+        assertTrue(entry.hasContent());
+    }
+
+    @Test
+    public void studentRoutineEntry_slotEleven_isValid() {
+        StudentRoutineEntry entry = new StudentRoutineEntry("STU001", DayOfWeek.SUNDAY, 11, "Night Study");
+        assertEquals(11, entry.getSlotIndex());
+        assertTrue(entry.hasContent());
+    }
+
+    @Test
+    public void studentRoutineEntry_twoEntriesSameStudent_differentSlots_areDistinct() {
+        StudentRoutineEntry a = new StudentRoutineEntry("STU001", DayOfWeek.MONDAY, 4, "Lecture");
+        StudentRoutineEntry b = new StudentRoutineEntry("STU001", DayOfWeek.MONDAY, 5, "Lab");
+        assertNotEquals(a.getSlotIndex(), b.getSlotIndex());
+        assertNotEquals(a.getContent(), b.getContent());
+    }
+
+    @Test
+    public void studentRoutineEntry_twoEntriesSameSlot_differentDays_areDistinct() {
+        StudentRoutineEntry a = new StudentRoutineEntry("STU001", DayOfWeek.MONDAY, 4, "Lecture");
+        StudentRoutineEntry b = new StudentRoutineEntry("STU001", DayOfWeek.TUESDAY, 4, "Lecture");
+        assertNotEquals(a.getDay(), b.getDay());
+        assertEquals(a.getContent(), b.getContent());
+    }
+
+    // ─── WorkerVisitEntry — Status & Day Variation Tests ─────
+
+    @Test
+    public void workerVisitEntry_statusPlanned_storedCorrectly() {
+        WorkerVisitEntry entry = new WorkerVisitEntry("C1","W1","S1","R1", DayOfWeek.MONDAY, 0, "PLANNED", "");
+        assertEquals("PLANNED", entry.getStatus());
+    }
+
+    @Test
+    public void workerVisitEntry_statusDone_storedCorrectly() {
+        WorkerVisitEntry entry = new WorkerVisitEntry("C1","W1","S1","R1", DayOfWeek.MONDAY, 0, "DONE", "");
+        assertEquals("DONE", entry.getStatus());
+    }
+
+    @Test
+    public void workerVisitEntry_statusCancelled_storedCorrectly() {
+        WorkerVisitEntry entry = new WorkerVisitEntry("C1","W1","S1","R1", DayOfWeek.MONDAY, 0, "CANCELLED", "");
+        assertEquals("CANCELLED", entry.getStatus());
+    }
+
+    @Test
+    public void workerVisitEntry_allDaysOfWeek_storeCorrectly() {
+        DayOfWeek[] days = DayOfWeek.values();
+        for (DayOfWeek day : days) {
+            WorkerVisitEntry entry = new WorkerVisitEntry("C1","W1","S1","R1", day, 0, "PLANNED", "");
+            assertEquals(day, entry.getDay());
+        }
+    }
+
+    @Test
+    public void workerVisitEntry_emptyNote_storedCorrectly() {
+        WorkerVisitEntry entry = new WorkerVisitEntry("C1","W1","S1","R1", DayOfWeek.MONDAY, 0, "PLANNED", "");
+        assertEquals("", entry.getNote());
+    }
+
+    // ─── RoutineController — putSlotByStudentId Validation ───
+
+    @Test
+    public void routineController_putSlotByStudentId_negativeSlotReturnsFalse() {
+        RoutineController rc = new RoutineController();
+        assertFalse(rc.putSlotByStudentId("STU001", DayOfWeek.MONDAY, -1, "Class"));
+    }
+
+    @Test
+    public void routineController_putSlotByStudentId_slotTooHighReturnsFalse() {
+        RoutineController rc = new RoutineController();
+        assertFalse(rc.putSlotByStudentId("STU001", DayOfWeek.MONDAY, 12, "Class"));
+    }
+
+    @Test
+    public void routineController_putSlotByStudentId_slot11IsValid() {
+        RoutineController rc = new RoutineController();
+        assertTrue(rc.putSlotByStudentId("STU_TEST_VALID", DayOfWeek.MONDAY, 11, "Night Study"));
+    }
+
+    @Test
+    public void routineController_putSlotByStudentId_slot0IsValid() {
+        RoutineController rc = new RoutineController();
+        assertTrue(rc.putSlotByStudentId("STU_TEST_VALID", DayOfWeek.MONDAY, 0, "Sleep"));
+    }
+
+    // ─── RoutineController — clearSlotByStudentId Validation ─
+
+    @Test
+    public void routineController_clearSlotByStudentId_negativeSlotReturnsFalse() {
+        RoutineController rc = new RoutineController();
+        assertFalse(rc.clearSlotByStudentId("STU001", DayOfWeek.MONDAY, -1));
+    }
+
+    @Test
+    public void routineController_clearSlotByStudentId_slotTooHighReturnsFalse() {
+        RoutineController rc = new RoutineController();
+        assertFalse(rc.clearSlotByStudentId("STU001", DayOfWeek.MONDAY, 12));
+    }
+
+    @Test
+    public void routineController_clearSlotByStudentId_validSlotReturnsTrue() {
+        RoutineController rc = new RoutineController();
+        assertTrue(rc.clearSlotByStudentId("GHOST_STUDENT", DayOfWeek.WEDNESDAY, 5));
+    }
+
+    // ─── RoutineController — writeComplaintVisit Validation ──
+
+    @Test
+    public void routineController_writeComplaintVisit_negativeAttendantSlotReturnsFalse() {
+        RoutineController rc = new RoutineController();
+        assertFalse(rc.writeComplaintVisit("STU001", DayOfWeek.MONDAY, -1, "CMP001", "Visit"));
+    }
+
+    @Test
+    public void routineController_writeComplaintVisit_slotTooHighReturnsFalse() {
+        RoutineController rc = new RoutineController();
+        assertFalse(rc.writeComplaintVisit("STU001", DayOfWeek.MONDAY, 6, "CMP001", "Visit"));
+    }
+
+    // ─── RoutineController — clearComplaintVisitIfPresent ────
+
+    @Test
+    public void routineController_clearComplaintVisit_negativeSlotReturnsFalse() {
+        RoutineController rc = new RoutineController();
+        assertFalse(rc.clearComplaintVisitIfPresent("STU001", DayOfWeek.MONDAY, -1, "CMP001"));
+    }
+
+    @Test
+    public void routineController_clearComplaintVisit_slotTooHighReturnsFalse() {
+        RoutineController rc = new RoutineController();
+        assertFalse(rc.clearComplaintVisitIfPresent("STU001", DayOfWeek.MONDAY, 6, "CMP001"));
+    }
+
+    @Test
+    public void routineController_clearComplaintVisit_nonExistentEntryReturnsFalse() {
+        RoutineController rc = new RoutineController();
+        assertFalse(rc.clearComplaintVisitIfPresent("GHOST_STUDENT_XYZ", DayOfWeek.FRIDAY, 3, "CMP999"));
+    }
+
+    // ─── RoutineController — isBusyForAttendantWindowExceptComplaint ──
+
+    @Test
+    public void routineController_isBusyExceptComplaint_negativeSlotReturnsTrue() {
+        RoutineController rc = new RoutineController();
+        assertTrue(rc.isBusyForAttendantWindowExceptComplaint("STU001", DayOfWeek.MONDAY, -1, "CMP001"));
+    }
+
+    @Test
+    public void routineController_isBusyExceptComplaint_slotTooHighReturnsTrue() {
+        RoutineController rc = new RoutineController();
+        assertTrue(rc.isBusyForAttendantWindowExceptComplaint("STU001", DayOfWeek.MONDAY, 6, "CMP001"));
+    }
+
+    @Test
+    public void routineController_isBusyExceptComplaint_ghostStudentNoEntryReturnsFalse() {
+        RoutineController rc = new RoutineController();
+        assertFalse(rc.isBusyForAttendantWindowExceptComplaint("GHOST_STUDENT_XYZ", DayOfWeek.MONDAY, 3, "CMP001"));
+    }
+
+    // ─── RoutineController — Full Slot Labels Content ─────────
+
+    @Test
+    public void routineController_fullSlotLabels_endsAt2400() {
+        assertEquals("22-24", RoutineController.FULL_SLOT_LABELS[11]);
+    }
+
+    @Test
+    public void routineController_fullSlotLabels_attendantWindowStartsAtIndex4() {
+        assertEquals("08-10", RoutineController.FULL_SLOT_LABELS[4]);
+    }
+
+    @Test
+    public void routineController_fullSlotLabels_attendantWindowEndsAtIndex9() {
+        assertEquals("18-20", RoutineController.FULL_SLOT_LABELS[9]);
+    }
+
+    // ─── WorkerScheduleController — isDefaultDutyDay Remaining ──
+
+    @Test
+    public void isDefaultDutyDay_internetTechWorker_saturdayIsTrue() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        MaintenanceWorker w = new MaintenanceWorker("W8", "Tariq", "MAINTENANCE_WORKER", "pass", "01700000008", WorkerField.INTERNET_TECH);
+        assertTrue(wsc.isDefaultDutyDay(w, DayOfWeek.SATURDAY));
+    }
+
+    @Test
+    public void isDefaultDutyDay_internetTechWorker_tuesdayIsFalse() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        MaintenanceWorker w = new MaintenanceWorker("W8", "Tariq", "MAINTENANCE_WORKER", "pass", "01700000008", WorkerField.INTERNET_TECH);
+        assertFalse(wsc.isDefaultDutyDay(w, DayOfWeek.TUESDAY));
+    }
+
+    @Test
+    public void isDefaultDutyDay_cleaningWorker_wednesdayIsFalse() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        MaintenanceWorker w = new MaintenanceWorker("W9", "Rima", "MAINTENANCE_WORKER", "pass", "01700000009", WorkerField.CLEANING);
+        assertFalse(wsc.isDefaultDutyDay(w, DayOfWeek.WEDNESDAY));
+    }
+
+    @Test
+    public void isDefaultDutyDay_cleaningWorker_fridayIsFalse() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        MaintenanceWorker w = new MaintenanceWorker("W10", "Dina", "MAINTENANCE_WORKER", "pass", "01700000010", WorkerField.CLEANING);
+        assertFalse(wsc.isDefaultDutyDay(w, DayOfWeek.FRIDAY));
+    }
+
+    // ─── WorkerScheduleController — SLOT_LABELS All Values ───
+
+    @Test
+    public void workerScheduleController_slotLabels_allValuesCorrect() {
+        String[] expected = {"08-10", "10-12", "12-14", "14-16", "16-18", "18-20"};
+        assertArrayEquals(expected, WorkerScheduleController.SLOT_LABELS);
+    }
+
+    // ─── WorkerScheduleController — markVisitDone ────────────
+
+    @Test
+    public void workerScheduleController_markVisitDone_nonExistentComplaintReturnsFalse() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        assertFalse(wsc.markVisitDone("COMPLAINT_DOES_NOT_EXIST_XYZ"));
+    }
+
+    // ─── WorkerScheduleController — renderWorkerWeek ─────────
+
+    @Test
+    public void workerScheduleController_renderWorkerWeek_unknownWorkerReturnsMessage() {
+        WorkerScheduleController wsc = new WorkerScheduleController();
+        String result = wsc.renderWorkerWeek("NONEXISTENT_WORKER_TOKEN_XYZ");
+        assertNotNull(result);
+        assertFalse(result.trim().isEmpty());
+    }
+
+    // ─── MaintenanceWorker — Field & Role Tests ───────────────
+
+    @Test
+    public void maintenanceWorker_getField_returnsCorrectField() {
+        MaintenanceWorker w = new MaintenanceWorker("W1", "Ali", "MAINTENANCE_WORKER", "hash", "01700000001", WorkerField.ELECTRICIAN);
+        assertEquals(WorkerField.ELECTRICIAN, w.getField());
+    }
+
+    @Test
+    public void maintenanceWorker_getRole_returnsMaintenanceWorker() {
+        MaintenanceWorker w = new MaintenanceWorker("W1", "Ali", "MAINTENANCE_WORKER", "hash", "01700000001", WorkerField.PLUMBER);
+        assertEquals("MAINTENANCE_WORKER", w.getRole());
+    }
+
+    @Test
+    public void maintenanceWorker_getId_returnsCorrectId() {
+        MaintenanceWorker w = new MaintenanceWorker("WRK99", "Sadia", "MAINTENANCE_WORKER", "hash", "01700000099", WorkerField.CLEANING);
+        assertEquals("WRK99", w.getId());
+    }
+
+    @Test
+    public void maintenanceWorker_getName_returnsCorrectName() {
+        MaintenanceWorker w = new MaintenanceWorker("W1", "Jamal", "MAINTENANCE_WORKER", "hash", "01700000001", WorkerField.INTERNET_TECH);
+        assertEquals("Jamal", w.getName());
+    }
+
+    @Test
+    public void maintenanceWorker_allWorkerFields_canBeAssigned() {
+        WorkerField[] fields = WorkerField.values();
+        for (WorkerField field : fields) {
+            MaintenanceWorker w = new MaintenanceWorker("WX", "Test", "MAINTENANCE_WORKER", "hash", "0170", field);
+            assertEquals(field, w.getField());
+        }
     }
 }
