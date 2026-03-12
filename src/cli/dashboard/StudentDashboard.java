@@ -12,23 +12,21 @@ public class StudentDashboard implements Dashboard {
             = new StudentDashboardController();
     private boolean firstShow = true;
 
-    private static final String BOX = ConsoleColors.fgRGB(60, 140, 255);   // electric blue box
-    private static final String TEXT = ConsoleColors.ThemeText.STUDENT_TEXT;
-    private static final String BG = ConsoleColors.bgRGB(0, 6, 45);
-    private static final String MUTED = ConsoleColors.Accent.MUTED;
+    private static final BackgroundFiller.Theme THEME = BackgroundFiller.STUDENT;
 
     private static final MenuItem[] MENU = {
-        new MenuItem(1, "View Room Info"),
-        new MenuItem(2, "Facility Booking"),
-        new MenuItem(3, "Meal Token Purchase"),
-        new MenuItem(4, "Store Account & Dues"),
-        new MenuItem(5, "Lost & Found"),
-        new MenuItem(6, "Complaint Menu"),
-        new MenuItem(7, "Weekly Routine"),
-        new MenuItem(8, "View Announcements"),
-        new MenuItem(9, "Store Shopping Cart"),
-        new MenuItem(10, "Emergency Contacts"),
-        new MenuItem(0, "Logout"),};
+            new MenuItem(1, "View Room Info"),
+            new MenuItem(2, "Facility Booking"),
+            new MenuItem(3, "Meal Token Purchase"),
+            new MenuItem(4, "Store Account & Dues"),
+            new MenuItem(5, "Lost & Found"),
+            new MenuItem(6, "Complaint Menu"),
+            new MenuItem(7, "Weekly Routine"),
+            new MenuItem(8, "View Announcements"),
+            new MenuItem(9, "Store Shopping Cart"),
+            new MenuItem(10, "Emergency Contacts"),
+            new MenuItem(0, "Logout"),
+    };
 
     @Override
     public void show(String username) {
@@ -42,15 +40,23 @@ public class StudentDashboard implements Dashboard {
 
         while (true) {
             try {
-                BackgroundFiller.applyStudentTheme();
-                setActiveTheme(BOX, TEXT, BG);
+                BackgroundFiller.applyTheme(THEME);
+                setActiveTheme(
+                        THEME.box(),
+                        THEME.text(),
+                        THEME.canvasBg(),
+                        THEME.panelBg(),
+                        THEME.inputBg()
+                );
                 System.out.print(HIDE_CUR);
 
                 int menuStartRow = 3;
                 drawDashboard(
                         "STUDENT DASHBOARD",
                         "Welcome, " + username,
-                        MENU, TEXT, BOX,
+                        MENU,
+                        THEME.text(),
+                        THEME.box(),
                         null,
                         menuStartRow
                 );
@@ -59,7 +65,7 @@ public class StudentDashboard implements Dashboard {
                 System.out.print(RESET);
 
                 if (choice == 0) {
-                    BackgroundFiller.applyStudentTheme();
+                    BackgroundFiller.applyTheme(THEME);
                     showLogout();
                     BackgroundFiller.resetTheme();
                     return;

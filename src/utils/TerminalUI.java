@@ -8,16 +8,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * TerminalUI — WezTerm / Kitty true-color terminal engine.
+ * TerminalUI — dynamic true-color terminal engine
  *
- * • Queries ACTUAL terminal size at runtime (resize-safe centering) • Proper
- * background canvas fill on every draw cycle • Animated gradient banner •
- * Animated box drawing (line by line) • Pulsing prompt on daemon thread • SGR
- * mouse + raw keyboard unified readChoice() • Hover highlight on menu rows
+ * Fixes:
+ * - fills the whole terminal using live size
+ * - better Windows terminal height/width probing
+ * - auto-centers dashboard blocks on resize
+ * - consistent box spacing and right border alignment
+ * - keeps all dashboard rows/backgrounds visually consistent
  */
 public final class TerminalUI {
 
-    // Unified color constants for UI panels
+    // ─────────────────────────────────────────────────────────────
+    // SHARED COLORS
+    // ─────────────────────────────────────────────────────────────
     public static final String MUTED = "\u001B[38;2;110;85;170m";
     public static final String ACCENT = "\u001B[38;2;185;140;255m";
     public static final String ERROR = "\u001B[38;2;255;100;100m";
@@ -26,9 +30,32 @@ public final class TerminalUI {
     public static final String ARROW = "\u001B[38;2;200;160;255m";
     public static final String SEARCH_FG = "\u001B[38;2;140;110;200m";
 
-    // Reusable UI helpers
+    public static final String RESET = "\u001B[0m";
+    public static final String BOLD = "\u001B[1m";
+    public static final String HIDE_CUR = "\u001B[?25l";
+    public static final String SHOW_CUR = "\u001B[?25h";
+    public static final String MOUSE_ON = "\u001B[?1000h\u001B[?1006h";
+    public static final String MOUSE_OFF = "\u001B[?1006l\u001B[?1000l";
+
+    private static volatile String activeBoxColor = ConsoleColors.Accent.BOX;
+    private static volatile String activeTextColor = ConsoleColors.ThemeText.SOFT_WHITE;
+    private static volatile String activeBgColor = ConsoleColors.bgRGB(10, 7, 20);
+    private static volatile String activePanelBgColor = ConsoleColors.bgRGB(16, 11, 30);
+    private static volatile String activeInputBgColor = ConsoleColors.bgRGB(24, 18, 42);
+
+    private static org.jline.terminal.Terminal sharedJLineTerminal = null;
+
+    private TerminalUI() {
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // BASIC HELPERS
+    // ─────────────────────────────────────────────────────────────
     public static String padC(String s, int w) {
-        int p = Math.max(0, w - s.length());
+        if (s == null) {
+            s = "";
+        }
+        int p = Math.max(0, w - plain(s).length());
         return " ".repeat(p / 2) + s + " ".repeat(p - p / 2);
     }
 
@@ -36,10 +63,10 @@ public final class TerminalUI {
         if (s == null) {
             s = "";
         }
-        if (s.length() >= w) {
-            return s.substring(0, w);
+        if (plain(s).length() >= w) {
+            return trimToDisplayWidth(s, w);
         }
-        return s + " ".repeat(w - s.length());
+        return s + " ".repeat(w - plain(s).length());
     }
 
     public static String truncate(String s, int max) {
@@ -50,11 +77,11 @@ public final class TerminalUI {
     }
 
     public static String stripAnsi(String s) {
-        return s == null ? "" : s.replaceAll("\u001B\\[[;\\d]*m", "");
+        return s == null ? "" : s.replaceAll("\u001B\\[[;\\d?]*[ -/]*[@-~]", "");
     }
 
     public static String topBorder(String label, int innerW, String accent) {
-        int dashes = innerW - label.length() - 3;
+        int dashes = innerW - plain(label).length() - 3;
         return "╭─ " + accent + label + MUTED + " " + "─".repeat(Math.max(0, dashes)) + "╮";
     }
 
@@ -62,27 +89,40 @@ public final class TerminalUI {
         return "╰" + "─".repeat(innerW) + "╯";
     }
 
-    private static org.jline.terminal.Terminal sharedJLineTerminal = null;
-
-    private TerminalUI() {
+    private static String plain(String s) {
+        return stripAnsi(s);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  DYNAMIC TERMINAL SIZE
-    //  Queried fresh on every screen draw — handles resize.
-    //  Uses only fast, non-blocking approaches to avoid app freezes.
-    // ══════════════════════════════════════════════════════════════
+    private static String trimToDisplayWidth(String s, int width) {
+        String p = plain(s);
+        if (p.length() <= width) {
+            return s;
+        }
+        return p.substring(0, width);
+    }
+
+    private static String trimToWidth(String text, int width) {
+        if (text == null) {
+            return "";
+        }
+        return text.length() <= width ? text : text.substring(0, width);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // LIVE TERMINAL SIZE
+    // ─────────────────────────────────────────────────────────────
     private static volatile int cachedTermW = 120;
     private static volatile int cachedTermH = 30;
     private static volatile long lastTermProbeMs = 0L;
-    private static final long TERM_PROBE_INTERVAL_MS = 3000L;
-    private static final Pattern COLON_NUMBER = Pattern.compile(":\\s*(\\d+)");
+    private static final long TERM_PROBE_INTERVAL_MS = 250L;
 
-    /**
-     * Safely run a short-lived subprocess, returning its stdout. Destroys the
-     * process if it doesn't finish in time. Returns null on any failure so the
-     * caller can fall through.
-     */
+    private static final boolean IS_WINDOWS =
+            System.getProperty("os.name", "").toLowerCase().contains("win");
+
+    private static final Pattern COLON_NUMBER = Pattern.compile(":\\s*(\\d+)");
+    private static final Pattern MODE_CON_COLUMNS = Pattern.compile("(?i)columns?:\\s*(\\d+)");
+    private static final Pattern MODE_CON_LINES = Pattern.compile("(?i)lines?:\\s*(\\d+)");
+
     private static String runProbe(String[] cmd, int timeoutMs) {
         try {
             Process p = new ProcessBuilder(cmd)
@@ -99,75 +139,135 @@ public final class TerminalUI {
         }
     }
 
-    private static void refreshTerminalSizeIfNeeded() {
-        long now = System.currentTimeMillis();
-        if (now - lastTermProbeMs < TERM_PROBE_INTERVAL_MS) {
-            return;
-        }
-
+    private static void refreshTerminalSizeNow() {
         synchronized (TerminalUI.class) {
-            now = System.currentTimeMillis();
-            if (now - lastTermProbeMs < TERM_PROBE_INTERVAL_MS) {
-                return;
+            int w = -1;
+            int h = -1;
+
+            // 1) JLine terminal if available
+            try {
+                if (sharedJLineTerminal != null) {
+                    int jw = sharedJLineTerminal.getWidth();
+                    int jh = sharedJLineTerminal.getHeight();
+                    if (jw > 0) {
+                        w = jw;
+                    }
+                    if (jh > 0) {
+                        h = jh;
+                    }
+                }
+            } catch (Exception ignored) {
             }
 
-            int w = -1, h = -1;
-
-            // ── Priority 1: env vars (WezTerm, Kitty, most modern terminals) ──
+            // 2) Environment variables
             try {
                 String ec = System.getenv("COLUMNS");
                 String el = System.getenv("LINES");
-                if (ec != null) {
+                if (w <= 0 && ec != null) {
                     w = Integer.parseInt(ec.trim());
                 }
-                if (el != null) {
+                if (h <= 0 && el != null) {
                     h = Integer.parseInt(el.trim());
                 }
             } catch (Exception ignored) {
             }
 
-            // ── Priority 2: tput (Unix only) ─────────────────────────────────
+            // 3) Unix probes
             if (!IS_WINDOWS) {
+                if (w <= 0 || h <= 0) {
+                    String s = runProbe(new String[]{"sh", "-c", "stty size </dev/tty 2>/dev/null"}, 700);
+                    if (s != null && s.matches("\\d+\\s+\\d+")) {
+                        String[] parts = s.trim().split("\\s+");
+                        try {
+                            int sh = Integer.parseInt(parts[0]);
+                            int sw = Integer.parseInt(parts[1]);
+                            if (w <= 0) {
+                                w = sw;
+                            }
+                            if (h <= 0) {
+                                h = sh;
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+
                 if (w <= 0) {
-                    String s = runProbe(new String[]{"sh", "-c", "tput cols 2>/dev/null"}, 1000);
-                    if (s != null) try {
-                        w = Integer.parseInt(s.trim());
-                    } catch (Exception ignored) {
+                    String s = runProbe(new String[]{"sh", "-c", "tput cols 2>/dev/null"}, 700);
+                    if (s != null) {
+                        try {
+                            w = Integer.parseInt(s.trim());
+                        } catch (Exception ignored) {
+                        }
                     }
                 }
                 if (h <= 0) {
-                    String s = runProbe(new String[]{"sh", "-c", "tput lines 2>/dev/null"}, 1000);
-                    if (s != null) try {
-                        h = Integer.parseInt(s.trim());
-                    } catch (Exception ignored) {
+                    String s = runProbe(new String[]{"sh", "-c", "tput lines 2>/dev/null"}, 700);
+                    if (s != null) {
+                        try {
+                            h = Integer.parseInt(s.trim());
+                        } catch (Exception ignored) {
+                        }
                     }
                 }
             }
 
-            // ── Priority 3: mode con (Windows, width only — height unreliable) ─
-            if (IS_WINDOWS && w <= 0) {
-                String out = runProbe(new String[]{"cmd", "/c", "mode con"}, 1500);
+            // 4) Windows mode con (width + height)
+            if (IS_WINDOWS && (w <= 0 || h <= 0)) {
+                String out = runProbe(new String[]{"cmd", "/c", "mode con"}, 1000);
                 if (out != null) {
-                    for (String line : out.split("\\R")) {
-                        String t = line.trim().toLowerCase();
-                        if (t.contains("column")) {
+                    Matcher mw = MODE_CON_COLUMNS.matcher(out);
+                    Matcher mh = MODE_CON_LINES.matcher(out);
+                    if (w <= 0 && mw.find()) {
+                        try {
+                            w = Integer.parseInt(mw.group(1));
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    if (h <= 0 && mh.find()) {
+                        try {
+                            h = Integer.parseInt(mh.group(1));
+                        } catch (Exception ignored) {
+                        }
+                    }
+
+                    // fallback more permissive scan
+                    if (w <= 0 || h <= 0) {
+                        for (String line : out.split("\\R")) {
+                            String t = line.trim().toLowerCase();
                             Matcher m = COLON_NUMBER.matcher(t);
                             if (m.find()) {
-                                w = Integer.parseInt(m.group(1));
+                                int val;
+                                try {
+                                    val = Integer.parseInt(m.group(1));
+                                } catch (Exception e) {
+                                    continue;
+                                }
+                                if (t.contains("column") && w <= 0) {
+                                    w = val;
+                                } else if (t.contains("line") && h <= 0) {
+                                    h = val;
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // ── Sanity clamp ───────────────────────────────────────────────────
             if (w > 20) {
                 cachedTermW = w;
             }
             if (h > 10) {
                 cachedTermH = h;
             }
-            lastTermProbeMs = now;
+            lastTermProbeMs = System.currentTimeMillis();
+        }
+    }
+
+    private static void refreshTerminalSizeIfNeeded() {
+        long now = System.currentTimeMillis();
+        if (now - lastTermProbeMs >= TERM_PROBE_INTERVAL_MS) {
+            refreshTerminalSizeNow();
         }
     }
 
@@ -181,104 +281,182 @@ public final class TerminalUI {
         return cachedTermH;
     }
 
-    /**
-     * Center a block of contentW chars in the current terminal.
-     */
     public static int centerCol(int contentW) {
         int tw = termW();
         return Math.max(1, (tw - contentW) / 2 + 1);
     }
 
-    /**
-     * Width of the dashboard box — 71 chars, never exceeds terminal.
-     */
-    public static int boxW() {
-        return Math.min(71, termW() - 4);
+    public static int centerRow(int contentH) {
+        int th = termH();
+        return Math.max(1, (th - contentH) / 2 + 1);
     }
 
     /**
-     * Left col of the box.
+     * Dynamic dashboard width:
+     * - small terminals shrink safely
+     * - normal terminals use classic 71
+     * - wide terminals can expand slightly
      */
+    public static int boxW() {
+        int tw = termW();
+        if (tw <= 76) {
+            return Math.max(40, tw - 4);
+        }
+        if (tw <= 110) {
+            return Math.min(71, tw - 4);
+        }
+        return Math.min(88, tw - 6);
+    }
+
     public static int boxCol() {
         return centerCol(boxW());
     }
 
-    /**
-     * Inner width (box minus the two border chars).
-     */
     public static int innerW() {
         return boxW() - 2;
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  ESCAPE CODES
-    // ══════════════════════════════════════════════════════════════
-    public static final String RESET = "\u001B[0m";
-    public static final String BOLD = "\u001B[1m";
-    public static final String HIDE_CUR = "\u001B[?25l";
-    public static final String SHOW_CUR = "\u001B[?25h";
-    public static final String MOUSE_ON = "\u001B[?1000h\u001B[?1006h";
-    public static final String MOUSE_OFF = "\u001B[?1006l\u001B[?1000l";
-
+    // ─────────────────────────────────────────────────────────────
+    // CURSOR / CLEAR
+    // ─────────────────────────────────────────────────────────────
     public static void at(int row, int col) {
         System.out.print("\u001B[" + row + ";" + col + "H");
     }
 
     public static void cls() {
+        refreshTerminalSizeNow();
         System.out.print("\u001B[2J\u001B[H");
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  BACKGROUND CANVAS FILL
-    //  Fills every cell with the current background attribute.
-    //  Avoids \u001B[2J because on Windows it clears to the
-    //  default background, not the current SGR attribute.
-    // ══════════════════════════════════════════════════════════════
+    /**
+     * Fills the current terminal with the active background.
+     */
     public static void fillCanvas() {
+        refreshTerminalSizeNow();
         int w = termW();
         int h = termH();
         StringBuilder sb = new StringBuilder(w * h + h * 20 + 40);
         sb.append("\u001B[2J\u001B[H");
-        String row = " ".repeat(w);
+        String row = activeBgColor + " ".repeat(w);
         for (int r = 1; r <= h; r++) {
             sb.append("\u001B[").append(r).append(";1H").append(row);
         }
-        sb.append("\u001B[H");
+        sb.append("\u001B[H").append(activeBgColor).append(activeTextColor);
         System.out.print(sb);
         System.out.flush();
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  MATRIX RAIN EFFECT — Hot Pink / Magenta theme
-    //  Animated falling characters filling the entire terminal
-    // ══════════════════════════════════════════════════════════════
-    // Use only half-width ASCII glyphs for consistent column alignment
-    private static final char[] MATRIX_GLYPHS
-            = "DORMATRIX0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%&*<>=/+".toCharArray();
+    // ─────────────────────────────────────────────────────────────
+    // FULL-SCREEN GRADIENT PAINT
+    // ─────────────────────────────────────────────────────────────
+    public static void paintScreenGradient(int[] top, int[] mid, int[] bottom, String fgColor) {
+        refreshTerminalSizeNow();
+        int w = Math.max(1, termW());
+        int h = Math.max(1, termH());
+
+        StringBuilder sb = new StringBuilder(w * h + h * 48 + 128);
+        sb.append("\u001B[2J\u001B[H");
+
+        String spaces = " ".repeat(w);
+        int split = Math.max(1, h / 2);
+
+        for (int r = 1; r <= h; r++) {
+            int[] c;
+            if (r <= split) {
+                double t = (split <= 1) ? 0.0 : (double) (r - 1) / (split - 1);
+                c = lerpColor(top, mid, t);
+            } else {
+                double t = (h - split <= 1) ? 0.0 : (double) (r - split - 1) / (h - split - 1);
+                c = lerpColor(mid, bottom, t);
+            }
+            sb.append("\u001B[").append(r).append(";1H")
+                    .append(ConsoleColors.bgRGB(c[0], c[1], c[2]))
+                    .append(fgColor)
+                    .append(spaces);
+        }
+
+        sb.append("\u001B[H").append(fgColor);
+        System.out.print(sb);
+        System.out.flush();
+    }
+
+    public static void fillBackground(String bgColor) {
+        int[] rgb = parseBgRGB(bgColor);
+        if (rgb == null) {
+            System.out.print(bgColor);
+            System.out.flush();
+            return;
+        }
+
+        int[] top = {Math.max(rgb[0] - 10, 0), Math.max(rgb[1] - 10, 0), Math.max(rgb[2] - 10, 0)};
+        int[] mid = {Math.min(rgb[0] + 10, 255), Math.min(rgb[1] + 10, 255), Math.min(rgb[2] + 10, 255)};
+        int[] bot = {Math.max(rgb[0] - 8, 0), Math.max(rgb[1] - 8, 0), Math.max(rgb[2] - 8, 0)};
+        paintScreenGradient(top, mid, bot, activeTextColor);
+    }
+
+    private static int[] parseBgRGB(String esc) {
+        if (esc == null) {
+            return null;
+        }
+        String prefix = "\u001B[48;2;";
+        if (!esc.startsWith(prefix)) {
+            return null;
+        }
+        String body = esc.substring(prefix.length());
+        if (body.endsWith("m")) {
+            body = body.substring(0, body.length() - 1);
+        }
+        String[] parts = body.split(";");
+        if (parts.length != 3) {
+            return null;
+        }
+        try {
+            return new int[]{
+                    Integer.parseInt(parts[0]),
+                    Integer.parseInt(parts[1]),
+                    Integer.parseInt(parts[2])
+            };
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static int[] lerpColor(int[] a, int[] b, double t) {
+        if (t < 0) {
+            t = 0;
+        }
+        if (t > 1) {
+            t = 1;
+        }
+        return new int[]{
+                (int) (a[0] + (b[0] - a[0]) * t),
+                (int) (a[1] + (b[1] - a[1]) * t),
+                (int) (a[2] + (b[2] - a[2]) * t)
+        };
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // MATRIX RAIN
+    // ─────────────────────────────────────────────────────────────
+    private static final char[] MATRIX_GLYPHS =
+            "DORMATRIX0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%&*<>=/+".toCharArray();
     private static final Random RAND = new Random();
 
-    // Background color for matrix rain — deep black-magenta
     private static final int[] RAIN_BG = {20, 5, 20};
-
-    // Hot pink / magenta palette on dark background
-    private static final int[] RAIN_HEAD = {255, 240, 255};  // near-white pink head
-    private static final int[] RAIN_BODY = {255, 50, 180};   // hot magenta
-    private static final int[] RAIN_MID = {200, 20, 130};    // deep hot pink
-    private static final int[] RAIN_GHOST = {80, 5, 55};     // faint dark magenta trail
+    private static final int[] RAIN_HEAD = {255, 240, 255};
+    private static final int[] RAIN_BODY = {255, 50, 180};
+    private static final int[] RAIN_MID = {200, 20, 130};
+    private static final int[] RAIN_GHOST = {80, 5, 55};
 
     private static class RainColumn {
-
         int col, head, len, speed, tick;
 
         RainColumn(int c, int maxH, boolean stagger) {
             col = c;
-            // Stagger start: some columns begin on-screen immediately,
-            // others start just a few rows above. This ensures visible
-            // rain from the first frame instead of a long blank wait.
             if (stagger) {
-                head = RAND.nextInt(maxH);          // already on-screen
+                head = RAND.nextInt(Math.max(1, maxH));
             } else {
-                head = -RAND.nextInt(maxH / 3 + 1); // slightly above
+                head = -RAND.nextInt(Math.max(1, maxH / 3 + 1));
             }
             len = 6 + RAND.nextInt(12);
             speed = 1 + RAND.nextInt(2);
@@ -291,24 +469,18 @@ public final class TerminalUI {
                 head++;
             }
             if (head - len > maxH) {
-                head = -RAND.nextInt(6);   // quick reset — appear again fast
+                head = -RAND.nextInt(6);
                 len = 6 + RAND.nextInt(12);
                 speed = 1 + RAND.nextInt(2);
             }
         }
     }
 
-    /**
-     * Plays a matrix rain animation (hot pink/magenta) for the specified
-     * duration. Fills the entire terminal with the effect.
-     */
     public static void matrixRain(int durationMs) throws InterruptedException {
-        // Force a fresh size probe so we use the real WezTerm window size
-        lastTermProbeMs = 0L;
+        refreshTerminalSizeNow();
         int w = termW();
         int h = termH();
 
-        // Init rain columns — every other column, ~40% start on-screen
         List<RainColumn> cols = new ArrayList<>();
         for (int c = 0; c < w; c += 2) {
             cols.add(new RainColumn(c, h, RAND.nextFloat() < 0.4f));
@@ -321,14 +493,12 @@ public final class TerminalUI {
             }
         }
 
-        // Build background + clear strings once
         String bgCode = ConsoleColors.bgRGB(RAIN_BG[0], RAIN_BG[1], RAIN_BG[2]);
 
-        // Clear and fill background — CLS works in WezTerm
         System.out.print(HIDE_CUR);
         System.out.print(bgCode);
         System.out.print("\u001B[2J\u001B[H");
-        // Explicit cell fill so the bg color is painted everywhere
+
         StringBuilder init = new StringBuilder(w * h + h * 10);
         String blank = bgCode + " ".repeat(w);
         for (int r = 1; r <= h; r++) {
@@ -374,14 +544,11 @@ public final class TerminalUI {
                         frame.append(BOLD);
                     }
                     frame.append(ch);
-                    // Use SGR reset only for BOLD — keep bg color active
                     if (dist == 0) {
-                        frame.append("\u001B[22m");  // bold off only
-
+                        frame.append("\u001B[22m");
                     }
                 }
 
-                // Erase tail cell
                 int tail = rc.head - rc.len;
                 if (tail >= 0 && tail < h) {
                     frame.append("\u001B[").append(tail + 1).append(";").append(rc.col + 1).append("H");
@@ -397,68 +564,53 @@ public final class TerminalUI {
             Thread.sleep(45);
         }
 
-        // Restore — do NOT print RESET here because applyMainMenuTheme()
-        // will set the correct bg immediately after this returns.
         System.out.print(SHOW_CUR);
         System.out.flush();
     }
 
-    /**
-     * Quick matrix rain intro (1000ms) - for dashboard transitions
-     */
     public static void quickMatrixRain() throws InterruptedException {
         matrixRain(2000);
     }
 
-    // ── Dot-art image ─────────────────────────────────────────────
-// 65 columns × 23 rows  (moon + dorm-building silhouette)
-// Characters used: · for structure dots, spaces for empty cells.
-// You can swap this with any other dot art; the animation is
-// fully data-driven from this array.
+    // ─────────────────────────────────────────────────────────────
+    // DORM RAIN INTRO
+    // ─────────────────────────────────────────────────────────────
     private static final String[] DORM_DOT_ART = {
-        "        *       *            *      *                  *         ",
-        "  *   *          ▒▒▒▒▒    *                 ██████               ",
-        "             ▒▒▒▒▒▒▒▒▒▒▒         *        ██████████             ",
-        "     *       ▒▒▒▒▒▒▒▒▒▒▒▒▒                ████  ████      *      ",
-        "             ▒▒▒▒▒▒▒▒▒▒▒▒▒   *            ████    ██             ",
-        "         *                          *     ████  ████  *      *   ",
-        "  *                           ▒▒▒▒    *   ██████████     *       ",
-        "            *      *        ▒▒▒▒▒▒▒▒        ██████               ",
-        "   *     *       *    *     ▒▒▒▒▒▒▒▒     *        *        *     ",
-        "           ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄             ",
-        "      *    █████████████████████████████████████████     *       ",
-        "           █████████████████████████████████████████             ",
-        "           █████████████████████████████████████████             ",
-        "           ████▒▒▄▄▄▒▒██████▒▒▄▄▄▒▒██████▒▒▒▒▒▒▒████             ",
-        "           ████▒█████▒██████▒████▒▒██████▒▒▓▓▓▒▒████             ",
-        "           ████▒█▒█▒█▒██████▒▒▒█▒▒▒██████▒▓▓▓▓▓▒████             ",
-        "           ████▒█▒▒▒█▒██████▒▒▀▀▀▒▒██████▒▒▓▓▓▒▒████             ",
-        "           █████████████████████████████████████████             ",
-        "           ████▒▒▒▒▒▒▒██████▒▒▀▀▀▒▒██████▒▒▒▒▒▒▒████             ",
-        "           ████▒▒▓▓▒▒▒██████▒▒▒█▒▒▒██████▒▒▒▓▓▒▒████             ",
-        "           ████▒▒▒▒▒▒▒██████▒▒▄▄▄▒▒██████▒▒▒▒▒▒▒████             ",
-        "   ▀▀▀▀▀▀▀▀█████████████████████████████████████████▀▀▀▀▀▀▀▀▀▀   ",
-        "   ███████████████████████████████████████████████████████████   ",};
+            "        *       *            *      *                  *         ",
+            "  *   *          ▒▒▒▒▒    *                 ██████               ",
+            "             ▒▒▒▒▒▒▒▒▒▒▒         *        ██████████             ",
+            "     *       ▒▒▒▒▒▒▒▒▒▒▒▒▒                ████  ████      *      ",
+            "             ▒▒▒▒▒▒▒▒▒▒▒▒▒   *            ████    ██             ",
+            "         *                          *     ████  ████  *      *   ",
+            "  *                           ▒▒▒▒    *   ██████████     *       ",
+            "            *      *        ▒▒▒▒▒▒▒▒        ██████               ",
+            "   *     *       *    *     ▒▒▒▒▒▒▒▒     *        *        *     ",
+            "           ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄             ",
+            "      *    █████████████████████████████████████████     *       ",
+            "           █████████████████████████████████████████             ",
+            "           █████████████████████████████████████████             ",
+            "           ████▒▒▄▄▄▒▒██████▒▒▄▄▄▒▒██████▒▒▒▒▒▒▒████             ",
+            "           ████▒█████▒██████▒████▒▒██████▒▒▓▓▓▒▒████             ",
+            "           ████▒█▒█▒█▒██████▒▒▒█▒▒▒██████▒▓▓▓▓▓▒████             ",
+            "           ████▒█▒▒▒█▒██████▒▒▀▀▀▒▒██████▒▒▓▓▓▒▒████             ",
+            "           █████████████████████████████████████████             ",
+            "           ████▒▒▒▒▒▒▒██████▒▒▀▀▀▒▒██████▒▒▒▒▒▒▒████             ",
+            "           ████▒▒▓▓▒▒▒██████▒▒▒█▒▒▒██████▒▒▒▓▓▒▒████             ",
+            "           ████▒▒▒▒▒▒▒██████▒▒▄▄▄▒▒██████▒▒▒▒▒▒▒████             ",
+            "   ▀▀▀▀▀▀▀▀█████████████████████████████████████████▀▀▀▀▀▀▀▀▀▀   ",
+            "   ███████████████████████████████████████████████████████████   ",
+    };
 
-    // ── Color palette — hot pink / magenta theme ──
-    private static final int[] DR_BG = {20, 5, 20};     // deep black-magenta bg
-    private static final int[] DR_HEAD = {255, 235, 255};  // near-white pink head
-    private static final int[] DR_FALL_MID = {255, 60, 190};   // hot magenta falling trail
-    private static final int[] DR_SETTLE = {200, 20, 130};   // deep hot pink — settled dot
-    private static final int[] DR_STAR = {160, 15, 100};   // muted dark pink — stars
+    private static final int[] DR_BG = {20, 5, 20};
+    private static final int[] DR_HEAD = {255, 235, 255};
+    private static final int[] DR_FALL_MID = {255, 60, 190};
+    private static final int[] DR_SETTLE = {200, 20, 130};
 
-    /**
-     * Full dorm-rain intro animation.
-     *
-     * @param durationMs total ms to spend animating (≈ 2000 recommended)
-     */
     public static void dormRain(int durationMs) throws InterruptedException {
-        // Always re-probe terminal size so we use the live window dimensions
-        lastTermProbeMs = 0L;
+        refreshTerminalSizeNow();
         int w = termW();
         int h = termH();
 
-        // ── Pad / measure the art ───────────────────────────────────
         int artH = DORM_DOT_ART.length;
         int artW = 0;
         for (String row : DORM_DOT_ART) {
@@ -473,11 +625,9 @@ public final class TerminalUI {
             }
         }
 
-        // Center art in the terminal
         int artStartRow = Math.max(1, (h - artH) / 2);
         int artStartCol = Math.max(1, (w - artW) / 2 + 1);
 
-        // ── Paint blank lavender canvas ─────────────────────────────
         String bgCode = ConsoleColors.bgRGB(DR_BG[0], DR_BG[1], DR_BG[2]);
         System.out.print(HIDE_CUR + bgCode + "\u001B[2J\u001B[H");
         StringBuilder init = new StringBuilder(w * h + h * 30);
@@ -489,21 +639,15 @@ public final class TerminalUI {
         System.out.print(init);
         System.out.flush();
 
-        // ── Per-column rain state ───────────────────────────────────
-        // head  = current terminal row of the falling droplet tip (1-based)
-        // delay = frames to wait before this column starts falling
-        // done  = true once the column has fully settled
         int[] head = new int[artW];
         int[] delay = new int[artW];
         boolean[] done = new boolean[artW];
-        boolean[] settled = new boolean[artW]; // full column rendered
 
         for (int c = 0; c < artW; c++) {
             head[c] = 0;
-            delay[c] = c;          // stagger: column 0 starts first, c=artW-1 starts last
+            delay[c] = c;
         }
 
-        // ── Animation loop ──────────────────────────────────────────
         long endTime = System.currentTimeMillis() + durationMs;
 
         while (System.currentTimeMillis() < endTime) {
@@ -524,12 +668,10 @@ public final class TerminalUI {
 
                 int termCol = artStartCol + c;
 
-                // ── Draw current head character ─────────────────────
                 int r = head[c];
                 if (r >= 1 && r <= h) {
                     frame.append("\u001B[").append(r).append(";").append(termCol).append("H");
                     frame.append(bgCode);
-                    // Use art char if we're inside the art area, else a trail glyph
                     int artRow = r - artStartRow;
                     char ch;
                     if (artRow >= 0 && artRow < artH) {
@@ -544,7 +686,6 @@ public final class TerminalUI {
                     frame.append(BOLD).append(ch).append("\u001B[22m");
                 }
 
-                // ── Render mid-trail one row back ───────────────────
                 int trail = r - 1;
                 if (trail >= 1 && trail <= h) {
                     int artRow = trail - artStartRow;
@@ -552,7 +693,6 @@ public final class TerminalUI {
                     frame.append("\u001B[").append(trail).append(";").append(termCol).append("H");
                     frame.append(bgCode);
                     if (hasDot) {
-                        // Dot is settling — render in mid-purple
                         frame.append(ConsoleColors.fgRGB(DR_FALL_MID[0], DR_FALL_MID[1], DR_FALL_MID[2]));
                         frame.append(art[artRow][c]);
                     } else {
@@ -560,7 +700,6 @@ public final class TerminalUI {
                     }
                 }
 
-                // ── Settle the row two back into final color ────────
                 int settle = r - 2;
                 if (settle >= 1 && settle <= h) {
                     int artRow = settle - artStartRow;
@@ -577,10 +716,8 @@ public final class TerminalUI {
 
                 head[c]++;
 
-                // ── Check if this column is fully past the art bottom ─
                 if (head[c] > artStartRow + artH + 2) {
                     done[c] = true;
-                    // Guarantee all art dots in this column are settled
                     for (int ar = 0; ar < artH; ar++) {
                         char ch = art[ar][c];
                         if (ch != ' ') {
@@ -591,7 +728,6 @@ public final class TerminalUI {
                             frame.append(ch);
                         }
                     }
-                    // Erase any leftover head pixel below art
                     int below = artStartRow + artH;
                     if (below <= h) {
                         frame.append("\u001B[").append(below).append(";").append(termCol).append("H");
@@ -604,33 +740,21 @@ public final class TerminalUI {
             System.out.flush();
 
             if (!anyActive) {
-                break;   // all columns settled — done early
-
+                break;
             }
             Thread.sleep(22);
         }
 
-        // ── One gentle brightness pulse over the finished art ───────
         dormArtPulse(artStartRow, artStartCol, art, artH, artW, bgCode);
 
-        // Restore cursor — do NOT print RESET; the caller's applyMainMenuTheme()
-        // will set the correct bg immediately after we return.
         System.out.print(SHOW_CUR);
         System.out.flush();
     }
 
-    /**
-     * Quick dorm-rain intro (~2 s) for use before the main dashboard. Drop-in
-     * replacement for quickMatrixRain().
-     */
     public static void quickDormRain() throws InterruptedException {
         dormRain(2000);
     }
 
-    /**
-     * Single brightness pulse: sweeps the art from faded → vivid → settled.
-     * Called once after all columns have landed.
-     */
     private static void dormArtPulse(
             int artStartRow, int artStartCol,
             char[][] art, int artH, int artW,
@@ -641,7 +765,7 @@ public final class TerminalUI {
             float t = step <= steps / 2
                     ? (float) step / (steps / 2)
                     : 1f - (float) (step - steps / 2) / (steps / 2);
-            // Interpolate settled color → bright head color → back
+
             int fr = lerp(DR_SETTLE[0], DR_HEAD[0], t);
             int fg = lerp(DR_SETTLE[1], DR_HEAD[1], t);
             int fb = lerp(DR_SETTLE[2], DR_HEAD[2], t);
@@ -666,7 +790,6 @@ public final class TerminalUI {
             Thread.sleep(40);
         }
 
-        // Final pass: lock all dots to settled color
         StringBuilder fin = new StringBuilder(artH * artW * 20);
         for (int r = 0; r < artH; r++) {
             for (int c = 0; c < artW; c++) {
@@ -684,49 +807,35 @@ public final class TerminalUI {
         }
         System.out.print(fin);
         System.out.flush();
-        Thread.sleep(300);  // brief pause so the user sees the finished art
+        Thread.sleep(300);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  GOODBYE BANNER (CONGESTED 6-LINE DORMATRIX STYLE)
-    // ══════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────
+    // GOODBYE RAIN
+    // ─────────────────────────────────────────────────────────────
     private static final String[] GOODBYE_BANNER = {
-        "▒██████╗▒▒██████╗▒▒██████╗▒██████╗▒██████╗▒██╗▒▒▒██╗███████╗▒",
-        "██╔════╝▒██╔═══██╗██╔═══██╗██╔══██╗██╔══██╗╚██╗▒██╔╝██╔════╝▒",
-        "██║▒▒███╗██║▒▒▒██║██║▒▒▒██║██║▒▒██║██████╔╝▒╚████╔╝▒█████╗▒▒▒",
-        "██║▒▒▒██║██║▒▒▒██║██║▒▒▒██║██║▒▒██║██╔══██╗▒▒╚██╔╝▒▒██╔══╝▒▒▒",
-        "╚██████╔╝╚██████╔╝╚██████╔╝██████╔╝██████╔╝▒▒▒██║▒▒▒███████╗▒",
-        "▒╚═════╝▒▒╚═════╝▒▒╚═════╝▒╚═════╝▒╚═════╝▒▒▒▒╚═╝▒▒▒╚══════╝▒"
+            "▒██████╗▒▒██████╗▒▒██████╗▒██████╗▒██████╗▒██╗▒▒▒██╗███████╗▒",
+            "██╔════╝▒██╔═══██╗██╔═══██╗██╔══██╗██╔══██╗╚██╗▒██╔╝██╔════╝▒",
+            "██║▒▒███╗██║▒▒▒██║██║▒▒▒██║██║▒▒██║██████╔╝▒╚████╔╝▒█████╗▒▒▒",
+            "██║▒▒▒██║██║▒▒▒██║██║▒▒▒██║██║▒▒██║██╔══██╗▒▒╚██╔╝▒▒██╔══╝▒▒▒",
+            "╚██████╔╝╚██████╔╝╚██████╔╝██████╔╝██████╔╝▒▒▒██║▒▒▒███████╗▒",
+            "▒╚═════╝▒▒╚═════╝▒▒╚═════╝▒╚═════╝▒╚═════╝▒▒▒▒╚═╝▒▒▒╚══════╝▒"
     };
-    private static final int GOODBYE_W = 64;
 
-    // Red rain colour palette
-    private static final int[] GB_BG = {10, 0, 0};    // near-black red bg
-    private static final int[] GB_HEAD = {255, 230, 200}; // hot white-orange tip
-    private static final int[] GB_MID = {255, 60, 20};  // bright orange-red trail
-    private static final int[] GB_SETTLE = {180, 10, 10};  // deep crimson settled
+    private static final int[] GB_BG = {10, 0, 0};
+    private static final int[] GB_HEAD = {255, 230, 200};
+    private static final int[] GB_MID = {255, 60, 20};
+    private static final int[] GB_SETTLE = {180, 10, 10};
 
-    // Each glitch pass cycles through one name's characters in order across replaced cells
     private static final String[] GLITCH_NAMES = {
-        "DORMATRIX KHADIZA SULTANA",
-        "AYMAN BINTE ALTAF NONDINY",
-        "SAYMA TASNIM",
-        "PROCHETA SILVIE"
-    };
-    // Fallback pool (kept for any future use)
-    private static final char[] GLITCH_CHARS = {
-        'D', 'O', 'R', 'M', 'A', 'T', 'R', 'I', 'X', 'K', 'H', 'A', 'D', 'I', 'Z', 'A', 'S', 'U', 'L', 'T', 'A', 'N', 'A',
-        'A', 'Y', 'M', 'A', 'N', 'B', 'I', 'N', 'T', 'E', 'A', 'L', 'T', 'A', 'F', 'N', 'O', 'N', 'D', 'I', 'N', 'Y',
-        'S', 'A', 'Y', 'M', 'A', 'T', 'A', 'S', 'N', 'I', 'M',
-        'P', 'R', 'O', 'C', 'H', 'E', 'T', 'A', 'S', 'I', 'L', 'V', 'I', 'E'
+            "DORMATRIX KHADIZA SULTANA",
+            "AYMAN BINTE ALTAF NONDINY",
+            "SAYMA TASNIM",
+            "PROCHETA SILVIE"
     };
 
-    /**
-     * Exit animation: deep-red column rain reveals the GOODBYE banner, then two
-     * glitch passes shake it before it fades to black.
-     */
     public static void goodbyeRain() throws InterruptedException {
-        lastTermProbeMs = 0L;
+        refreshTerminalSizeNow();
         int w = termW();
         int h = termH();
         java.util.Random rng = new java.util.Random();
@@ -745,11 +854,9 @@ public final class TerminalUI {
             }
         }
 
-        // Centre the banner vertically with a little padding above
         int artStartRow = Math.max(1, (h - artH) / 2 - 1);
         int artStartCol = Math.max(1, (w - artW) / 2 + 1);
 
-        // ── 1. Paint deep-red canvas ──────────────────────────────────
         String bgCode = ConsoleColors.bgRGB(GB_BG[0], GB_BG[1], GB_BG[2]);
         System.out.print(HIDE_CUR + bgCode + "\u001B[2J\u001B[H");
         StringBuilder init = new StringBuilder();
@@ -759,13 +866,12 @@ public final class TerminalUI {
         System.out.print(init);
         System.out.flush();
 
-        // ── 2. Column rain ────────────────────────────────────────────
         int[] head = new int[artW];
         int[] delay = new int[artW];
         boolean[] done = new boolean[artW];
         for (int c = 0; c < artW; c++) {
             head[c] = 0;
-            delay[c] = c / 2;   // stagger so columns start quickly but not all at once
+            delay[c] = c / 2;
         }
 
         long end = System.currentTimeMillis() + 2600;
@@ -787,7 +893,6 @@ public final class TerminalUI {
                 int tc = artStartCol + c;
                 int r = head[c];
 
-                // head — only render inside the art's row range
                 if (r >= artStartRow && r < artStartRow + artH) {
                     int ar = r - artStartRow;
                     char ch = art[ar][c];
@@ -798,7 +903,7 @@ public final class TerminalUI {
                                 .append(BOLD).append(ch).append("\u001B[22m");
                     }
                 }
-                // mid trail
+
                 int trail = r - 1;
                 if (trail >= 1 && trail <= h) {
                     int ar = trail - artStartRow;
@@ -806,13 +911,12 @@ public final class TerminalUI {
                     frame.append("\u001B[").append(trail).append(";").append(tc).append("H")
                             .append(bgCode);
                     if (hasDot) {
-                        frame.append(ConsoleColors.fgRGB(GB_MID[0], GB_MID[1], GB_MID[2]))
-                                .append(art[ar][c]);
+                        frame.append(ConsoleColors.fgRGB(GB_MID[0], GB_MID[1], GB_MID[2])).append(art[ar][c]);
                     } else {
                         frame.append(' ');
                     }
                 }
-                // settle
+
                 int settle = r - 2;
                 if (settle >= 1 && settle <= h) {
                     int ar = settle - artStartRow;
@@ -820,8 +924,7 @@ public final class TerminalUI {
                     frame.append("\u001B[").append(settle).append(";").append(tc).append("H")
                             .append(bgCode);
                     if (hasDot) {
-                        frame.append(ConsoleColors.fgRGB(GB_SETTLE[0], GB_SETTLE[1], GB_SETTLE[2]))
-                                .append(art[ar][c]);
+                        frame.append(ConsoleColors.fgRGB(GB_SETTLE[0], GB_SETTLE[1], GB_SETTLE[2])).append(art[ar][c]);
                     } else {
                         frame.append(' ');
                     }
@@ -846,6 +949,7 @@ public final class TerminalUI {
                     }
                 }
             }
+
             System.out.print(frame);
             System.out.flush();
             if (!anyActive) {
@@ -854,7 +958,6 @@ public final class TerminalUI {
             Thread.sleep(18);
         }
 
-        // ── 3. Typewrite "Exiting Dormatrix..." below the banner ────────
         String exitMsg = "Exiting Dormatrix...";
         int exitRow = artStartRow + artH + 2;
         int exitCol = Math.max(1, (w - exitMsg.length()) / 2 + 1);
@@ -868,10 +971,8 @@ public final class TerminalUI {
             System.out.flush();
             Thread.sleep(70);
         }
-        // Hold the banner + message visible for 2 s
         Thread.sleep(2000);
 
-        // ── 4. Bright pulse ───────────────────────────────────────────
         for (int step = 0; step <= 10; step++) {
             float t = step <= 5 ? step / 5f : 1f - (step - 5) / 5f;
             int fr = lerp(GB_SETTLE[0], 255, t);
@@ -893,13 +994,11 @@ public final class TerminalUI {
             Thread.sleep(35);
         }
 
-        // ── 5. Glitch effect — each pass cycles through one name ──────
         for (int glitchPass = 0; glitchPass < GLITCH_NAMES.length; glitchPass++) {
             String name = GLITCH_NAMES[glitchPass];
             int nameLen = name.length();
             int namePos = 0;
 
-            // glitch frame: replace ~45% of glyph cells with name characters in order
             StringBuilder gFrame = new StringBuilder();
             for (int r = 0; r < artH; r++) {
                 for (int c = 0; c < artW; c++) {
@@ -909,7 +1008,6 @@ public final class TerminalUI {
                     }
                     char render;
                     if (rng.nextDouble() < 0.45) {
-                        // skip spaces in the name so only letters/digits show
                         char nc = name.charAt(namePos % nameLen);
                         namePos++;
                         if (nc == ' ') {
@@ -920,10 +1018,10 @@ public final class TerminalUI {
                     } else {
                         render = ch;
                     }
-                    // glitch colors: cycle between blood-red, orange, near-white
                     int[] gc = (rng.nextInt(3) == 0)
                             ? new int[]{255, 220, 180}
                             : (rng.nextInt(2) == 0 ? new int[]{255, 40, 10} : GB_SETTLE);
+
                     gFrame.append("\u001B[").append(artStartRow + r).append(";").append(artStartCol + c).append("H")
                             .append(bgCode).append(ConsoleColors.fgRGB(gc[0], gc[1], gc[2])).append(render);
                 }
@@ -932,7 +1030,6 @@ public final class TerminalUI {
             System.out.flush();
             Thread.sleep(80);
 
-            // restore frame
             StringBuilder restore = new StringBuilder();
             for (int r = 0; r < artH; r++) {
                 for (int c = 0; c < artW; c++) {
@@ -949,14 +1046,16 @@ public final class TerminalUI {
             Thread.sleep(60);
         }
 
-        // ── 6. Fade to black ──────────────────────────────────────────
         for (int step = 0; step <= 12; step++) {
             float t = step / 12f;
             int fr = lerp(GB_SETTLE[0], 0, t);
             int fg = lerp(GB_SETTLE[1], 0, t);
             int fb = lerp(GB_SETTLE[2], 0, t);
             String fadeBg = ConsoleColors.bgRGB(
-                    lerp(GB_BG[0], 0, t), lerp(GB_BG[1], 0, t), lerp(GB_BG[2], 0, t));
+                    lerp(GB_BG[0], 0, t),
+                    lerp(GB_BG[1], 0, t),
+                    lerp(GB_BG[2], 0, t)
+            );
             StringBuilder frame = new StringBuilder();
             for (int r = 0; r < artH; r++) {
                 for (int c = 0; c < artW; c++) {
@@ -977,9 +1076,9 @@ public final class TerminalUI {
         System.out.flush();
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  COLOR INTERPOLATION
-    // ══════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────
+    // COLOR INTERPOLATION / BANNER
+    // ─────────────────────────────────────────────────────────────
     public static int lerp(int a, int b, float t) {
         return (int) (a + t * (b - a));
     }
@@ -998,327 +1097,63 @@ public final class TerminalUI {
         return sb.toString();
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  BANNER  — violet→cyan gradient, animated line by line
-    // ══════════════════════════════════════════════════════════════
     private static final String[] BANNER_LINES = {
-        "██████╗▒▒██████╗▒██████╗▒███╗▒▒▒███╗▒█████╗▒████████╗██████╗▒██╗██╗▒▒██╗",
-        "██╔══██╗██╔═══██╗██╔══██╗████╗▒████║██╔══██╗╚══██╔══╝██╔══██╗██║╚██╗██╔╝",
-        "██║▒▒██║██║▒▒▒██║██████╔╝██╔████╔██║███████║▒▒▒██║▒▒▒██████╔╝██║▒╚███╔╝▒",
-        "██║▒▒██║██║▒▒▒██║██╔══██╗██║╚██╔╝██║██╔══██║▒▒▒██║▒▒▒██╔══██╗██║▒██╔██╗▒",
-        "██████╔╝╚██████╔╝██║▒▒██║██║▒╚═╝▒██║██║▒▒██║▒▒▒██║▒▒▒██║▒▒██║██║██╔╝▒██╗",
-        "╚═════╝▒▒╚═════╝▒╚═╝▒▒╚═╝╚═╝▒▒▒▒▒╚═╝╚═╝▒▒╚═╝▒▒▒╚═╝▒▒▒╚═╝▒▒╚═╝╚═╝╚═╝▒▒╚═╝"
+            "██████╗▒▒██████╗▒██████╗▒███╗▒▒▒███╗▒█████╗▒████████╗██████╗▒██╗██╗▒▒██╗",
+            "██╔══██╗██╔═══██╗██╔══██╗████╗▒████║██╔══██╗╚══██╔══╝██╔══██╗██║╚██╗██╔╝",
+            "██║▒▒██║██║▒▒▒██║██████╔╝██╔████╔██║███████║▒▒▒██║▒▒▒██████╔╝██║▒╚███╔╝▒",
+            "██║▒▒██║██║▒▒▒██║██╔══██╗██║╚██╔╝██║██╔══██║▒▒▒██║▒▒▒██╔══██╗██║▒██╔██╗▒",
+            "██████╔╝╚██████╔╝██║▒▒██║██║▒╚═╝▒██║██║▒▒██║▒▒▒██║▒▒▒██║▒▒██║██║██╔╝▒██╗",
+            "╚═════╝▒▒╚═════╝▒╚═╝▒▒╚═╝╚═╝▒▒▒▒▒╚═╝╚═╝▒▒╚═╝▒▒▒╚═╝▒▒▒╚═╝▒▒╚═╝╚═╝╚═╝▒▒╚═╝"
     };
+    private static final int BANNER_W = 73;
+    private static final int[] GRAD_A = {120, 50, 220};
+    private static final int[] GRAD_B = {30, 180, 190};
 
-    // ══════════════════════════════════════════════════════════════
-    //  BANNER  — paste this block into TerminalUI right after the
-    //  GRAD_B declaration.  It was missing from the shared file.
-    // ══════════════════════════════════════════════════════════════
-    /**
-     * Draws the animated gradient DORMATRIX banner, centered. Each line fades
-     * in with a 52 ms delay.
-     *
-     * @param startRow first terminal row to draw on (1-based)
-     * @return the row directly after the last banner line
-     */
     public static int drawBanner(int startRow) throws InterruptedException {
         int col = centerCol(BANNER_W);
         for (String line : BANNER_LINES) {
             at(startRow, col);
-            System.out.print(BOLD + gradient(line, GRAD_A, GRAD_B) + RESET);
+            System.out.print(activeBgColor + BOLD + gradient(line, GRAD_A, GRAD_B) + "\u001B[22m");
             System.out.flush();
             Thread.sleep(52);
             startRow++;
         }
-        return startRow;   // row directly after last banner line
+        return startRow;
     }
-    private static final int BANNER_W = 73;
-    private static final int[] GRAD_A = {120, 50, 220};  // brighter violet
-    private static final int[] GRAD_B = {30, 180, 190};  // brighter cyan-teal
 
-    // ══════════════════════════════════════════════════════════════
-    //  TYPEWRITER
-    // ══════════════════════════════════════════════════════════════
     public static void typewrite(int row, String text, String colorCode, long msPerChar)
             throws InterruptedException {
         at(row, centerCol(text.length()));
+        System.out.print(activeBgColor);
         for (char c : text.toCharArray()) {
-            System.out.print(colorCode + c + RESET);
+            System.out.print(colorCode + activeBgColor + c);
             System.out.flush();
             Thread.sleep(msPerChar);
         }
+        System.out.print(activeTextColor + activeBgColor);
+        System.out.flush();
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  DIVIDER
-    // ══════════════════════════════════════════════════════════════
     public static void divider(int row, String colorCode) {
         int w = Math.min(BANNER_W, termW() - 4);
         at(row, centerCol(w));
-        System.out.print(colorCode + "─".repeat(w) + RESET);
+        System.out.print(activeBgColor + colorCode + "─".repeat(w));
         System.out.flush();
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  ANIMATED BOX DRAW
-    //
-    //  drawDashboard():
-    //   • centers box based on live terminal width
-    //   • draws each line with a small delay (animated reveal)
-    //   • registers each menu row as a clickable region
-    //   • returns the row number for the input prompt
-    // ══════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────
+    // DASHBOARD DRAWING
+    // ─────────────────────────────────────────────────────────────
     public record MenuItem(int number, String label) {
-
     }
 
-    /**
-     * @param extraHeader optional lines inserted between welcome and menu
-     * separator (null = skip). Each string is the full pre-colored content.
-     * @param startRow first row to draw the box at
-     * @return row for the input prompt (2 below bottom border)
-     */
-    public static int drawDashboard(
-            String title,
-            String welcome,
-            MenuItem[] items,
-            String themeColor,
-            String boxColor,
-            String[] extraHeader,
-            int startRow) throws InterruptedException {
-
-        clearRegions();
-        clearItemData();
-
-        int col = boxCol();
-        int bw = boxW();
-        int iw = innerW();
-        String b = boxColor + RESET + boxColor;   // border segment
-        String t = themeColor;
-        String hi = ConsoleColors.Accent.HIGHLIGHT;
-        String ex = ConsoleColors.Accent.EXIT;
-        String mu = ConsoleColors.Accent.MUTED;
-
-        // ── Top ──────────────────────────────────────────────────
-        boxRow(startRow++, col, boxColor + "╔" + "═".repeat(iw) + "╗" + RESET);
-
-        // ── Title ────────────────────────────────────────────────
-        boxRow(startRow++, col,
-                boxColor + "║" + RESET + BOLD + t + padC(title, iw) + RESET + boxColor + "║" + RESET);
-
-        // ── Welcome separator ────────────────────────────────────
-        boxRow(startRow++, col, boxColor + "╠" + "═".repeat(iw) + "╣" + RESET);
-
-        // ── Welcome line ─────────────────────────────────────────
-        boxRow(startRow++, col,
-                boxColor + "║" + RESET + t + padC(welcome, iw) + RESET + boxColor + "║" + RESET);
-
-        // ── Extra header (e.g. cafeteria clock) ──────────────────
-        if (extraHeader != null) {
-            for (String line : extraHeader) {
-                boxRow(startRow++, col,
-                        boxColor + "║ " + RESET + mu + padL(plain(line), iw - 1)
-                        + RESET + boxColor + "║" + RESET);
-            }
-        }
-
-        // ── Menu separator ───────────────────────────────────────
-        boxRow(startRow++, col, boxColor + "╠" + "═".repeat(iw) + "╣" + RESET);
-
-        // ── Menu items ───────────────────────────────────────────
-        for (MenuItem item : items) {
-            String numCol = item.number() == 0 ? ex : hi;
-            String lblCol = item.number() == 0 ? mu : t;
-            String numStr = "[" + item.number() + "]";
-            String content = boxColor + "║ " + RESET
-                    + numCol + numStr + RESET
-                    + lblCol + " " + padL(item.label(), iw - numStr.length() - 2) + RESET
-                    + boxColor + "║" + RESET;
-            registerItem(startRow, item.number(), item.label(), themeColor, boxColor);
-            boxRow(startRow++, col, content);
-        }
-
-        // ── Input separator ──────────────────────────────────────
-        boxRow(startRow++, col, boxColor + "╠" + "═".repeat(iw) + "╣" + RESET);
-
-        // ── Input field row ──────────────────────────────────────
-        String inputLabel = "Your choice  : ";
-        int fieldW = iw - inputLabel.length() - 2;
-        inputFieldRow = startRow;
-        inputFieldCol = col + 2 + inputLabel.length();
-        boxRow(startRow++, col,
-                boxColor + "║ " + RESET
-                + ConsoleColors.FG_WHITE + inputLabel + RESET
-                + " ".repeat(Math.max(0, fieldW))
-                + boxColor + " ║" + RESET);
-        // ── Bottom ───────────────────────────────────────────────
-        boxRow(startRow++, col, boxColor + "╚" + "═".repeat(iw) + "╝" + RESET);
-        notifyRow = startRow;
-
-        System.out.flush();
-        return startRow;   // row after box
-    }
-
-    private static void boxRow(int row, int col, String content) throws InterruptedException {
-        at(row, col);
-        System.out.print(content);
-        System.out.flush();
-        Thread.sleep(8);
-    }
-
-    private static void updateInputField(String text) {
-        if (inputFieldRow < 0) {
-            return;
-        }
-        clearNotify();
-        int fieldW = Math.max(0, innerW() - "Your choice  : ".length() - 2);
-        at(inputFieldRow, inputFieldCol);
-        System.out.print(ConsoleColors.FG_WHITE + ConsoleColors.BOLD + text + RESET
-                + " ".repeat(Math.max(0, fieldW - text.length())));
-        at(inputFieldRow, inputFieldCol + text.length());
-        System.out.flush();
-    }
-
-    private static void updateInputFieldError(String text) {
-        // Clear the typed value from the input field
-        if (inputFieldRow >= 0) {
-            int fieldW = Math.max(0, innerW() - "Your choice  : ".length() - 2);
-            at(inputFieldRow, inputFieldCol);
-            System.out.print(activeBgColor + " ".repeat(fieldW) + RESET);
-            System.out.flush();
-        }
-        paintNotifyError(text);
-        // Put cursor back at the input field for next input
-        if (inputFieldRow >= 0) {
-            at(inputFieldRow, inputFieldCol);
-        }
-    }
-
-    private static void paintNotifyError(String text) {
-        if (notifyRow < 0) {
-            return;
-        }
-        int col = boxCol();
-        int iw = innerW();
-        String err = ConsoleColors.Accent.ERROR;
-        String box = activeBoxColor;
-        String bg = activeBgColor;
-        String line = padC(trimToWidth(text, iw), iw);
-        at(notifyRow, col);
-        System.out.print(box + bg + "╔" + "═".repeat(iw) + "╗" + RESET);
-        at(notifyRow + 1, col);
-        System.out.print(box + bg + "║" + err + bg + BOLD + line + RESET + box + bg + "║" + RESET);
-        at(notifyRow + 2, col);
-        System.out.print(box + bg + "╚" + "═".repeat(iw) + "╝" + RESET);
-        System.out.flush();
-    }
-
-    private static void clearNotify() {
-        if (notifyRow < 0) {
-            return;
-        }
-        int col = boxCol();
-        int bw = boxW();
-        String bg = activeBgColor;
-        for (int r = notifyRow; r <= notifyRow + 2; r++) {
-            at(r, col);
-            System.out.print(bg + " ".repeat(bw) + RESET);
-        }
-        System.out.flush();
-    }
-
-    // strip ANSI for length measurement
-    private static String plain(String s) {
-        return s.replaceAll("\u001B\\[[;\\d]*m", "");
-    }
-
-    // ══════════════════════════════════════════════════════════════
-    //  LOGOUT BOX
-    // ══════════════════════════════════════════════════════════════
-    public static void showLogout() throws InterruptedException {
-        int iw = innerW();
-        int col = boxCol();
-        String ex = ConsoleColors.Accent.EXIT;
-        String mu = ConsoleColors.Accent.MUTED;
-        int mid = termH() / 2;
-
-        boxRow(mid - 1, col, ex + "╔" + "═".repeat(iw) + "╗" + RESET);
-        boxRow(mid, col, ex + "║" + RESET + mu + padC("Logging out  . . .", iw) + RESET + ex + "║" + RESET);
-        boxRow(mid + 1, col, ex + "╚" + "═".repeat(iw) + "╝" + RESET);
-        Thread.sleep(400);
-    }
-
-    // ══════════════════════════════════════════════════════════════
-    //  FLASH FEEDBACK
-    // ══════════════════════════════════════════════════════════════
-    public static void flash(int row, String msg, String fgColor, String bgColor)
-            throws InterruptedException {
-        int col = boxCol();
-        int iw = innerW();
-        at(row, 1);
-        System.out.print(bgColor + " ".repeat(termW()));
-        at(row, col + 1);
-        System.out.print(bgColor + fgColor + BOLD + padC(msg, iw) + RESET);
-        System.out.flush();
-        Thread.sleep(220);
-    }
-
-    // ══════════════════════════════════════════════════════════════
-    //  PULSE THREAD
-    // ══════════════════════════════════════════════════════════════
-    private static volatile boolean pulseStopped = false;
-    private static Thread pulseThread = null;
-
-    public static void startPulse(int row, String text) {
-        pulseStopped = false;
-        int[] bright = {210, 175, 255};  // bright lavender
-        int[] dark = {80, 55, 150};       // dim purple
-        pulseThread = new Thread(() -> {
-            int p = 0;
-            while (!pulseStopped) {
-                float t = (float) (p % 20) / 19f;
-                if (p % 20 >= 10) {
-                    t = 1f - t;
-                }
-                int col = centerCol(text.length());
-                at(row, col);
-                System.out.print(ConsoleColors.fgRGB(
-                        lerp(dark[0], bright[0], t),
-                        lerp(dark[1], bright[1], t),
-                        lerp(dark[2], bright[2], t)
-                ) + text + RESET);
-                System.out.flush();
-                try {
-                    Thread.sleep(55);
-                } catch (Exception e) {
-                    break;
-                }
-                p++;
-            }
-            at(row, 1);
-            System.out.print("\u001B[2K");
-            System.out.flush();
-        }, "pulse");
-        pulseThread.setDaemon(true);
-        pulseThread.start();
-    }
-
-    public static void stopPulse() {
-        pulseStopped = true;
-        if (pulseThread != null) {
-            try {
-                pulseThread.join(400);
-            } catch (Exception ignored) {
-            }
-        }
-    }
+    private static final int DASH_W_FALLBACK = 71;
+    private static final int DASH_IW_FALLBACK = 69;
 
     private record Region(int row, int c1, int c2, int value) {
-
     }
 
     private record ItemData(int row, int number, String label, String theme, String box) {
-
     }
 
     private static final List<Region> REGIONS = new ArrayList<>();
@@ -1362,41 +1197,302 @@ public final class TerminalUI {
         return -1;
     }
 
+    private static int autoDashboardTop(int itemsCount, int extraHeaderCount) {
+        int contentH = 8 + itemsCount + Math.max(0, extraHeaderCount);
+        return Math.max(2, centerRow(contentH) - 1);
+    }
+
+    private static String boxBorder(String left, String mid, String right, String boxColor, String bg, int iw) {
+        return boxColor + bg + left + mid.repeat(Math.max(0, iw)) + right + RESET;
+    }
+
+    private static String boxContentLine(String text, String fg, String boxColor, String bg, int iw) {
+        return boxColor + bg + "║"
+                + fg + bg + padC(trimToWidth(text, iw), iw)
+                + boxColor + bg + "║" + RESET;
+    }
+
+    private static String boxContentLeft(String text, String fg, String boxColor, String bg, int iw) {
+        return boxColor + bg + "║ "
+                + fg + bg + padL(trimToWidth(text, iw - 2), iw - 2)
+                + boxColor + bg + " ║" + RESET;
+    }
+
+    private static String buildMenuLine(int number, String label, boolean selected,
+                                        String themeColor, String boxColor, int iw) {
+        String panel = activePanelBgColor;
+        String numStr = "[" + number + "]";
+        String numCol = number == 0 ? ConsoleColors.Accent.EXIT : ConsoleColors.Accent.HIGHLIGHT;
+        String labelColor = number == 0 ? ConsoleColors.Accent.MUTED : themeColor;
+
+        String rowBg = selected ? ConsoleColors.bgRGB(185, 165, 220) : panel;
+        String rowFg = selected ? ConsoleColors.fgRGB(25, 15, 55) : labelColor;
+        String rowNumFg = selected ? ConsoleColors.fgRGB(80, 55, 0) : numCol;
+
+        int leftContentW = iw - 2;
+        String content = numStr + " " + label;
+        String padded = padL(trimToWidth(content, leftContentW), leftContentW);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(boxColor).append(panel).append("║ ");
+        sb.append(rowBg).append(rowNumFg);
+        sb.append(numStr);
+        sb.append(rowBg).append(rowFg);
+        sb.append(" ").append(padL(trimToWidth(label, leftContentW - numStr.length() - 1),
+                leftContentW - numStr.length() - 1));
+        sb.append(boxColor).append(panel).append(" ║").append(RESET);
+        return sb.toString();
+    }
+
+    private static String buildInputRow(String label, String currentText, String boxColor, String panelBg,
+                                        String inputBg, int iw) {
+        String safeText = currentText == null ? "" : currentText;
+        int leftWidth = label.length();
+        int fieldW = Math.max(1, iw - leftWidth - 2);
+
+        if (safeText.length() > fieldW) {
+            safeText = safeText.substring(0, fieldW);
+        }
+
+        return boxColor + panelBg + "║ "
+                + ConsoleColors.FG_WHITE + panelBg + label
+                + inputBg + ConsoleColors.FG_WHITE + safeText
+                + " ".repeat(Math.max(0, fieldW - safeText.length()))
+                + boxColor + panelBg + " ║" + RESET;
+    }
+
+    public static int drawDashboard(
+            String title,
+            String welcome,
+            MenuItem[] items,
+            String themeColor,
+            String boxColor,
+            String[] extraHeader,
+            int startRow) throws InterruptedException {
+
+        refreshTerminalSizeNow();
+        clearRegions();
+        clearItemData();
+
+        int extraCount = extraHeader == null ? 0 : extraHeader.length;
+        if (startRow <= 3) {
+            startRow = autoDashboardTop(items.length, extraCount);
+        }
+
+        int col = boxCol();
+        int iw = innerW();
+        String panel = activePanelBgColor;
+        String inputBg = activeInputBgColor;
+        String muted = ConsoleColors.Accent.MUTED;
+
+        boxRow(startRow++, col, boxBorder("╔", "═", "╗", boxColor, panel, iw));
+        boxRow(startRow++, col, boxContentLine(title, BOLD + themeColor, boxColor, panel, iw));
+        boxRow(startRow++, col, boxBorder("╠", "═", "╣", boxColor, panel, iw));
+        boxRow(startRow++, col, boxContentLine(welcome, themeColor, boxColor, panel, iw));
+
+        if (extraHeader != null) {
+            for (String line : extraHeader) {
+                boxRow(startRow++, col, boxContentLeft(plain(line), muted, boxColor, panel, iw));
+            }
+        }
+
+        boxRow(startRow++, col, boxBorder("╠", "═", "╣", boxColor, panel, iw));
+
+        for (MenuItem item : items) {
+            registerItem(startRow, item.number(), item.label(), themeColor, boxColor);
+            boxRow(startRow++, col, buildMenuLine(item.number(), item.label(), false, themeColor, boxColor, iw));
+        }
+
+        boxRow(startRow++, col, boxBorder("╠", "═", "╣", boxColor, panel, iw));
+
+        String inputLabel = "Your choice  : ";
+        inputFieldRow = startRow;
+        inputFieldCol = col + 2 + inputLabel.length();
+
+        boxRow(startRow++, col, buildInputRow(inputLabel, "", boxColor, panel, inputBg, iw));
+        boxRow(startRow++, col, boxBorder("╚", "═", "╝", boxColor, panel, iw));
+
+        notifyRow = startRow;
+        System.out.flush();
+        return startRow;
+    }
+
+    private static void boxRow(int row, int col, String content) throws InterruptedException {
+        at(row, col);
+        System.out.print(content);
+        System.out.flush();
+        Thread.sleep(8);
+    }
+
+    private static void updateInputField(String text) {
+        if (inputFieldRow < 0) {
+            return;
+        }
+        clearNotify();
+
+        String safe = text == null ? "" : text;
+        int fieldW = Math.max(1, innerW() - "Your choice  : ".length() - 2);
+        if (safe.length() > fieldW) {
+            safe = safe.substring(0, fieldW);
+        }
+
+        at(inputFieldRow, inputFieldCol);
+        System.out.print(activeInputBgColor + ConsoleColors.FG_WHITE + ConsoleColors.BOLD
+                + safe
+                + " ".repeat(Math.max(0, fieldW - safe.length()))
+                + RESET);
+
+        at(inputFieldRow, inputFieldCol + safe.length());
+        System.out.flush();
+    }
+
+    private static void updateInputFieldError(String text) {
+        if (inputFieldRow >= 0) {
+            int fieldW = Math.max(1, innerW() - "Your choice  : ".length() - 2);
+            at(inputFieldRow, inputFieldCol);
+            System.out.print(activeInputBgColor + " ".repeat(fieldW) + RESET);
+            System.out.flush();
+        }
+        paintNotifyError(text);
+        if (inputFieldRow >= 0) {
+            at(inputFieldRow, inputFieldCol);
+        }
+    }
+
+    private static void paintNotifyError(String text) {
+        if (notifyRow < 0) {
+            return;
+        }
+        int col = boxCol();
+        int iw = innerW();
+        String err = ConsoleColors.Accent.ERROR;
+        String box = activeBoxColor;
+        String panel = activePanelBgColor;
+        String line = padC(trimToWidth(text, iw), iw);
+
+        at(notifyRow, col);
+        System.out.print(box + panel + "╔" + "═".repeat(iw) + "╗" + RESET);
+
+        at(notifyRow + 1, col);
+        System.out.print(box + panel + "║" + err + panel + BOLD + line + box + panel + "║" + RESET);
+
+        at(notifyRow + 2, col);
+        System.out.print(box + panel + "╚" + "═".repeat(iw) + "╝" + RESET);
+
+        System.out.flush();
+    }
+
+    private static void clearNotify() {
+        if (notifyRow < 0) {
+            return;
+        }
+        int col = boxCol();
+        int bw = boxW();
+        String panel = activePanelBgColor;
+        for (int r = notifyRow; r <= notifyRow + 2; r++) {
+            at(r, col);
+            System.out.print(panel + " ".repeat(bw) + RESET);
+        }
+        System.out.flush();
+    }
+
     private static void renderHighlight(int row, boolean on) {
         for (ItemData d : ITEM_DATA) {
             if (d.row() != row) {
                 continue;
             }
-            String numStr = "[" + d.number() + "]";
-            String numCol = d.number() == 0 ? ConsoleColors.Accent.EXIT : ConsoleColors.Accent.HIGHLIGHT;
-            String lblCol = on
-                    ? ConsoleColors.fgRGB(25, 15, 55)
-                    : (d.number() == 0 ? ConsoleColors.Accent.MUTED : d.theme());
-            String bgOn = on ? ConsoleColors.bgRGB(185, 165, 220) : "";
-            int iw = innerW();
             at(row, boxCol());
-            System.out.print(
-                    d.box() + "║ " + RESET
-                    + (on ? bgOn : "") + numCol + (on ? BOLD : "") + numStr + RESET
-                    + (on ? bgOn : "") + lblCol + (on ? BOLD : "")
-                    + " " + padL(d.label(), iw - numStr.length() - 2) + RESET
-                    + d.box() + "║" + RESET
-            );
+            System.out.print(buildMenuLine(d.number(), d.label(), on, d.theme(), d.box(), innerW()));
             System.out.flush();
             return;
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  RAW / COOKED MODE
-    // ══════════════════════════════════════════════════════════════
-    private static final boolean IS_WINDOWS
-            = System.getProperty("os.name", "").toLowerCase().contains("win");
+    // ─────────────────────────────────────────────────────────────
+    // LOGOUT / FLASH / PULSE
+    // ─────────────────────────────────────────────────────────────
+    public static void showLogout() throws InterruptedException {
+        refreshTerminalSizeNow();
+        int iw = innerW();
+        int col = boxCol();
+        int mid = centerRow(3);
+        String ex = ConsoleColors.Accent.EXIT;
+        String mu = ConsoleColors.Accent.MUTED;
+        String panel = activePanelBgColor;
 
+        boxRow(mid - 1, col, boxBorder("╔", "═", "╗", ex, panel, iw));
+        boxRow(mid, col, boxContentLine("Logging out  . . .", mu, ex, panel, iw));
+        boxRow(mid + 1, col, boxBorder("╚", "═", "╝", ex, panel, iw));
+        Thread.sleep(400);
+    }
+
+    public static void flash(int row, String msg, String fgColor, String bgColor)
+            throws InterruptedException {
+        int col = boxCol();
+        int iw = innerW();
+        at(row, 1);
+        System.out.print(bgColor + " ".repeat(termW()));
+        at(row, col + 1);
+        System.out.print(bgColor + fgColor + BOLD + padC(msg, iw) + RESET);
+        System.out.flush();
+        Thread.sleep(220);
+    }
+
+    private static volatile boolean pulseStopped = false;
+    private static Thread pulseThread = null;
+
+    public static void startPulse(int row, String text) {
+        pulseStopped = false;
+        int[] bright = {210, 175, 255};
+        int[] dark = {80, 55, 150};
+
+        pulseThread = new Thread(() -> {
+            int p = 0;
+            while (!pulseStopped) {
+                float t = (float) (p % 20) / 19f;
+                if (p % 20 >= 10) {
+                    t = 1f - t;
+                }
+                int col = centerCol(text.length());
+                at(row, col);
+                System.out.print(activeBgColor + ConsoleColors.fgRGB(
+                        lerp(dark[0], bright[0], t),
+                        lerp(dark[1], bright[1], t),
+                        lerp(dark[2], bright[2], t)
+                ) + text);
+                System.out.flush();
+                try {
+                    Thread.sleep(55);
+                } catch (Exception e) {
+                    break;
+                }
+                p++;
+            }
+            at(row, 1);
+            System.out.print(activeBgColor + " ".repeat(termW()));
+            System.out.flush();
+        }, "pulse");
+
+        pulseThread.setDaemon(true);
+        pulseThread.start();
+    }
+
+    public static void stopPulse() {
+        pulseStopped = true;
+        if (pulseThread != null) {
+            try {
+                pulseThread.join(400);
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // RAW / COOKED MODE
+    // ─────────────────────────────────────────────────────────────
     public static void setRaw() {
         if (IS_WINDOWS) {
-            return; // stty not available on Windows
-
+            return;
         }
         try {
             new ProcessBuilder("sh", "-c", "stty raw -echo </dev/tty")
@@ -1407,8 +1503,7 @@ public final class TerminalUI {
 
     public static void setCooked() {
         if (IS_WINDOWS) {
-            return; // stty not available on Windows
-
+            return;
         }
         try {
             new ProcessBuilder("sh", "-c", "stty cooked echo </dev/tty")
@@ -1417,9 +1512,9 @@ public final class TerminalUI {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  UNIFIED CHOICE READER  — keyboard digits + SGR mouse
-    // ══════════════════════════════════════════════════════════════
+    // ─────────────────────────────────────────────────────────────
+    // MOUSE / KEYBOARD INPUT
+    // ─────────────────────────────────────────────────────────────
     public static int readChoice() throws Exception {
         InputStream in = System.in;
         int lastHover = -1;
@@ -1430,7 +1525,6 @@ public final class TerminalUI {
                 continue;
             }
 
-            // ESC sequence
             if (b == 27) {
                 if (in.available() == 0) {
                     return -1;
@@ -1442,7 +1536,6 @@ public final class TerminalUI {
                 int b3 = in.read();
 
                 if (b3 == '<') {
-                    // SGR mouse: ESC[<btn;col;rowM/m
                     StringBuilder sb = new StringBuilder();
                     int ch;
                     while (true) {
@@ -1456,12 +1549,12 @@ public final class TerminalUI {
                     if (parts.length < 3) {
                         continue;
                     }
+
                     int btn = Integer.parseInt(parts[0]);
                     int mcol = Integer.parseInt(parts[1]);
                     int mrow = Integer.parseInt(parts[2]);
 
                     if (ch == 'M' && btn == 0) {
-                        // Left button click
                         int hit = hitTest(mrow, mcol);
                         if (hit >= 0) {
                             if (lastHover >= 0) {
@@ -1470,7 +1563,6 @@ public final class TerminalUI {
                             return hit;
                         }
                     } else if (ch == 'M' && (btn == 32 || btn == 35)) {
-                        // Mouse move / hover
                         int hitRow = hitTestRow(mrow);
                         if (hitRow != lastHover) {
                             if (lastHover >= 0) {
@@ -1486,12 +1578,10 @@ public final class TerminalUI {
                 continue;
             }
 
-            // Enter / CR
             if (b == 13 || b == 10) {
                 continue;
             }
 
-            // Single digit — instant submit
             if (b >= '0' && b <= '9') {
                 if (lastHover >= 0) {
                     renderHighlight(lastHover, false);
@@ -1501,9 +1591,189 @@ public final class TerminalUI {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  CLEANUP  — always restore terminal state
-    // ══════════════════════════════════════════════════════════════
+    public static int readChoiceArrow() throws Exception {
+        if (ITEM_DATA.isEmpty()) {
+            return -1;
+        }
+
+        int selected = 0;
+        StringBuilder inputBuffer = new StringBuilder();
+        System.out.print(HIDE_CUR);
+        renderHighlight(ITEM_DATA.get(selected).row(), true);
+        updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
+        System.out.print(SHOW_CUR);
+        System.out.flush();
+
+        if (sharedJLineTerminal != null) {
+            org.jline.terminal.Attributes saved = sharedJLineTerminal.enterRawMode();
+            org.jline.utils.NonBlockingReader reader = sharedJLineTerminal.reader();
+            try {
+                while (true) {
+                    int c = reader.read();
+                    if (c == -1) {
+                        continue;
+                    }
+
+                    if (c == 27) {
+                        int n1 = reader.read(100);
+                        if (n1 == '[' || n1 == 'O') {
+                            int n2 = reader.read(100);
+                            switch (n2) {
+                                case 'A' -> {
+                                    renderHighlight(ITEM_DATA.get(selected).row(), false);
+                                    selected = (selected - 1 + ITEM_DATA.size()) % ITEM_DATA.size();
+                                    renderHighlight(ITEM_DATA.get(selected).row(), true);
+                                    inputBuffer.setLength(0);
+                                    updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
+                                    System.out.flush();
+                                }
+                                case 'B' -> {
+                                    renderHighlight(ITEM_DATA.get(selected).row(), false);
+                                    selected = (selected + 1) % ITEM_DATA.size();
+                                    renderHighlight(ITEM_DATA.get(selected).row(), true);
+                                    inputBuffer.setLength(0);
+                                    updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
+                                    System.out.flush();
+                                }
+                            }
+                        }
+                        continue;
+                    }
+
+                    if (c == 13 || c == 10) {
+                        if (inputBuffer.length() > 0) {
+                            try {
+                                int typed = Integer.parseInt(inputBuffer.toString());
+                                for (ItemData d : ITEM_DATA) {
+                                    if (d.number() == typed) {
+                                        renderHighlight(ITEM_DATA.get(selected).row(), false);
+                                        return typed;
+                                    }
+                                }
+                            } catch (NumberFormatException ignored) {
+                            }
+                            inputBuffer.setLength(0);
+                            updateInputFieldError("Invalid choice input");
+                        } else {
+                            renderHighlight(ITEM_DATA.get(selected).row(), false);
+                            return ITEM_DATA.get(selected).number();
+                        }
+                    }
+
+                    if (c == 3) {
+                        renderHighlight(ITEM_DATA.get(selected).row(), false);
+                        return 0;
+                    }
+
+                    if (c == 127 || c == 8) {
+                        if (inputBuffer.length() > 0) {
+                            inputBuffer.deleteCharAt(inputBuffer.length() - 1);
+                            updateInputField(inputBuffer.length() > 0
+                                    ? inputBuffer.toString()
+                                    : String.valueOf(ITEM_DATA.get(selected).number()));
+                            System.out.flush();
+                        }
+                        continue;
+                    }
+
+                    if (c >= '0' && c <= '9') {
+                        inputBuffer.append((char) c);
+                        updateInputField(inputBuffer.toString());
+                        System.out.flush();
+                    }
+                }
+            } finally {
+                sharedJLineTerminal.setAttributes(saved);
+                System.out.print(SHOW_CUR);
+                System.out.flush();
+            }
+        }
+
+        setRaw();
+        InputStream in = System.in;
+        try {
+            while (true) {
+                int b = in.read();
+                if (b == -1) {
+                    continue;
+                }
+                if (b == 27) {
+                    if (in.available() == 0) {
+                        continue;
+                    }
+                    int b2 = in.read();
+                    if (b2 != '[') {
+                        continue;
+                    }
+                    int b3 = in.read();
+                    switch (b3) {
+                        case 'A' -> {
+                            renderHighlight(ITEM_DATA.get(selected).row(), false);
+                            selected = (selected - 1 + ITEM_DATA.size()) % ITEM_DATA.size();
+                            renderHighlight(ITEM_DATA.get(selected).row(), true);
+                            inputBuffer.setLength(0);
+                            updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
+                            System.out.flush();
+                        }
+                        case 'B' -> {
+                            renderHighlight(ITEM_DATA.get(selected).row(), false);
+                            selected = (selected + 1) % ITEM_DATA.size();
+                            renderHighlight(ITEM_DATA.get(selected).row(), true);
+                            inputBuffer.setLength(0);
+                            updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
+                            System.out.flush();
+                        }
+                    }
+                    continue;
+                }
+
+                if (b == 13 || b == 10) {
+                    if (inputBuffer.length() > 0) {
+                        try {
+                            int typed = Integer.parseInt(inputBuffer.toString());
+                            for (ItemData d : ITEM_DATA) {
+                                if (d.number() == typed) {
+                                    renderHighlight(ITEM_DATA.get(selected).row(), false);
+                                    return typed;
+                                }
+                            }
+                        } catch (NumberFormatException ignored) {
+                        }
+                        inputBuffer.setLength(0);
+                        updateInputFieldError("Invalid choice input");
+                    } else {
+                        renderHighlight(ITEM_DATA.get(selected).row(), false);
+                        return ITEM_DATA.get(selected).number();
+                    }
+                }
+
+                if (b == 127 || b == 8) {
+                    if (inputBuffer.length() > 0) {
+                        inputBuffer.deleteCharAt(inputBuffer.length() - 1);
+                        updateInputField(inputBuffer.length() > 0
+                                ? inputBuffer.toString()
+                                : String.valueOf(ITEM_DATA.get(selected).number()));
+                        System.out.flush();
+                    }
+                    continue;
+                }
+
+                if (b >= '0' && b <= '9') {
+                    inputBuffer.append((char) b);
+                    updateInputField(inputBuffer.toString());
+                    System.out.flush();
+                }
+            }
+        } finally {
+            setCooked();
+            System.out.print(SHOW_CUR);
+            System.out.flush();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // CLEANUP
+    // ─────────────────────────────────────────────────────────────
     public static void cleanup() {
         stopPulse();
         System.out.print(MOUSE_OFF + SHOW_CUR + RESET);
@@ -1511,101 +1781,84 @@ public final class TerminalUI {
         setCooked();
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  STRING HELPERS
-    // ══════════════════════════════════════════════════════════════
-    // ...existing code...
-    // ══════════════════════════════════════════════════════════════
-    //  CENTERED DASHBOARD HELPERS
-    //  For consistent centered output across all dashboards
-    // ══════════════════════════════════════════════════════════════
-    private static final int DASH_W = 71;  // Dashboard box width
-    private static final int DASH_IW = 69; // Inner width
+    // ─────────────────────────────────────────────────────────────
+    // CENTERED / THEMED HELPERS
+    // ─────────────────────────────────────────────────────────────
+    private static final int DASH_W = DASH_W_FALLBACK;
+    private static final int DASH_IW = DASH_IW_FALLBACK;
 
-    /**
-     * Print a line centered in the terminal with background fill.
-     */
     public static void printCentered(String text, String fg, String bg) {
-        int col = centerCol(text.length());
-        System.out.print("\u001B[" + col + "G" + fg + text + RESET);
+        int col = centerCol(plain(text).length());
+        System.out.print("\u001B[" + col + "G" + bg + fg + text + RESET);
         System.out.println();
     }
 
-    /**
-     * Print a dashboard box line, centered with filled background.
-     */
     public static void printBoxLine(String line, String boxColor, String bgColor) {
-        int col = centerCol(DASH_W);
-        System.out.print("\u001B[" + col + "G" + boxColor + line + RESET);
+        int col = boxCol();
+        System.out.print("\u001B[" + col + "G" + boxColor + bgColor + line + RESET);
         System.out.println();
     }
 
-    /**
-     * Draw a complete centered dashboard header with title and welcome message.
-     * Returns the background color string for continued use.
-     */
-    public static String drawDashboardHeader(String title, String username, String boxColor, String textColor, String bgColor) {
+    public static String drawDashboardHeader(String title, String username,
+                                             String boxColor, String textColor, String bgColor) {
         int col = boxCol();
         int iw = innerW();
 
-        writeRow("\u001B[" + col + "G" + boxColor + bgColor + "╔" + "═".repeat(iw) + "╗");
-        writeRow("\u001B[" + col + "G" + boxColor + bgColor + "║" + textColor + bgColor + padC(trimToWidth(title, iw), iw) + boxColor + bgColor + "║");
-        writeRow("\u001B[" + col + "G" + boxColor + bgColor + "╠" + "═".repeat(iw) + "╣");
+        writeRowAt(col, boxColor + bgColor + "╔" + "═".repeat(iw) + "╗");
+        writeRowAt(col, boxColor + bgColor + "║" + textColor + bgColor + padC(trimToWidth(title, iw), iw) + boxColor + bgColor + "║");
+        writeRowAt(col, boxColor + bgColor + "╠" + "═".repeat(iw) + "╣");
         String welcomeMsg = "Welcome, " + username;
-        writeRow("\u001B[" + col + "G" + boxColor + bgColor + "║" + textColor + bgColor + padC(trimToWidth(welcomeMsg, iw), iw) + boxColor + bgColor + "║");
-        writeRow("\u001B[" + col + "G" + boxColor + bgColor + "╠" + "═".repeat(iw) + "╣");
+        writeRowAt(col, boxColor + bgColor + "║" + textColor + bgColor + padC(trimToWidth(welcomeMsg, iw), iw) + boxColor + bgColor + "║");
+        writeRowAt(col, boxColor + bgColor + "╠" + "═".repeat(iw) + "╣");
 
         return bgColor;
     }
 
-    /**
-     * Draw a menu item line.
-     */
     public static void drawMenuItem(String item, String boxColor, String textColor, String bgColor) {
         int col = boxCol();
         int iw = innerW();
-        writeRow("\u001B[" + col + "G" + boxColor + bgColor + "║ " + textColor + bgColor + padL(trimToWidth(item, iw - 2), iw - 2) + boxColor + bgColor + " ║");
+        writeRowAt(col, boxColor + bgColor + "║ " + textColor + bgColor + padL(trimToWidth(item, iw - 2), iw - 2) + boxColor + bgColor + " ║");
     }
 
-    /**
-     * Draw bottom border.
-     */
     public static void drawBoxBottom(String boxColor, String bgColor) {
         int col = boxCol();
         int iw = innerW();
-        writeRow("\u001B[" + col + "G" + boxColor + bgColor + "╚" + "═".repeat(iw) + "╝");
+        writeRowAt(col, boxColor + bgColor + "╚" + "═".repeat(iw) + "╝");
     }
 
-    /**
-     * Draw a centered input prompt.
-     */
     public static void drawInputPrompt(String prompt, String color, String bgColor) {
-        int col = centerCol(prompt.length() + 10);
-        System.out.print("\u001B[" + col + "G" + color + prompt + RESET);
+        int col = centerCol(prompt.length());
+        System.out.print("\u001B[" + col + "G" + bgColor + color + prompt + RESET);
     }
 
     public static void drawInputBox(int startRow, String label,
-            String boxColor, String textColor,
-            String panelBg, String inputBg)
+                                    String boxColor, String textColor,
+                                    String panelBg, String inputBg)
             throws InterruptedException {
+
+        if (startRow <= 3) {
+            startRow = Math.max(2, centerRow(5) - 1);
+        }
 
         int col = boxCol();
         int iw = innerW();
         String b = boxColor + panelBg;
         String r = RESET;
 
-        int labelLen = label.length() + 3;          // "Label  : "
-        int fieldW = Math.max(10, iw - labelLen - 1);
+        int labelLen = label.length() + 3;
+        int fieldW = Math.max(10, iw - labelLen - 2);
 
         String inputColor = ConsoleColors.Accent.INPUT;
 
         String[] rows = {
-            b + "╔" + "═".repeat(iw) + "╗" + r,
-            b + "║" + panelBg + " ".repeat(iw) + b + "║" + r,
-            b + "║ " + r + inputColor + panelBg + label + " : " + r
-            + inputBg + textColor + " ".repeat(fieldW) + r + b + "║" + r,
-            b + "║" + panelBg + " ".repeat(iw) + b + "║" + r,
-            b + "╚" + "═".repeat(iw) + "╝" + r,};
+                b + "╔" + "═".repeat(iw) + "╗" + r,
+                b + "║" + panelBg + " ".repeat(iw) + b + "║" + r,
+                b + "║ " + inputColor + panelBg + label + " : "
+                        + inputBg + textColor + " ".repeat(fieldW)
+                        + b + panelBg + " ║" + r,
+                b + "║" + panelBg + " ".repeat(iw) + b + "║" + r,
+                b + "╚" + "═".repeat(iw) + "╝" + r,
+        };
 
         for (int i = 0; i < rows.length; i++) {
             at(startRow + i, col);
@@ -1614,131 +1867,50 @@ public final class TerminalUI {
             Thread.sleep(8);
         }
 
-        // Position cursor inside the input field (row +2, after label)
-        at(startRow + 2, col + labelLen + 1);
+        at(startRow + 2, col + label.length() + 6);
         System.out.print(inputBg + textColor);
         System.out.flush();
     }
 
-    /**
-     * Draw centered logout box.
-     */
     public static void drawLogoutBox(String boxColor, String textColor, String bgColor) {
         int col = boxCol();
         int iw = innerW();
-        writeRow("\u001B[" + col + "G" + boxColor + bgColor + "╔" + "═".repeat(iw) + "╗");
-        writeRow("\u001B[" + col + "G" + boxColor + bgColor + "║" + textColor + bgColor + padC("Logging Out....", iw) + boxColor + bgColor + "║");
-        writeRow("\u001B[" + col + "G" + boxColor + bgColor + "╚" + "═".repeat(iw) + "╝");
+        writeRowAt(col, boxColor + bgColor + "╔" + "═".repeat(iw) + "╗");
+        writeRowAt(col, boxColor + bgColor + "║" + textColor + bgColor + padC("Logging Out....", iw) + boxColor + bgColor + "║");
+        writeRowAt(col, boxColor + bgColor + "╚" + "═".repeat(iw) + "╝");
     }
 
-    /**
-     * Fills the terminal with a subtle vertical gradient based on the given
-     * background color — slightly darker at top and bottom, lighter in the
-     * center. Also sets the SGR background attribute for subsequent output.
-     */
-    public static void fillBackground(String bgColor) {
-        // Parse the rgb values from the ANSI escape sequence
-        int[] rgb = parseBgRGB(bgColor);
-        if (rgb != null) {
-            int w = termW();
-            int h = termH();
-            if (h < 1) {
-                h = 30;
-            }
-
-            int[] top = {Math.max(rgb[0] - 8, 0), Math.max(rgb[1] - 8, 0), Math.max(rgb[2] - 8, 0)};
-            int[] mid = {Math.min(rgb[0] + 12, 255), Math.min(rgb[1] + 12, 255), Math.min(rgb[2] + 12, 255)};
-            int[] bot = {Math.max(rgb[0] - 6, 0), Math.max(rgb[1] - 6, 0), Math.max(rgb[2] - 6, 0)};
-
-            StringBuilder sb = new StringBuilder(w * h + h * 40 + 60);
-            sb.append("\u001B[2J\u001B[H");
-            String rowSpaces = " ".repeat(w);
-            int half = Math.max(h / 2, 1);
-            for (int r = 1; r <= h; r++) {
-                int[] c;
-                if (r <= half) {
-                    double t = (half <= 1) ? 0 : (double) (r - 1) / (half - 1);
-                    c = lerpColor(top, mid, t);
-                } else {
-                    double t = (h - half <= 1) ? 0 : (double) (r - half - 1) / (h - half - 1);
-                    c = lerpColor(mid, bot, t);
-                }
-                sb.append("\u001B[").append(r).append(";1H");
-                sb.append(ConsoleColors.bgRGB(c[0], c[1], c[2]));
-                sb.append(rowSpaces);
-            }
-            sb.append("\u001B[H");
-            // Set the base bg for subsequent text output
-            sb.append(bgColor);
-            System.out.print(sb);
-        } else {
-            System.out.print(bgColor);
-        }
-        System.out.flush();
-    }
-
-    private static int[] parseBgRGB(String esc) {
-        // Matches \e[48;2;R;G;Bm
-        if (esc == null) {
-            return null;
-        }
-        String prefix = "\u001B[48;2;";
-        if (!esc.startsWith(prefix)) {
-            return null;
-        }
-        String body = esc.substring(prefix.length());
-        if (body.endsWith("m")) {
-            body = body.substring(0, body.length() - 1);
-        }
-        String[] parts = body.split(";");
-        if (parts.length != 3) {
-            return null;
-        }
-        try {
-            return new int[]{Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2])};
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private static int[] lerpColor(int[] a, int[] b, double t) {
-        if (t < 0) {
-            t = 0;
-        }
-        if (t > 1) {
-            t = 1;
-        }
-        return new int[]{
-            (int) (a[0] + (b[0] - a[0]) * t),
-            (int) (a[1] + (b[1] - a[1]) * t),
-            (int) (a[2] + (b[2] - a[2]) * t)
-        };
-    }
-
-    // ══════════════════════════════════════════════════════════════
-    //  ACTIVE THEME CONTEXT
-    //  Stored per-thread so any sub-view can use the current theme ═══
-    // ══════════════════════════════════════════════════════════
-    private static volatile String activeBoxColor = ConsoleColors.Accent.BOX;
-    private static volatile String activeTextColor = ConsoleColors.ThemeText.SOFT_WHITE;
-    private static volatile String activeBgColor = ConsoleColors.bgRGB(10, 7, 20);
-    private static volatile String activePanelBgColor = ConsoleColors.bgRGB(16, 11, 30);
-
-    /**
-     * Set the active theme colors that sub-views will inherit.
-     */
+    // ─────────────────────────────────────────────────────────────
+    // ACTIVE THEME
+    // ─────────────────────────────────────────────────────────────
     public static void setActiveTheme(String boxColor, String textColor, String bgColor) {
         activeBoxColor = boxColor;
         activeTextColor = textColor;
         activeBgColor = bgColor;
         activePanelBgColor = bgColor;
+        activeInputBgColor = bgColor;
     }
 
-    public static void setActiveTheme(String boxColor, String textColor, String bgColor, String panelBgColor) {
+    public static void setActiveTheme(String boxColor, String textColor,
+                                      String bgColor, String panelBgColor) {
         activeBoxColor = boxColor;
         activeTextColor = textColor;
         activeBgColor = bgColor;
         activePanelBgColor = panelBgColor;
+        activeInputBgColor = panelBgColor;
+    }
+
+    public static void setActiveTheme(String boxColor, String textColor,
+                                      String bgColor, String panelBgColor, String inputBgColor) {
+        activeBoxColor = boxColor;
+        activeTextColor = textColor;
+        activeBgColor = bgColor;
+        activePanelBgColor = panelBgColor;
+        activeInputBgColor = inputBgColor;
+    }
+
+    public static String getActiveInputBgColor() {
+        return activeInputBgColor;
     }
 
     public static String getActiveBoxColor() {
@@ -1761,24 +1933,13 @@ public final class TerminalUI {
         System.out.print(content + RESET + "\n");
     }
 
-    private static String trimToWidth(String text, int width) {
-        if (text.length() <= width) {
-            return text;
-        }
-        return text.substring(0, width);
+    private static void writeRowAt(int col, String content) {
+        System.out.print("\u001B[" + col + "G" + content + RESET + "\n");
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  THEMED PRINT HELPERS
-    //  Use the active theme for centered, bg-filled output.
-    //  Any sub-view can call these without knowing the theme.
-    // ══════════════════════════════════════════════════════════════
-    /**
-     * Print a line of text centered, with theme bg fill.
-     */
     public static void tPrint(String text) {
         int col = centerCol(text.length());
-        writeRow("\u001B[" + col + "G" + activeTextColor + text);
+        writeRowAt(col, activeBgColor + activeTextColor + text);
     }
 
     public static void tPanelCenter(String text) {
@@ -1787,119 +1948,84 @@ public final class TerminalUI {
 
     public static void tPanelCenter(String text, String fgColor) {
         int col = centerCol(text.length());
-        writeRow("\u001B[" + col + "G" + fgColor + activeBgColor + text);
+        writeRowAt(col, fgColor + activeBgColor + text);
     }
 
-    /**
-     * Print a themed box top border.
-     */
     public static void tBoxTop() {
-        int col = centerCol(DASH_W);
-        writeRow("\u001B[" + col + "G" + activeBoxColor + activeBgColor + "╔" + "═".repeat(DASH_IW) + "╗");
+        int col = boxCol();
+        writeRowAt(col, activeBoxColor + activePanelBgColor + "╔" + "═".repeat(innerW()) + "╗");
     }
 
-    /**
-     * Print a themed box title line.
-     */
     public static void tBoxTitle(String title) {
-        int col = centerCol(DASH_W);
-        writeRow("\u001B[" + col + "G" + activeBoxColor + activeBgColor + "║"
-                + BOLD + activeTextColor + activeBgColor + padC(trimToWidth(title, DASH_IW), DASH_IW)
-                + activeBoxColor + activeBgColor + "║");
+        int col = boxCol();
+        int iw = innerW();
+        writeRowAt(col, activeBoxColor + activePanelBgColor + "║"
+                + BOLD + activeTextColor + activePanelBgColor + padC(trimToWidth(title, iw), iw)
+                + activeBoxColor + activePanelBgColor + "║");
     }
 
-    /**
-     * Print a themed box separator.
-     */
     public static void tBoxSep() {
-        int col = centerCol(DASH_W);
-        writeRow("\u001B[" + col + "G" + activeBoxColor + activeBgColor + "╠" + "═".repeat(DASH_IW) + "╣");
+        int col = boxCol();
+        writeRowAt(col, activeBoxColor + activePanelBgColor + "╠" + "═".repeat(innerW()) + "╣");
     }
 
-    /**
-     * Print a themed box content line (left-aligned inside box).
-     */
     public static void tBoxLine(String text) {
-        int col = centerCol(DASH_W);
-        String display = trimToWidth(text, DASH_IW - 2);
-        writeRow("\u001B[" + col + "G" + activeBoxColor + activeBgColor + "║ "
-                + activeTextColor + activeBgColor + padL(display, DASH_IW - 2)
-                + activeBoxColor + activeBgColor + " ║");
+        int col = boxCol();
+        int iw = innerW();
+        String display = trimToWidth(text, iw - 2);
+        writeRowAt(col, activeBoxColor + activePanelBgColor + "║ "
+                + activeTextColor + activePanelBgColor + padL(display, iw - 2)
+                + activeBoxColor + activePanelBgColor + " ║");
     }
 
-    /**
-     * Print a themed box content line with custom color.
-     */
     public static void tBoxLine(String text, String fgColor) {
-        int col = centerCol(DASH_W);
-        String display = trimToWidth(text, DASH_IW - 2);
-        writeRow("\u001B[" + col + "G" + activeBoxColor + activeBgColor + "║ "
-                + fgColor + activeBgColor + padL(display, DASH_IW - 2)
-                + activeBoxColor + activeBgColor + " ║");
+        int col = boxCol();
+        int iw = innerW();
+        String display = trimToWidth(text, iw - 2);
+        writeRowAt(col, activeBoxColor + activePanelBgColor + "║ "
+                + fgColor + activePanelBgColor + padL(display, iw - 2)
+                + activeBoxColor + activePanelBgColor + " ║");
     }
 
-    /**
-     * Print a themed box bottom border.
-     */
     public static void tBoxBottom() {
-        int col = centerCol(DASH_W);
-        writeRow("\u001B[" + col + "G" + activeBoxColor + activeBgColor + "╚" + "═".repeat(DASH_IW) + "╝");
+        int col = boxCol();
+        writeRowAt(col, activeBoxColor + activePanelBgColor + "╚" + "═".repeat(innerW()) + "╝");
     }
 
-    /**
-     * Print an empty bg-filled line.
-     */
     public static void tEmpty() {
-        writeRow("");
+        writeRow(activeBgColor);
     }
 
-    /**
-     * Print a themed input prompt, centered.
-     */
     public static void tPrompt(String prompt) {
-        int col = centerCol(prompt.length() + 10);
-        System.out.print("\u001B[" + col + "G" + activeTextColor + prompt + RESET);
+        int col = centerCol(prompt.length());
+        System.out.print("\u001B[" + col + "G" + activeBgColor + activeTextColor + prompt + RESET);
     }
 
-    /**
-     * Print a themed success message in a centered box.
-     */
     public static void tSuccess(String msg) {
         tBoxTop();
-        int col = centerCol(DASH_W);
-        writeRow("\u001B[" + col + "G" + activeBoxColor + activeBgColor + "║"
-                + activeTextColor + activeBgColor + padC(trimToWidth(msg, DASH_IW), DASH_IW)
-                + activeBoxColor + activeBgColor + "║");
+        int col = boxCol();
+        writeRowAt(col, activeBoxColor + activePanelBgColor + "║"
+                + activeTextColor + activePanelBgColor + padC(trimToWidth(msg, innerW()), innerW())
+                + activeBoxColor + activePanelBgColor + "║");
         tBoxBottom();
     }
 
-    /**
-     * Print a themed error message in a centered box.
-     */
     public static void tError(String msg) {
         String errorColor = ConsoleColors.Accent.ERROR;
         tBoxTop();
-        int col = centerCol(DASH_W);
-        writeRow("\u001B[" + col + "G" + activeBoxColor + activeBgColor + "║"
-                + errorColor + activeBgColor + padC(trimToWidth(msg, DASH_IW), DASH_IW)
-                + activeBoxColor + activeBgColor + "║");
+        int col = boxCol();
+        writeRowAt(col, activeBoxColor + activePanelBgColor + "║"
+                + errorColor + activePanelBgColor + padC(trimToWidth(msg, innerW()), innerW())
+                + activeBoxColor + activePanelBgColor + "║");
         tBoxBottom();
     }
 
-    /**
-     * Print themed pause prompt, centered.
-     */
     public static void tPause() {
         tEmpty();
         tPrompt("Press Enter to continue...");
         FastInput.readLine();
     }
 
-    /**
-     * Draw a complete sub-dashboard: title + menu items + input row inside box.
-     * Items should include their [N] prefix. Positions the cursor inside the
-     * input field after drawing.
-     */
     public static void tSubDashboard(String title, String[] items) {
         tBoxTop();
         tBoxTitle(title);
@@ -1911,36 +2037,29 @@ public final class TerminalUI {
                 tBoxLine(item);
             }
         }
-        // Input separator + input row inside the box (matches drawDashboard style)
         tBoxSep();
         tInputRow();
     }
 
-    /**
-     * Draws the "Your choice" input row + bottom border and positions the
-     * cursor inside the input field. Call this after all menu lines have been
-     * drawn (no tBoxBottom needed after this).
-     */
     public static void tInputRow() {
-        int col = centerCol(DASH_W);
+        int col = boxCol();
+        int iw = innerW();
         String inputLabel = "Your choice  : ";
-        int fieldW = DASH_IW - inputLabel.length() - 2;
+        int fieldW = Math.max(1, iw - inputLabel.length() - 2);
         System.out.print(
                 "\u001B[" + col + "G"
-                + activeBoxColor + activePanelBgColor + "║ "
-                + ConsoleColors.FG_WHITE + inputLabel + RESET + activePanelBgColor
-                + " ".repeat(Math.max(0, fieldW))
-                + activeBoxColor + activePanelBgColor + " ║" + RESET + "\n"
+                        + activeBoxColor + activePanelBgColor + "║ "
+                        + ConsoleColors.FG_WHITE + activePanelBgColor + inputLabel
+                        + activeInputBgColor + ConsoleColors.FG_WHITE
+                        + " ".repeat(fieldW)
+                        + activeBoxColor + activePanelBgColor + " ║"
+                        + RESET + "\n"
         );
         tBoxBottom();
-        // Move cursor up 2 rows (input row is above the bottom border row)
         System.out.print(SHOW_CUR + "\u001B[2A\u001B[" + (col + 2 + inputLabel.length()) + "G");
         System.out.flush();
     }
 
-    /**
-     * Renders an interactive menu where one item is highlighted.
-     */
     public static void tInteractiveDashboard(String title, String[] items, int selectedIndex) {
         tBoxTop();
         tBoxTitle(title);
@@ -1955,221 +2074,37 @@ public final class TerminalUI {
         tBoxBottom();
     }
 
-    /**
-     * Draws a single line for the interactive menu, applying background
-     * highlights.
-     */
     private static void tInteractiveBoxLine(String text, boolean isSelected, boolean isExit) {
-        int col = centerCol(DASH_W);
+        int col = boxCol();
+        int iw = innerW();
         String b = activeBoxColor + activePanelBgColor;
         String r = RESET;
 
-        // Define styles for selected vs unselected
         String prefix = isSelected ? "  > " : "    ";
         String rowBg = isSelected ? ConsoleColors.bgRGB(60, 60, 80) : activePanelBgColor;
-        String textColor = isExit ? ConsoleColors.Accent.EXIT : (isSelected ? ConsoleColors.FG_WHITE + ConsoleColors.BOLD : ConsoleColors.FG_WHITE);
+        String textColor = isExit
+                ? ConsoleColors.Accent.EXIT
+                : (isSelected ? ConsoleColors.FG_WHITE + ConsoleColors.BOLD : ConsoleColors.FG_WHITE);
 
         String content = prefix + text;
-        int padLen = Math.max(0, DASH_IW - content.length() - 2);
+        int padLen = Math.max(0, iw - 2 - content.length());
 
         System.out.print(
-                "\u001B[" + col + "G" // Position cursor
-                + b + "║ " + r
-                + rowBg + textColor + content + " ".repeat(padLen) + r
-                + b + " ║" + r + "\n"
+                "\u001B[" + col + "G"
+                        + b + "║ "
+                        + rowBg + textColor + content + " ".repeat(padLen)
+                        + b + " ║" + r + "\n"
         );
     }
 
-    // ══════════════════════════════════════════════════════════════
-//  ARROW-KEY MENU NAVIGATION
-//  ↑ / ↓  move selection,  Enter confirms,  digits still work.
-//  Raw mode is engaged for the duration of this call only.
-// ══════════════════════════════════════════════════════════════
-    public static int readChoiceArrow() throws Exception {
-        if (ITEM_DATA.isEmpty()) {
-            return -1;
-        }
-
-        int selected = 0;
-        StringBuilder inputBuffer = new StringBuilder();
-        System.out.print(HIDE_CUR);
-        renderHighlight(ITEM_DATA.get(selected).row(), true);
-        updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
-        System.out.print(SHOW_CUR);
-        System.out.flush();
-
-        // ── JLine path (Windows + Unix) ───────────────────────────────
-        if (sharedJLineTerminal != null) {
-            org.jline.terminal.Attributes saved = sharedJLineTerminal.enterRawMode();
-            org.jline.utils.NonBlockingReader reader = sharedJLineTerminal.reader();
-            try {
-                while (true) {
-                    int c = reader.read();           // blocks until a key
-                    if (c == -1) {
-                        continue;
-                    }
-
-                    if (c == 27) {                   // ESC — start of arrow sequence
-                        int n1 = reader.read(100);   // 100 ms timeout
-                        if (n1 == '[' || n1 == 'O') {
-                            int n2 = reader.read(100);
-                            switch (n2) {
-                                case 'A' -> {    // ↑ Up
-                                    renderHighlight(ITEM_DATA.get(selected).row(), false);
-                                    selected = (selected - 1 + ITEM_DATA.size()) % ITEM_DATA.size();
-                                    renderHighlight(ITEM_DATA.get(selected).row(), true);
-                                    inputBuffer.setLength(0);
-                                    updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
-                                    System.out.flush();
-                                }
-                                case 'B' -> {    // ↓ Down
-                                    renderHighlight(ITEM_DATA.get(selected).row(), false);
-                                    selected = (selected + 1) % ITEM_DATA.size();
-                                    renderHighlight(ITEM_DATA.get(selected).row(), true);
-                                    inputBuffer.setLength(0);
-                                    updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
-                                    System.out.flush();
-                                }
-                            }
-                        }
-                        continue;
-                    }
-
-                    if (c == 13 || c == 10) {        // Enter — confirm
-                        if (inputBuffer.length() > 0) {
-                            try {
-                                int typed = Integer.parseInt(inputBuffer.toString());
-                                for (ItemData d : ITEM_DATA) {
-                                    if (d.number() == typed) {
-                                        renderHighlight(ITEM_DATA.get(selected).row(), false);
-                                        return typed;
-                                    }
-                                }
-                            } catch (NumberFormatException ignored) {
-                            }
-                            // invalid — show error in field, wait for next key
-                            inputBuffer.setLength(0);
-                            updateInputFieldError("Invalid choice input");
-                        } else {
-                            renderHighlight(ITEM_DATA.get(selected).row(), false);
-                            return ITEM_DATA.get(selected).number();
-                        }
-                    }
-
-                    if (c == 3) {                    // Ctrl+C — treat as exit
-                        renderHighlight(ITEM_DATA.get(selected).row(), false);
-                        return 0;
-                    }
-
-                    if (c == 127 || c == 8) {        // Backspace
-                        if (inputBuffer.length() > 0) {
-                            inputBuffer.deleteCharAt(inputBuffer.length() - 1);
-                            updateInputField(inputBuffer.length() > 0
-                                    ? inputBuffer.toString()
-                                    : String.valueOf(ITEM_DATA.get(selected).number()));
-                            System.out.flush();
-                        }
-                        continue;
-                    }
-
-                    if (c >= '0' && c <= '9') {      // accumulate digit
-                        inputBuffer.append((char) c);
-                        updateInputField(inputBuffer.toString());
-                        System.out.flush();
-                    }
-                }
-            } finally {
-                sharedJLineTerminal.setAttributes(saved);   // restore BEFORE password read
-                System.out.print(SHOW_CUR);
-                System.out.flush();
-            }
-        }
-
-        // ── stty fallback (Unix without JLine) ────────────────────────
-        setRaw();
-        InputStream in = System.in;
-        try {
-            while (true) {
-                int b = in.read();
-                if (b == -1) {
-                    continue;
-                }
-                if (b == 27) {
-                    if (in.available() == 0) {
-                        continue;
-                    }
-                    int b2 = in.read();
-                    if (b2 != '[') {
-                        continue;
-                    }
-                    int b3 = in.read();
-                    switch (b3) {
-                        case 'A' -> {    // ↑ Up
-                            renderHighlight(ITEM_DATA.get(selected).row(), false);
-                            selected = (selected - 1 + ITEM_DATA.size()) % ITEM_DATA.size();
-                            renderHighlight(ITEM_DATA.get(selected).row(), true);
-                            inputBuffer.setLength(0);
-                            updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
-                            System.out.flush();
-                        }
-                        case 'B' -> {    // ↓ Down
-                            renderHighlight(ITEM_DATA.get(selected).row(), false);
-                            selected = (selected + 1) % ITEM_DATA.size();
-                            renderHighlight(ITEM_DATA.get(selected).row(), true);
-                            inputBuffer.setLength(0);
-                            updateInputField(String.valueOf(ITEM_DATA.get(selected).number()));
-                            System.out.flush();
-                        }
-                    }
-                    continue;
-                }
-                if (b == 13 || b == 10) {            // Enter — confirm
-                    if (inputBuffer.length() > 0) {
-                        try {
-                            int typed = Integer.parseInt(inputBuffer.toString());
-                            for (ItemData d : ITEM_DATA) {
-                                if (d.number() == typed) {
-                                    renderHighlight(ITEM_DATA.get(selected).row(), false);
-                                    return typed;
-                                }
-                            }
-                        } catch (NumberFormatException ignored) {
-                        }
-                        inputBuffer.setLength(0);
-                        updateInputFieldError("Invalid choice input");
-                    } else {
-                        renderHighlight(ITEM_DATA.get(selected).row(), false);
-                        return ITEM_DATA.get(selected).number();
-                    }
-                }
-                if (b == 127 || b == 8) {            // Backspace
-                    if (inputBuffer.length() > 0) {
-                        inputBuffer.deleteCharAt(inputBuffer.length() - 1);
-                        updateInputField(inputBuffer.length() > 0
-                                ? inputBuffer.toString()
-                                : String.valueOf(ITEM_DATA.get(selected).number()));
-                        System.out.flush();
-                    }
-                    continue;
-                }
-                if (b >= '0' && b <= '9') {          // accumulate digit
-                    inputBuffer.append((char) b);
-                    updateInputField(inputBuffer.toString());
-                    System.out.flush();
-                }
-            }
-        } finally {
-            setCooked();
-            System.out.print(SHOW_CUR);
-            System.out.flush();
-        }
-    }
-
+    // ─────────────────────────────────────────────────────────────
+    // JLINE BRIDGE
+    // ─────────────────────────────────────────────────────────────
     public static void setJLineTerminal(org.jline.terminal.Terminal t) {
         sharedJLineTerminal = t;
+        refreshTerminalSizeNow();
     }
 
-    // ── Public bridge so MainDashboard can highlight by item number ──
     public static void highlightItem(int number, boolean on) {
         for (ItemData d : ITEM_DATA) {
             if (d.number() == number) {

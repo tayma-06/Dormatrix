@@ -2,7 +2,6 @@ package cli.dashboard;
 
 import controllers.dashboard.AdminDashboardController;
 import utils.BackgroundFiller;
-import utils.ConsoleColors;
 
 import static utils.TerminalUI.*;
 
@@ -11,9 +10,7 @@ public class AdminDashboard implements Dashboard {
     private final AdminDashboardController controller = new AdminDashboardController();
     private boolean firstShow = true;
 
-    private static final String BOX = ConsoleColors.fgRGB(255, 60, 60);
-    private static final String TEXT = ConsoleColors.ThemeText.ADMIN_TEXT;
-    private static final String BG = ConsoleColors.bgRGB(48, 0, 5);
+    private static final BackgroundFiller.Theme THEME = BackgroundFiller.ADMIN;
 
     private static final MenuItem[] MENU = {
             new MenuItem(1, "Create Account"),
@@ -35,18 +32,23 @@ public class AdminDashboard implements Dashboard {
 
         while (true) {
             try {
-                BackgroundFiller.applyAdminTheme();
-                setActiveTheme(BOX, TEXT, BG);
+                BackgroundFiller.applyTheme(THEME);
+                setActiveTheme(
+                        THEME.box(),
+                        THEME.text(),
+                        THEME.canvasBg(),
+                        THEME.panelBg(),
+                        THEME.inputBg()
+                );
                 System.out.print(HIDE_CUR);
 
                 drawDashboard(
                         "ADMIN DASHBOARD",
                         "Welcome, " + username,
                         MENU,
-                        TEXT,
-                        BOX,
-                        new String[]{
-                        },
+                        THEME.text(),
+                        THEME.box(),
+                        null,
                         3
                 );
 
@@ -54,7 +56,7 @@ public class AdminDashboard implements Dashboard {
                 System.out.print(RESET);
 
                 if (choice == 0) {
-                    BackgroundFiller.applyAdminTheme();
+                    BackgroundFiller.applyTheme(THEME);
                     showLogout();
                     BackgroundFiller.resetTheme();
                     return;

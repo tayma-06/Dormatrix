@@ -2,6 +2,7 @@ package cli.dashboard;
 
 import controllers.dashboard.StoreInChargeDashboardController;
 import utils.*;
+
 import static utils.TerminalUI.*;
 
 public class StoreInChargeDashboard implements Dashboard {
@@ -10,16 +11,14 @@ public class StoreInChargeDashboard implements Dashboard {
             = new StoreInChargeDashboardController();
     private boolean firstShow = true;
 
-    private static final String BOX = ConsoleColors.fgRGB(255, 150, 40);   // bright orange box
-    private static final String TEXT = ConsoleColors.ThemeText.STORE_TEXT;
-    private static final String BG = ConsoleColors.bgRGB(40, 16, 0);
-    private static final String MUTED = ConsoleColors.Accent.MUTED;
+    private static final BackgroundFiller.Theme THEME = BackgroundFiller.STORE;
 
     private static final MenuItem[] MENU = {
-        new MenuItem(1, "Inventory Management"),
-        new MenuItem(2, "Process Purchase"),
-        new MenuItem(3, "Sales Summary & Reports"),
-        new MenuItem(0, "Logout"),};
+            new MenuItem(1, "Inventory Management"),
+            new MenuItem(2, "Process Purchase"),
+            new MenuItem(3, "Sales Summary & Reports"),
+            new MenuItem(0, "Logout"),
+    };
 
     @Override
     public void show(String username) {
@@ -33,15 +32,23 @@ public class StoreInChargeDashboard implements Dashboard {
 
         while (true) {
             try {
-                BackgroundFiller.applyStoreInChargeTheme();
-                setActiveTheme(BOX, TEXT, BG);
+                BackgroundFiller.applyTheme(THEME);
+                setActiveTheme(
+                        THEME.box(),
+                        THEME.text(),
+                        THEME.canvasBg(),
+                        THEME.panelBg(),
+                        THEME.inputBg()
+                );
                 System.out.print(HIDE_CUR);
 
                 int menuStartRow = 3;
                 drawDashboard(
                         "STORE-IN-CHARGE DASHBOARD",
                         "Welcome, " + username,
-                        MENU, TEXT, BOX,
+                        MENU,
+                        THEME.text(),
+                        THEME.box(),
                         null,
                         menuStartRow
                 );
@@ -50,7 +57,7 @@ public class StoreInChargeDashboard implements Dashboard {
                 System.out.print(RESET);
 
                 if (choice == 0) {
-                    BackgroundFiller.applyStoreInChargeTheme();
+                    BackgroundFiller.applyTheme(THEME);
                     showLogout();
                     BackgroundFiller.resetTheme();
                     return;

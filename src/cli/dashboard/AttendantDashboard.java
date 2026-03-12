@@ -12,19 +12,16 @@ public class AttendantDashboard implements Dashboard {
     private final AttendantDashboardController controller = new AttendantDashboardController();
     private boolean firstShow = true;
 
-    private static final String BOX = ConsoleColors.fgRGB(40, 220, 210);   // bright cyan box
-    private static final String TEXT = ConsoleColors.ThemeText.ATTENDANT_TEXT;
-    private static final String BG = ConsoleColors.bgRGB(0, 28, 26);
-    private static final String MUTED = ConsoleColors.Accent.MUTED;
+    private static final BackgroundFiller.Theme THEME = BackgroundFiller.ATTENDANT;
 
     private static final MenuItem[] MENU = {
-        new MenuItem(1, "Handle Student Complaints"),
-        new MenuItem(2, "Handle Worker Schedule"),
-        new MenuItem(3, "Add Found Items"),
-        new MenuItem(4, "View Student Routine"),
-        new MenuItem(5, "Announcements"),
-        new MenuItem(6, "Manage Emergency Contacts"),
-        new MenuItem(0, "Logout")
+            new MenuItem(1, "Handle Student Complaints"),
+            new MenuItem(2, "Handle Worker Schedule"),
+            new MenuItem(3, "Add Found Items"),
+            new MenuItem(4, "View Student Routine"),
+            new MenuItem(5, "Announcements"),
+            new MenuItem(6, "Manage Emergency Contacts"),
+            new MenuItem(0, "Logout")
     };
 
     @Override
@@ -39,15 +36,23 @@ public class AttendantDashboard implements Dashboard {
 
         while (true) {
             try {
-                BackgroundFiller.applyAttendantTheme();
-                setActiveTheme(BOX, TEXT, BG);
+                BackgroundFiller.applyTheme(THEME);
+                setActiveTheme(
+                        THEME.box(),
+                        THEME.text(),
+                        THEME.canvasBg(),
+                        THEME.panelBg(),
+                        THEME.inputBg()
+                );
                 System.out.print(HIDE_CUR);
 
                 int menuStartRow = 3;
                 drawDashboard(
                         "ATTENDANT DASHBOARD",
                         "Welcome, " + username,
-                        MENU, TEXT, BOX,
+                        MENU,
+                        THEME.text(),
+                        THEME.box(),
                         null,
                         menuStartRow
                 );
@@ -55,7 +60,7 @@ public class AttendantDashboard implements Dashboard {
                 int choice = readChoiceArrow();
 
                 if (choice == 0) {
-                    BackgroundFiller.applyAttendantTheme();
+                    BackgroundFiller.applyTheme(THEME);
                     showLogout();
                     BackgroundFiller.resetTheme();
                     return;
