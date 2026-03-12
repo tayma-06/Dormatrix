@@ -1,7 +1,0 @@
-HALL_ATTENDANT_1|Hall Attendant 1|Rahima Khatun|01700000000|You can reach me out anytime|Rahima Khatun
-HALL_ATTENDANT_2|Hall Attendant 2|Halima Begum|01700000000||Rahima Khatun
-AMBULANCE|Ambulance|IUT Ambulance|01716141399||Rahima Khatun
-MEDICAL_CENTRE|Medical Centre|Dr Salma Khatun|01917309481||Rahima Khatun
-PHARMACY|Pharmacy||||
-FIRE_SERVICE|Fire Service|Gazipur Fire Station|02-49273252||Rahima Khatun
-SECURITY_DESK|Security Desk|Security Office Phone|01678022546||Rahima Khatun

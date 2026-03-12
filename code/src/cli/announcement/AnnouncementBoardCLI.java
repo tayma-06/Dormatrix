@@ -1,3 +1,4 @@
+
 package cli.announcement;
 
 import controllers.announcement.AnnouncementController;
