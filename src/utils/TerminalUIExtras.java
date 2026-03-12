@@ -36,6 +36,11 @@ public final class TerminalUIExtras {
     // ─────────────────────────────────────────────────────────────
 
     public static int tArrowSelect(String title, String[] items) throws InterruptedException {
+        // ── Fill background first ─────────────────────────────────
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+
+
         if (items == null || items.length == 0) {
             TerminalUI.tBoxTop();
             TerminalUI.tBoxTitle(title);
@@ -71,13 +76,28 @@ public final class TerminalUIExtras {
         TerminalUI.tBoxLine(
                 "  [Up/Down] Navigate    [Enter] Select    [ESC] Cancel",
 //                ConsoleColors.Accent.MUTED);
-                ConsoleColors.fgRGB(255, 245, 100));
+//                ConsoleColors.fgRGB(255, 245, 100));
+//                ConsoleColors.fgRGB(160, 150, 60));  // muted yellow
+                ConsoleColors.fgRGB(120, 110, 40));
+
+
+        // ── Input row ─────────────────────────────────────────────
+        TerminalUI.tBoxSep();
+        int inputRow = getCursorRow();
+        drawInputRow("");
         TerminalUI.tBoxBottom();
         System.out.flush();
+
+
+//        TerminalUI.tBoxBottom();
+//        System.out.flush();
 
         // Highlight first item
         int selected = 0;
         renderItemHighlight(itemRows[selected], items[selected], true);
+        StringBuilder inputBuffer = new StringBuilder();
+        inputBuffer.append(selected + 1);                        // ← add this
+        updateInputRow(inputRow, inputBuffer.toString());
         System.out.flush();
 
         Terminal term = getSharedTerminal();
@@ -85,7 +105,7 @@ public final class TerminalUIExtras {
             return fallbackNumberInput(items);
         }
 
-        StringBuilder inputBuffer = new StringBuilder();
+        inputBuffer = new StringBuilder();
         Attributes saved = term.enterRawMode();
         NonBlockingReader reader = term.reader();
 
@@ -94,23 +114,27 @@ public final class TerminalUIExtras {
                 int c = reader.read();
                 if (c == -1) continue;
 
-                if (c == 27) {                          // ESC or arrow
+                if (c == 27) {                              // ESC or arrow
                     int n1 = reader.read(100);
                     if (n1 == '[' || n1 == 'O') {
                         int n2 = reader.read(100);
-                        if (n2 == 'A') {                // UP
+                        if (n2 == 'A') {                    // UP
                             renderItemHighlight(itemRows[selected], items[selected], false);
                             selected = (selected - 1 + items.length) % items.length;
                             renderItemHighlight(itemRows[selected], items[selected], true);
                             inputBuffer.setLength(0);
+                            inputBuffer.append(selected + 1);
+                            updateInputRow(inputRow, inputBuffer.toString());
                             System.out.flush();
                             continue;
                         }
-                        if (n2 == 'B') {                // DOWN
+                        if (n2 == 'B') {                    // DOWN
                             renderItemHighlight(itemRows[selected], items[selected], false);
                             selected = (selected + 1) % items.length;
                             renderItemHighlight(itemRows[selected], items[selected], true);
                             inputBuffer.setLength(0);
+                            inputBuffer.append(selected + 1);
+                            updateInputRow(inputRow, inputBuffer.toString());
                             System.out.flush();
                             continue;
                         }
@@ -122,34 +146,62 @@ public final class TerminalUIExtras {
                     continue;
                 }
 
-                if (c == 13 || c == 10) {               // Enter
+                if (c == 13 || c == 10) {                   // Enter
                     renderItemHighlight(itemRows[selected], items[selected], false);
                     if (inputBuffer.length() > 0) {
                         try {
                             int n = Integer.parseInt(inputBuffer.toString());
                             if (n == 0) return -1;
                             if (n >= 1 && n <= items.length) return n - 1;
-                        } catch (NumberFormatException ignored) {}
+                        } catch (NumberFormatException ignored) {
+                        }
+                        // invalid number — reset
                         inputBuffer.setLength(0);
+                        updateInputRow(inputRow, "");
+                        renderItemHighlight(itemRows[selected], items[selected], true);
                         continue;
                     }
                     return selected;
                 }
 
-                if (c == 3 || c == 'q' || c == 'Q') {  // Ctrl+C or Q
+                if (c == 3 || c == 'q' || c == 'Q') {      // Ctrl+C or Q
                     renderItemHighlight(itemRows[selected], items[selected], false);
                     return -1;
                 }
 
-                if (c == 127 || c == 8) {               // Backspace
+                if (c == 127 || c == 8) {                   // Backspace
                     if (inputBuffer.length() > 0) {
                         inputBuffer.deleteCharAt(inputBuffer.length() - 1);
+                        updateInputRow(inputRow, inputBuffer.toString());
+                        // Update highlight to match remaining number if valid
+                        try {
+                            int n = Integer.parseInt(inputBuffer.toString());
+                            if (n >= 1 && n <= items.length) {
+                                renderItemHighlight(itemRows[selected], items[selected], false);
+                                selected = n - 1;
+                                renderItemHighlight(itemRows[selected], items[selected], true);
+                            }
+                        } catch (NumberFormatException ignored) {
+                        }
+                        System.out.flush();
                     }
                     continue;
                 }
 
-                if (c >= '0' && c <= '9') {             // digit
+                if (c >= '0' && c <= '9') {                 // digit
                     inputBuffer.append((char) c);
+                    updateInputRow(inputRow, inputBuffer.toString());
+                    // Move highlight to match typed number if valid
+                    try {
+                        int n = Integer.parseInt(inputBuffer.toString());
+                        if (n >= 1 && n <= items.length) {
+                            renderItemHighlight(itemRows[selected], items[selected], false);
+                            selected = n - 1;
+                            renderItemHighlight(itemRows[selected], items[selected], true);
+                        }
+                    } catch (NumberFormatException ignored) {
+                    }
+                    System.out.flush();
                 }
             }
         } catch (IOException e) {
@@ -159,6 +211,51 @@ public final class TerminalUIExtras {
             System.out.flush();
         }
     }
+
+    // ─────────────────────────────────────────────────────────────
+    //  Draw / update the "Your choice no:" input row
+    // ─────────────────────────────────────────────────────────────
+
+    private static final String INPUT_LABEL = "  Your Choice: ";
+
+    private static void drawInputRow(String value) {
+        int col = TerminalUI.boxCol();
+        int iw  = TerminalUI.innerW();
+        String box  = TerminalUI.getActiveBoxColor();
+        String bg   = TerminalUI.getActiveBgColor();
+        String fg   = ConsoleColors.fgRGB(255, 245, 100);
+        int fieldW  = iw - INPUT_LABEL.length() - 1;//-2
+
+        System.out.print(
+                "\u001B[" + col + "G"
+                        + box + bg + "║"
+                        + fg + INPUT_LABEL + TerminalUI.RESET + bg
+                        + fg + TerminalUI.BOLD + value + TerminalUI.RESET + bg
+                        + " ".repeat(Math.max(0, fieldW - value.length()))
+                        + box + bg + " ║" + TerminalUI.RESET
+        );
+        System.out.println(); // separate println so it always ends on a clean new line
+        System.out.flush();
+    }
+
+    private static void updateInputRow(int row, String value) {
+        int col    = TerminalUI.boxCol();
+        int iw     = TerminalUI.innerW();
+        String box = TerminalUI.getActiveBoxColor();
+        String bg  = TerminalUI.getActiveBgColor();
+        String fg  = ConsoleColors.fgRGB(255, 245, 100);
+        int fieldW = iw - INPUT_LABEL.length() - 1;  //-2
+
+        TerminalUI.at(row, col);
+        System.out.print(
+                box + bg + "║"
+                        + fg + INPUT_LABEL + TerminalUI.RESET + bg
+                        + fg + TerminalUI.BOLD + value + TerminalUI.RESET + bg
+                        + " ".repeat(Math.max(0, fieldW - value.length()))
+                        + box + bg + " ║" + TerminalUI.RESET
+        );
+    }
+
 
     // ─────────────────────────────────────────────────────────────
     //  Re-render a single item row with highlight on/off
@@ -182,6 +279,8 @@ public final class TerminalUIExtras {
 //        String rowFg = on ? ConsoleColors.fgRGB(255, 245, 100) : text; // bright yellow text
 
         String rowBg = on ? ConsoleColors.bgRGB(160, 130, 0)   : bg; //more vivid yellow
+
+//        String rowBg  = on ? ConsoleColors.bgRGB(0, 0, 0)       : bg;   // black bg
         String rowFg = on ? ConsoleColors.fgRGB(255, 255, 120) : text;
 
         String prefix   = on ? "  > " : "    ";

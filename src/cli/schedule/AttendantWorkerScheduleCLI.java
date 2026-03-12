@@ -206,12 +206,35 @@ public class AttendantWorkerScheduleCLI {
 
 
 
+//    private void handleViewWorkerSchedule() {
+//        clearAndRefresh();
+//        tSubDashboard("WORKER IDs", controller.renderAllWorkerIds());
+//        String workerToken = readNonEmpty("");
+//        System.out.println(controller.renderWorkerWeek(workerToken));
+//
+//        tPause();
+//    }
+
     private void handleViewWorkerSchedule() {
         clearAndRefresh();
-        tSubDashboard("WORKER IDs", controller.renderAllWorkerIds());
-        String workerToken = readNonEmpty("");
-        System.out.println(controller.renderWorkerWeek(workerToken));
+        String[] workerIds = controller.renderAllWorkerIds();
 
+        // Add numbers to labels
+        String[] numbered = new String[workerIds.length];
+        for (int i = 0; i < workerIds.length; i++) {
+            numbered[i] = String.format("%-4s %s", (i + 1) + ".", workerIds[i]);
+        }
+
+        int idx;
+        try {
+            idx = tArrowSelect("WORKER IDs", numbered);
+        } catch (InterruptedException e) {
+            return;
+        }
+        if (idx < 0 || idx >= workerIds.length) return;
+
+        clearAndRefresh();
+        System.out.println(controller.renderWorkerWeek(workerIds[idx]));
         tPause();
     }
 
