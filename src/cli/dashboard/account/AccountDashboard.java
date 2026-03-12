@@ -36,7 +36,7 @@ public class AccountDashboard implements Dashboard {
                         TerminalUI.getActiveTextColor(),
                         TerminalUI.getActiveBoxColor(),
                         new String[]{
-                                "Press Enter to open"
+                                ""
                         },
                         3
                 );

@@ -44,7 +44,7 @@ public class ViewAccount {
                         ROLE_MENU,
                         TerminalUI.getActiveTextColor(),
                         TerminalUI.getActiveBoxColor(),
-                        new String[]{"Browse accounts with arrow keys and press Enter."},
+                        new String[]{""},
                         3
                 );
 

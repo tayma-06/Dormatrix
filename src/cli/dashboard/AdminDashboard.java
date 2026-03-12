@@ -46,8 +46,6 @@ public class AdminDashboard implements Dashboard {
                         TEXT,
                         BOX,
                         new String[]{
-                                "Use ↑ and ↓ to move",
-                                "Press Enter to open"
                         },
                         3
                 );
