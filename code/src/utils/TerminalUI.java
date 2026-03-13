@@ -1,5 +1,7 @@
 package utils;
 
+import org.jline.terminal.Terminal;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,18 +12,27 @@ import java.util.regex.Pattern;
 /**
  * TerminalUI — dynamic true-color terminal engine
  *
- * Fixes:
- * - fills the whole terminal using live size
- * - better Windows terminal height/width probing
- * - auto-centers dashboard blocks on resize
- * - consistent box spacing and right border alignment
- * - keeps all dashboard rows/backgrounds visually consistent
+ * Features:
+ * - live terminal size probing
+ * - full-screen gradient fill
+ * - centered / dynamic dashboard sizing
+ * - banner draw + shimmer animation
+ * - scrollable dashboards for small terminals
+ * - arrow-key + mouse + mouse-wheel navigation
+ * - consistent box spacing / right borders
  */
 public final class TerminalUI {
 
     // ─────────────────────────────────────────────────────────────
-    // SHARED COLORS
+    // SHARED COLORS / ESCAPES
     // ─────────────────────────────────────────────────────────────
+    public static final String RESET = "\u001B[0m";
+    public static final String BOLD = "\u001B[1m";
+    public static final String HIDE_CUR = "\u001B[?25l";
+    public static final String SHOW_CUR = "\u001B[?25h";
+    public static final String MOUSE_ON = "\u001B[?1000h\u001B[?1006h";
+    public static final String MOUSE_OFF = "\u001B[?1006l\u001B[?1000l";
+
     public static final String MUTED = "\u001B[38;2;110;85;170m";
     public static final String ACCENT = "\u001B[38;2;185;140;255m";
     public static final String ERROR = "\u001B[38;2;255;100;100m";
@@ -29,13 +40,6 @@ public final class TerminalUI {
     public static final String HL_FG = "\u001B[38;2;230;210;255m";
     public static final String ARROW = "\u001B[38;2;200;160;255m";
     public static final String SEARCH_FG = "\u001B[38;2;140;110;200m";
-
-    public static final String RESET = "\u001B[0m";
-    public static final String BOLD = "\u001B[1m";
-    public static final String HIDE_CUR = "\u001B[?25l";
-    public static final String SHOW_CUR = "\u001B[?25h";
-    public static final String MOUSE_ON = "\u001B[?1000h\u001B[?1006h";
-    public static final String MOUSE_OFF = "\u001B[?1006l\u001B[?1000l";
 
     private static volatile String activeBoxColor = ConsoleColors.Accent.BOX;
     private static volatile String activeTextColor = ConsoleColors.ThemeText.SOFT_WHITE;
@@ -63,10 +67,11 @@ public final class TerminalUI {
         if (s == null) {
             s = "";
         }
-        if (plain(s).length() >= w) {
+        int len = plain(s).length();
+        if (len >= w) {
             return trimToDisplayWidth(s, w);
         }
-        return s + " ".repeat(w - plain(s).length());
+        return s + " ".repeat(w - len);
     }
 
     public static String truncate(String s, int max) {
@@ -144,7 +149,6 @@ public final class TerminalUI {
             int w = -1;
             int h = -1;
 
-            // 1) JLine terminal if available
             try {
                 if (sharedJLineTerminal != null) {
                     int jw = sharedJLineTerminal.getWidth();
@@ -159,7 +163,6 @@ public final class TerminalUI {
             } catch (Exception ignored) {
             }
 
-            // 2) Environment variables
             try {
                 String ec = System.getenv("COLUMNS");
                 String el = System.getenv("LINES");
@@ -172,7 +175,6 @@ public final class TerminalUI {
             } catch (Exception ignored) {
             }
 
-            // 3) Unix probes
             if (!IS_WINDOWS) {
                 if (w <= 0 || h <= 0) {
                     String s = runProbe(new String[]{"sh", "-c", "stty size </dev/tty 2>/dev/null"}, 700);
@@ -212,12 +214,12 @@ public final class TerminalUI {
                 }
             }
 
-            // 4) Windows mode con (width + height)
             if (IS_WINDOWS && (w <= 0 || h <= 0)) {
                 String out = runProbe(new String[]{"cmd", "/c", "mode con"}, 1000);
                 if (out != null) {
                     Matcher mw = MODE_CON_COLUMNS.matcher(out);
                     Matcher mh = MODE_CON_LINES.matcher(out);
+
                     if (w <= 0 && mw.find()) {
                         try {
                             w = Integer.parseInt(mw.group(1));
@@ -231,7 +233,6 @@ public final class TerminalUI {
                         }
                     }
 
-                    // fallback more permissive scan
                     if (w <= 0 || h <= 0) {
                         for (String line : out.split("\\R")) {
                             String t = line.trim().toLowerCase();
@@ -260,6 +261,7 @@ public final class TerminalUI {
             if (h > 10) {
                 cachedTermH = h;
             }
+
             lastTermProbeMs = System.currentTimeMillis();
         }
     }
@@ -291,12 +293,6 @@ public final class TerminalUI {
         return Math.max(1, (th - contentH) / 2 + 1);
     }
 
-    /**
-     * Dynamic dashboard width:
-     * - small terminals shrink safely
-     * - normal terminals use classic 71
-     * - wide terminals can expand slightly
-     */
     public static int boxW() {
         int tw = termW();
         if (tw <= 76) {
@@ -317,7 +313,7 @@ public final class TerminalUI {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // CURSOR / CLEAR
+    // CURSOR / CLEAR / CANVAS
     // ─────────────────────────────────────────────────────────────
     public static void at(int row, int col) {
         System.out.print("\u001B[" + row + ";" + col + "H");
@@ -328,9 +324,6 @@ public final class TerminalUI {
         System.out.print("\u001B[2J\u001B[H");
     }
 
-    /**
-     * Fills the current terminal with the active background.
-     */
     public static void fillCanvas() {
         refreshTerminalSizeNow();
         int w = termW();
@@ -369,6 +362,7 @@ public final class TerminalUI {
                 double t = (h - split <= 1) ? 0.0 : (double) (r - split - 1) / (h - split - 1);
                 c = lerpColor(mid, bottom, t);
             }
+
             sb.append("\u001B[").append(r).append(";1H")
                     .append(ConsoleColors.bgRGB(c[0], c[1], c[2]))
                     .append(fgColor)
@@ -447,6 +441,10 @@ public final class TerminalUI {
     private static final int[] RAIN_BODY = {255, 50, 180};
     private static final int[] RAIN_MID = {200, 20, 130};
     private static final int[] RAIN_GHOST = {80, 5, 55};
+
+    public static Terminal getJLineTerminal() {
+        return sharedJLineTerminal;
+    }
 
     private static class RainColumn {
         int col, head, len, speed, tick;
@@ -777,9 +775,7 @@ public final class TerminalUI {
                     if (ch == ' ') {
                         continue;
                     }
-                    frame.append("\u001B[")
-                            .append(artStartRow + r).append(";")
-                            .append(artStartCol + c).append("H");
+                    frame.append("\u001B[").append(artStartRow + r).append(";").append(artStartCol + c).append("H");
                     frame.append(bgCode);
                     frame.append(ConsoleColors.fgRGB(fr, fg, fb));
                     frame.append(ch);
@@ -797,9 +793,7 @@ public final class TerminalUI {
                 if (ch == ' ') {
                     continue;
                 }
-                fin.append("\u001B[")
-                        .append(artStartRow + r).append(";")
-                        .append(artStartCol + c).append("H");
+                fin.append("\u001B[").append(artStartRow + r).append(";").append(artStartCol + c).append("H");
                 fin.append(bgCode);
                 fin.append(ConsoleColors.fgRGB(DR_SETTLE[0], DR_SETTLE[1], DR_SETTLE[2]));
                 fin.append(ch);
@@ -838,7 +832,7 @@ public final class TerminalUI {
         refreshTerminalSizeNow();
         int w = termW();
         int h = termH();
-        java.util.Random rng = new java.util.Random();
+        Random rng = new Random();
 
         int artH = GOODBYE_BANNER.length;
         int artW = 0;
@@ -1071,6 +1065,7 @@ public final class TerminalUI {
             System.out.flush();
             Thread.sleep(40);
         }
+
         Thread.sleep(120);
         System.out.print(SHOW_CUR);
         System.out.flush();
@@ -1121,6 +1116,64 @@ public final class TerminalUI {
         return startRow;
     }
 
+    public static void animateBannerShimmer(int startRow, int cycles, int frameDelayMs)
+            throws InterruptedException {
+
+        int col = centerCol(BANNER_W);
+
+        for (int cycle = 0; cycle < cycles; cycle++) {
+            for (int sweep = -8; sweep < BANNER_W + 8; sweep++) {
+                for (int r = 0; r < BANNER_LINES.length; r++) {
+                    String line = BANNER_LINES[r];
+                    at(startRow + r, col);
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(activeBgColor);
+
+                    for (int i = 0; i < line.length(); i++) {
+                        char ch = line.charAt(i);
+
+                        if (ch == ' ') {
+                            sb.append(' ');
+                            continue;
+                        }
+
+                        float baseT = line.length() < 2 ? 0f : (float) i / (line.length() - 1);
+                        int br = lerp(GRAD_A[0], GRAD_B[0], baseT);
+                        int bg = lerp(GRAD_A[1], GRAD_B[1], baseT);
+                        int bb = lerp(GRAD_A[2], GRAD_B[2], baseT);
+
+                        int dist = Math.abs(i - sweep);
+
+                        if (dist <= 1) {
+                            sb.append(BOLD)
+                                    .append(ConsoleColors.fgRGB(
+                                            Math.min(255, br + 90),
+                                            Math.min(255, bg + 90),
+                                            Math.min(255, bb + 90)
+                                    ))
+                                    .append(ch)
+                                    .append("\u001B[22m");
+                        } else if (dist <= 3) {
+                            sb.append(ConsoleColors.fgRGB(
+                                    Math.min(255, br + 40),
+                                    Math.min(255, bg + 40),
+                                    Math.min(255, bb + 40)
+                            )).append(ch);
+                        } else {
+                            sb.append(ConsoleColors.fgRGB(br, bg, bb)).append(ch);
+                        }
+                    }
+
+                    System.out.print(sb);
+                }
+
+                System.out.flush();
+                Thread.sleep(frameDelayMs);
+            }
+        }
+    }
+
     public static void typewrite(int row, String text, String colorCode, long msPerChar)
             throws InterruptedException {
         at(row, centerCol(text.length()));
@@ -1142,18 +1195,18 @@ public final class TerminalUI {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // DASHBOARD DRAWING
+    // DASHBOARD DRAWING / SCROLLING
     // ─────────────────────────────────────────────────────────────
     public record MenuItem(int number, String label) {
     }
-
-    private static final int DASH_W_FALLBACK = 71;
-    private static final int DASH_IW_FALLBACK = 69;
 
     private record Region(int row, int c1, int c2, int value) {
     }
 
     private record ItemData(int row, int number, String label, String theme, String box) {
+    }
+
+    private record MenuViewport(int startIndex, int visibleCount, boolean overflow) {
     }
 
     private static final List<Region> REGIONS = new ArrayList<>();
@@ -1197,9 +1250,8 @@ public final class TerminalUI {
         return -1;
     }
 
-    private static int autoDashboardTop(int itemsCount, int extraHeaderCount) {
-        int contentH = 8 + itemsCount + Math.max(0, extraHeaderCount);
-        return Math.max(2, centerRow(contentH) - 1);
+    private static int autoDashboardTop(int totalRows) {
+        return Math.max(2, centerRow(totalRows) - 1);
     }
 
     private static String boxBorder(String left, String mid, String right, String boxColor, String bg, int iw) {
@@ -1229,17 +1281,14 @@ public final class TerminalUI {
         String rowFg = selected ? ConsoleColors.fgRGB(25, 15, 55) : labelColor;
         String rowNumFg = selected ? ConsoleColors.fgRGB(80, 55, 0) : numCol;
 
-        int leftContentW = iw - 2;
-        String content = numStr + " " + label;
-        String padded = padL(trimToWidth(content, leftContentW), leftContentW);
+        int labelW = Math.max(1, iw - numStr.length() - 3);
 
         StringBuilder sb = new StringBuilder();
         sb.append(boxColor).append(panel).append("║ ");
         sb.append(rowBg).append(rowNumFg);
         sb.append(numStr);
         sb.append(rowBg).append(rowFg);
-        sb.append(" ").append(padL(trimToWidth(label, leftContentW - numStr.length() - 1),
-                leftContentW - numStr.length() - 1));
+        sb.append(" ").append(padL(trimToWidth(label, labelW), labelW));
         sb.append(boxColor).append(panel).append(" ║").append(RESET);
         return sb.toString();
     }
@@ -1247,8 +1296,7 @@ public final class TerminalUI {
     private static String buildInputRow(String label, String currentText, String boxColor, String panelBg,
                                         String inputBg, int iw) {
         String safeText = currentText == null ? "" : currentText;
-        int leftWidth = label.length();
-        int fieldW = Math.max(1, iw - leftWidth - 2);
+        int fieldW = Math.max(1, iw - label.length() - 2);
 
         if (safeText.length() > fieldW) {
             safeText = safeText.substring(0, fieldW);
@@ -1259,6 +1307,34 @@ public final class TerminalUI {
                 + inputBg + ConsoleColors.FG_WHITE + safeText
                 + " ".repeat(Math.max(0, fieldW - safeText.length()))
                 + boxColor + panelBg + " ║" + RESET;
+    }
+
+    private static MenuViewport computeMenuViewport(int totalItems, int selectedIndex, int headerRows, int footerRows) {
+        int h = termH();
+        int usableRows = Math.max(4, h - 2);
+        int availableForMenu = usableRows - headerRows - footerRows;
+
+        boolean overflow;
+        int visibleCount;
+
+        if (availableForMenu >= totalItems) {
+            overflow = false;
+            visibleCount = totalItems;
+        } else {
+            overflow = true;
+            visibleCount = Math.max(1, availableForMenu - 1);
+        }
+
+        int start = 0;
+        if (selectedIndex >= visibleCount) {
+            start = selectedIndex - visibleCount + 1;
+        }
+
+        if (start + visibleCount > totalItems) {
+            start = Math.max(0, totalItems - visibleCount);
+        }
+
+        return new MenuViewport(start, visibleCount, overflow);
     }
 
     public static int drawDashboard(
@@ -1275,8 +1351,9 @@ public final class TerminalUI {
         clearItemData();
 
         int extraCount = extraHeader == null ? 0 : extraHeader.length;
+        int totalRows = 8 + items.length + extraCount;
         if (startRow <= 3) {
-            startRow = autoDashboardTop(items.length, extraCount);
+            startRow = autoDashboardTop(totalRows);
         }
 
         int col = boxCol();
@@ -1301,6 +1378,90 @@ public final class TerminalUI {
         for (MenuItem item : items) {
             registerItem(startRow, item.number(), item.label(), themeColor, boxColor);
             boxRow(startRow++, col, buildMenuLine(item.number(), item.label(), false, themeColor, boxColor, iw));
+        }
+
+        boxRow(startRow++, col, boxBorder("╠", "═", "╣", boxColor, panel, iw));
+
+        String inputLabel = "Your choice  : ";
+        inputFieldRow = startRow;
+        inputFieldCol = col + 2 + inputLabel.length();
+
+        boxRow(startRow++, col, buildInputRow(inputLabel, "", boxColor, panel, inputBg, iw));
+        boxRow(startRow++, col, boxBorder("╚", "═", "╝", boxColor, panel, iw));
+
+        notifyRow = startRow;
+        System.out.flush();
+        return startRow;
+    }
+
+    public static int drawScrollableDashboard(
+            String title,
+            String welcome,
+            MenuItem[] items,
+            String themeColor,
+            String boxColor,
+            String[] extraHeader,
+            int startRow,
+            int selectedIndex) throws InterruptedException {
+
+        refreshTerminalSizeNow();
+        clearRegions();
+        clearItemData();
+
+        int extraCount = extraHeader == null ? 0 : extraHeader.length;
+        int headerRows = 5 + extraCount;
+        int footerRows = 3;
+
+        MenuViewport viewport = computeMenuViewport(items.length, selectedIndex, headerRows, footerRows);
+        int indicatorRows = viewport.overflow() ? 1 : 0;
+        int totalBoxH = headerRows + viewport.visibleCount() + indicatorRows + footerRows;
+
+        int maxStartRow = Math.max(1, termH() - totalBoxH + 1);
+        if (startRow <= 0) {
+            startRow = 2;
+        }
+        startRow = Math.max(1, Math.min(startRow, maxStartRow));
+
+        int col = boxCol();
+        int iw = innerW();
+        String panel = activePanelBgColor;
+        String inputBg = activeInputBgColor;
+        String muted = ConsoleColors.Accent.MUTED;
+
+        boxRow(startRow++, col, boxBorder("╔", "═", "╗", boxColor, panel, iw));
+        boxRow(startRow++, col, boxContentLine(title, BOLD + themeColor, boxColor, panel, iw));
+        boxRow(startRow++, col, boxBorder("╠", "═", "╣", boxColor, panel, iw));
+        boxRow(startRow++, col, boxContentLine(welcome, themeColor, boxColor, panel, iw));
+
+        if (extraHeader != null) {
+            for (String line : extraHeader) {
+                boxRow(startRow++, col, boxContentLeft(plain(line), muted, boxColor, panel, iw));
+            }
+        }
+
+        boxRow(startRow++, col, boxBorder("╠", "═", "╣", boxColor, panel, iw));
+
+        int start = viewport.startIndex();
+        int end = start + viewport.visibleCount();
+
+        for (int i = start; i < end; i++) {
+            MenuItem item = items[i];
+            registerItem(startRow, item.number(), item.label(), themeColor, boxColor);
+            boxRow(startRow++, col, buildMenuLine(
+                    item.number(),
+                    item.label(),
+                    i == selectedIndex,
+                    themeColor,
+                    boxColor,
+                    iw
+            ));
+        }
+
+        if (viewport.overflow()) {
+            String up = start > 0 ? "▲ more above" : " ";
+            String down = end < items.length ? "▼ more below" : " ";
+            String indicator = up + "   " + down;
+            boxRow(startRow++, col, boxContentLeft(indicator, ConsoleColors.Accent.MUTED, boxColor, panel, iw));
         }
 
         boxRow(startRow++, col, boxBorder("╠", "═", "╣", boxColor, panel, iw));
@@ -1513,7 +1674,7 @@ public final class TerminalUI {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // MOUSE / KEYBOARD INPUT
+    // INPUT
     // ─────────────────────────────────────────────────────────────
     public static int readChoice() throws Exception {
         InputStream in = System.in;
@@ -1771,6 +1932,253 @@ public final class TerminalUI {
         }
     }
 
+    public static int readChoiceArrowScrollable(
+            String title,
+            String welcome,
+            MenuItem[] items,
+            String themeColor,
+            String boxColor,
+            String[] extraHeader,
+            int startRow) throws Exception {
+
+        if (items == null || items.length == 0) {
+            return -1;
+        }
+
+        int selected = 0;
+        StringBuilder inputBuffer = new StringBuilder();
+
+        System.out.print(MOUSE_ON);
+        drawScrollableDashboard(title, welcome, items, themeColor, boxColor, extraHeader, startRow, selected);
+        updateInputField(String.valueOf(items[selected].number()));
+        System.out.flush();
+
+        if (sharedJLineTerminal != null) {
+            org.jline.terminal.Attributes saved = sharedJLineTerminal.enterRawMode();
+            org.jline.utils.NonBlockingReader reader = sharedJLineTerminal.reader();
+            try {
+                while (true) {
+                    int c = reader.read();
+                    if (c == -1) {
+                        continue;
+                    }
+
+                    if (c == 27) {
+                        int n1 = reader.read(100);
+                        if (n1 == '[' || n1 == 'O') {
+                            int n2 = reader.read(100);
+
+                            if (n2 == '<') {
+                                StringBuilder sb = new StringBuilder();
+                                int ch;
+                                while (true) {
+                                    ch = reader.read(100);
+                                    if (ch == 'M' || ch == 'm' || ch == -1) {
+                                        break;
+                                    }
+                                    sb.append((char) ch);
+                                }
+
+                                String[] parts = sb.toString().split(";");
+                                if (parts.length >= 3) {
+                                    int btn = Integer.parseInt(parts[0]);
+                                    int mcol = Integer.parseInt(parts[1]);
+                                    int mrow = Integer.parseInt(parts[2]);
+
+                                    if (btn == 64) {
+                                        selected = (selected - 1 + items.length) % items.length;
+                                        inputBuffer.setLength(0);
+                                        drawScrollableDashboard(title, welcome, items, themeColor, boxColor, extraHeader, startRow, selected);
+                                        updateInputField(String.valueOf(items[selected].number()));
+                                        continue;
+                                    }
+
+                                    if (btn == 65) {
+                                        selected = (selected + 1) % items.length;
+                                        inputBuffer.setLength(0);
+                                        drawScrollableDashboard(title, welcome, items, themeColor, boxColor, extraHeader, startRow, selected);
+                                        updateInputField(String.valueOf(items[selected].number()));
+                                        continue;
+                                    }
+
+                                    if (btn == 0 && ch == 'M') {
+                                        int hit = hitTest(mrow, mcol);
+                                        if (hit >= 0) {
+                                            return hit;
+                                        }
+                                    }
+                                }
+                                continue;
+                            }
+
+                            switch (n2) {
+                                case 'A' -> {
+                                    selected = (selected - 1 + items.length) % items.length;
+                                    inputBuffer.setLength(0);
+                                    drawScrollableDashboard(title, welcome, items, themeColor, boxColor, extraHeader, startRow, selected);
+                                    updateInputField(String.valueOf(items[selected].number()));
+                                }
+                                case 'B' -> {
+                                    selected = (selected + 1) % items.length;
+                                    inputBuffer.setLength(0);
+                                    drawScrollableDashboard(title, welcome, items, themeColor, boxColor, extraHeader, startRow, selected);
+                                    updateInputField(String.valueOf(items[selected].number()));
+                                }
+                            }
+                        }
+                        continue;
+                    }
+
+                    if (c == 13 || c == 10) {
+                        if (inputBuffer.length() > 0) {
+                            try {
+                                return Integer.parseInt(inputBuffer.toString());
+                            } catch (NumberFormatException ignored) {
+                            }
+                            inputBuffer.setLength(0);
+                            updateInputFieldError("Invalid choice input");
+                        } else {
+                            return items[selected].number();
+                        }
+                    }
+
+                    if (c == 3) {
+                        return 0;
+                    }
+
+                    if (c == 127 || c == 8) {
+                        if (inputBuffer.length() > 0) {
+                            inputBuffer.deleteCharAt(inputBuffer.length() - 1);
+                            updateInputField(inputBuffer.length() > 0
+                                    ? inputBuffer.toString()
+                                    : String.valueOf(items[selected].number()));
+                        }
+                        continue;
+                    }
+
+                    if (c >= '0' && c <= '9') {
+                        inputBuffer.append((char) c);
+                        updateInputField(inputBuffer.toString());
+                    }
+                }
+            } finally {
+                sharedJLineTerminal.setAttributes(saved);
+                System.out.print(MOUSE_OFF + SHOW_CUR);
+                System.out.flush();
+            }
+        }
+
+        setRaw();
+        InputStream in = System.in;
+        try {
+            while (true) {
+                int b = in.read();
+                if (b == -1) {
+                    continue;
+                }
+
+                if (b == 27) {
+                    int b2 = in.read();
+                    if (b2 != '[') {
+                        continue;
+                    }
+                    int b3 = in.read();
+
+                    if (b3 == '<') {
+                        StringBuilder sb = new StringBuilder();
+                        int ch;
+                        while (true) {
+                            ch = in.read();
+                            if (ch == 'M' || ch == 'm' || ch == -1) {
+                                break;
+                            }
+                            sb.append((char) ch);
+                        }
+
+                        String[] parts = sb.toString().split(";");
+                        if (parts.length >= 3) {
+                            int btn = Integer.parseInt(parts[0]);
+                            int mcol = Integer.parseInt(parts[1]);
+                            int mrow = Integer.parseInt(parts[2]);
+
+                            if (btn == 64) {
+                                selected = (selected - 1 + items.length) % items.length;
+                                inputBuffer.setLength(0);
+                                drawScrollableDashboard(title, welcome, items, themeColor, boxColor, extraHeader, startRow, selected);
+                                updateInputField(String.valueOf(items[selected].number()));
+                                continue;
+                            }
+
+                            if (btn == 65) {
+                                selected = (selected + 1) % items.length;
+                                inputBuffer.setLength(0);
+                                drawScrollableDashboard(title, welcome, items, themeColor, boxColor, extraHeader, startRow, selected);
+                                updateInputField(String.valueOf(items[selected].number()));
+                                continue;
+                            }
+
+                            if (btn == 0 && ch == 'M') {
+                                int hit = hitTest(mrow, mcol);
+                                if (hit >= 0) {
+                                    return hit;
+                                }
+                            }
+                        }
+                        continue;
+                    }
+
+                    switch (b3) {
+                        case 'A' -> {
+                            selected = (selected - 1 + items.length) % items.length;
+                            inputBuffer.setLength(0);
+                            drawScrollableDashboard(title, welcome, items, themeColor, boxColor, extraHeader, startRow, selected);
+                            updateInputField(String.valueOf(items[selected].number()));
+                        }
+                        case 'B' -> {
+                            selected = (selected + 1) % items.length;
+                            inputBuffer.setLength(0);
+                            drawScrollableDashboard(title, welcome, items, themeColor, boxColor, extraHeader, startRow, selected);
+                            updateInputField(String.valueOf(items[selected].number()));
+                        }
+                    }
+                    continue;
+                }
+
+                if (b == 13 || b == 10) {
+                    if (inputBuffer.length() > 0) {
+                        try {
+                            return Integer.parseInt(inputBuffer.toString());
+                        } catch (NumberFormatException ignored) {
+                        }
+                        inputBuffer.setLength(0);
+                        updateInputFieldError("Invalid choice input");
+                    } else {
+                        return items[selected].number();
+                    }
+                }
+
+                if (b == 127 || b == 8) {
+                    if (inputBuffer.length() > 0) {
+                        inputBuffer.deleteCharAt(inputBuffer.length() - 1);
+                        updateInputField(inputBuffer.length() > 0
+                                ? inputBuffer.toString()
+                                : String.valueOf(items[selected].number()));
+                    }
+                    continue;
+                }
+
+                if (b >= '0' && b <= '9') {
+                    inputBuffer.append((char) b);
+                    updateInputField(inputBuffer.toString());
+                }
+            }
+        } finally {
+            setCooked();
+            System.out.print(MOUSE_OFF + SHOW_CUR);
+            System.out.flush();
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────
     // CLEANUP
     // ─────────────────────────────────────────────────────────────
@@ -1784,9 +2192,6 @@ public final class TerminalUI {
     // ─────────────────────────────────────────────────────────────
     // CENTERED / THEMED HELPERS
     // ─────────────────────────────────────────────────────────────
-    private static final int DASH_W = DASH_W_FALLBACK;
-    private static final int DASH_IW = DASH_IW_FALLBACK;
-
     public static void printCentered(String text, String fg, String bg) {
         int col = centerCol(plain(text).length());
         System.out.print("\u001B[" + col + "G" + bg + fg + text + RESET);
@@ -2112,9 +2517,5 @@ public final class TerminalUI {
                 return;
             }
         }
-    }
-
-    public static org.jline.terminal.Terminal getJLineTerminal() {
-        return sharedJLineTerminal;
     }
 }
