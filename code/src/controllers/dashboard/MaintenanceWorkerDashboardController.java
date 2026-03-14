@@ -1,6 +1,7 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
+import cli.profile.EditProfileCLI;
 import cli.schedule.WorkerVisitBoardCLI;
 import controllers.authentication.AuthController;
 
@@ -62,6 +63,10 @@ public class MaintenanceWorkerDashboardController {
 //                break;
             case 3:
                 new WorkerVisitBoardCLI().show(wid);
+                break;
+            case 4:
+                EditProfileCLI editProfileCLI = new EditProfileCLI(username, "MAINTENANCE_WORKER");
+                editProfileCLI.start();
                 break;
             case 0:
                 mainDashboard.show();

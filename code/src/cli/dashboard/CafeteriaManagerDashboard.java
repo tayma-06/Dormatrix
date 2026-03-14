@@ -17,6 +17,7 @@ public class CafeteriaManagerDashboard implements Dashboard {
             new MenuItem(2, "Schedule Special Event"),
             new MenuItem(3, "Verify Student Token"),
             new MenuItem(4, "Toggle Ramadan Mode"),
+            new MenuItem(5, "Edit Profile"),
             new MenuItem(0, "Logout"),
     };
 
@@ -81,7 +82,7 @@ public class CafeteriaManagerDashboard implements Dashboard {
                     return;
                 }
 
-                mainController.handleAction(choice);
+                mainController.handleAction(choice, username);
 
                 System.out.println();
                 drawInputPrompt("Press Enter to continue...", THEME.text(), THEME.canvasBg());

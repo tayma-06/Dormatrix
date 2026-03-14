@@ -2,6 +2,7 @@ package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
 import cli.dashboard.room.StudentRoomDashboard;
+import cli.profile.EditProfileCLI;
 import cli.routine.AttendantRoutineCLI;
 import cli.schedule.AttendantWorkerScheduleCLI;
 import cli.announcement.AttendantAnnouncementCLI;
@@ -54,6 +55,9 @@ public class AttendantDashboardController {
                 break;
             case 6:
                 new AttendantEmergencyContactsCLI().show(username);
+                break;
+            case 7:
+                new EditProfileCLI(username, "HALL_ATTENDANT").start();
                 break;
             case 0:
                 mainDashboard.show();
