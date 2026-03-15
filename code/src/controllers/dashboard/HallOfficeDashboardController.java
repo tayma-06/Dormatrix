@@ -7,14 +7,18 @@ import cli.views.complaint.ComplaintView;
 import controllers.dashboard.room.StudentRoomDashboardController;
 import controllers.room.RoomController;
 import controllers.room.RoomService;
-import java.io.*;
-import java.util.*;
 import libraries.collections.MyArrayList;
 import models.complaints.Complaint;
+import models.room.Room;
 import repo.file.FileComplaintRepository;
+import utils.ConsoleColors;
 import utils.ConsoleUtil;
 import utils.FastInput;
 import utils.TerminalUI;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HallOfficeDashboardController {
 
@@ -40,8 +44,7 @@ public class HallOfficeDashboardController {
                 TerminalUI.tPrint(">> Feature [Attendant Task] is under development.");
                 break;
             case 5:
-                EditProfileCLI editProfileCLI = new EditProfileCLI(username, "HALL_OFFICER");
-                editProfileCLI.start();
+                new EditProfileCLI(username, "HALL_OFFICER").start();
                 break;
             case 0:
                 mainDashboard.show();
@@ -57,21 +60,17 @@ public class HallOfficeDashboardController {
             TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
             TerminalUI.at(2, 1);
             TerminalUI.tSubDashboard("ROOM MANAGEMENT MENU", new String[]{
-                "[1] View All Rooms status",
-                "[2] Allocate/Change Student Room",
-                "[0] Back"
+                    "[1] View Available Rooms",
+                    "[2] Allocate / Change Student Room",
+                    "[0] Back"
             });
 
             int subChoice = FastInput.readInt();
 
             if (subChoice == 1) {
-                for (models.room.Room r : roomController.getAllRooms()) {
-                    TerminalUI.tBoxLine(r.toString());
-                }
-                TerminalUI.tPause();
+                roomController.showAvailableRooms();
             } else if (subChoice == 2) {
                 updateStudentRoom();
-                TerminalUI.tPause();
             } else if (subChoice == 0) {
                 ConsoleUtil.clearScreen();
                 return;
@@ -83,19 +82,139 @@ public class HallOfficeDashboardController {
     }
 
     private void updateStudentRoom() {
-        TerminalUI.tPrompt("Enter Student ID: ");
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("ALLOCATE / CHANGE STUDENT ROOM");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Enter Student ID to continue.");
+        TerminalUI.tBoxSep();
+        TerminalUI.tPrompt("Student ID: ");
+
         String targetId = FastInput.readLine().trim();
+        if (targetId.isEmpty()) {
+            TerminalUI.tError("Student ID cannot be empty.");
+            TerminalUI.tPause();
+            return;
+        }
+
+        StudentRecord student = findStudent(targetId);
+        if (student == null) {
+            TerminalUI.tError("Student ID [" + targetId + "] not found.");
+            TerminalUI.tPause();
+            return;
+        }
+
+        String selectedRoom = roomController.pickAvailableRoomInteractive();
+        if (selectedRoom == null || selectedRoom.trim().isEmpty()) {
+            return;
+        }
+
+        Room previewRoom = roomController.getRoomWithRealOccupancy(selectedRoom);
+        showAllocationPreview(student, previewRoom);
+
+        String confirm = FastInput.readLine().trim().toLowerCase();
+        if (!confirm.equals("y") && !confirm.equals("yes")) {
+            TerminalUI.tError("Room allocation cancelled.");
+            TerminalUI.tPause();
+            return;
+        }
+
+        if (!roomController.allocateRoom(selectedRoom)) {
+            TerminalUI.tError("Could not allocate selected room.");
+            TerminalUI.tPause();
+            return;
+        }
+
+        if (!student.oldRoom.equals("UNASSIGNED") && !student.oldRoom.equals("N/A")) {
+            roomController.freeRoom(student.oldRoom);
+        }
+
+        boolean saved = writeStudentRoom(student.id, selectedRoom);
+        if (!saved) {
+            TerminalUI.tError("Room updated in room list, but student file save failed.");
+            TerminalUI.tPause();
+            return;
+        }
+
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("ROOM UPDATED");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Student ID : " + student.id);
+        TerminalUI.tBoxLine("Student    : " + student.name);
+        TerminalUI.tBoxLine("Old Room   : " + student.oldRoom);
+        TerminalUI.tBoxLine("New Room   : " + selectedRoom);
+        TerminalUI.tBoxBottom();
+        TerminalUI.tPause();
+    }
+
+    private void showAllocationPreview(StudentRecord student, Room room) {
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("ALLOCATION PREVIEW");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Student ID : " + student.id);
+        TerminalUI.tBoxLine("Student    : " + student.name);
+        TerminalUI.tBoxLine("Current    : " + student.oldRoom);
+
+        if (room != null) {
+            int free = Math.max(0, room.getCapacity() - room.getCurrentOccupancy());
+            TerminalUI.tBoxSep();
+            TerminalUI.tBoxLine("Selected Room : " + room.getRoomId());
+            TerminalUI.tBoxLine("Occupancy     : " + room.getCurrentOccupancy() + "/" + room.getCapacity());
+            TerminalUI.tBoxLine("Free Seats    : " + free);
+            TerminalUI.tBoxLine("Status        : " + (room.isAvailable() ? "AVAILABLE" : "FULL"));
+        }
+
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Confirm allocation? Type Y to proceed, anything else to cancel.");
+        TerminalUI.tBoxBottom();
+        TerminalUI.tPrompt("Confirm [Y/N]: ");
+    }
+
+    private StudentRecord findStudent(String targetId) {
+        File file = new File(STUDENT_FILE);
+        if (!file.exists()) {
+            return null;
+        }
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split("\\|", -1);
+                if (parts.length > 1) {
+                    String fileId = parts[0].trim().replace("\uFEFF", "");
+                    if (fileId.equals(targetId.trim())) {
+                        StudentRecord record = new StudentRecord();
+                        record.id = fileId;
+                        record.name = parts[1].trim();
+                        record.oldRoom = (parts.length > 7 && !parts[7].trim().isEmpty())
+                                ? parts[7].trim()
+                                : "UNASSIGNED";
+                        return record;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private boolean writeStudentRoom(String targetId, String newRoom) {
+        File file = new File(STUDENT_FILE);
+        if (!file.exists()) {
+            return false;
+        }
 
         List<String> lines = new ArrayList<>();
         boolean found = false;
-        String oldRoom = "UNASSIGNED";
-        String currentLine = null;
-
-        File file = new File(STUDENT_FILE);
-        if (!file.exists()) {
-            System.out.println("Error: Student database missing.");
-            return;
-        }
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
@@ -104,71 +223,45 @@ public class HallOfficeDashboardController {
 
                 if (parts.length > 0) {
                     String fileId = parts[0].trim().replace("\uFEFF", "");
-
-                    if (fileId.equals(targetId)) {
+                    if (fileId.equals(targetId.trim())) {
                         found = true;
-                        currentLine = line;
-                        if (parts.length > 7 && !parts[7].trim().isEmpty()) {
-                            oldRoom = parts[7].trim();
+
+                        StringBuilder newLine = new StringBuilder();
+                        for (int i = 0; i < 8; i++) {
+                            if (i == 7) {
+                                newLine.append(newRoom);
+                            } else if (i < parts.length) {
+                                newLine.append(parts[i]);
+                            } else {
+                                newLine.append("");
+                            }
+
+                            if (i < 7) {
+                                newLine.append("|");
+                            }
                         }
+
+                        lines.add(newLine.toString());
                     } else {
                         lines.add(line);
                     }
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
-            return;
+            return false;
         }
 
         if (!found) {
-            System.out.println("Student ID [" + targetId + "] not found.");
-            return;
+            return false;
         }
 
-        System.out.println("Student found. Current Room: " + oldRoom);
-        roomController.showAvailableRooms();
-
-        TerminalUI.tPrompt("Enter New Room Number (or type '0' to cancel): ");
-        String newRoom = FastInput.readLine().trim();
-
-        if (newRoom.equals("0")) {
-            return;
-        }
-
-        if (roomController.allocateRoom(newRoom)) {
-            if (!oldRoom.equals("UNASSIGNED") && !oldRoom.equals("N/A")) {
-                roomController.freeRoom(oldRoom);
+        try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
+            for (String l : lines) {
+                pw.println(l);
             }
-
-            String[] parts = currentLine.split("\\|", -1);
-            StringBuilder newLine = new StringBuilder();
-
-            for (int i = 0; i < 8; i++) {
-                if (i == 7) {
-                    newLine.append(newRoom);
-                } else if (i < parts.length) {
-                    newLine.append(parts[i]);
-                } else {
-                    newLine.append("");
-                }
-
-                if (i < 7) {
-                    newLine.append("|");
-                }
-            }
-
-            lines.add(newLine.toString());
-
-            try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-                for (String l : lines) {
-                    pw.println(l);
-                }
-            } catch (IOException e) {
-                System.out.println("Error saving student data.");
-            }
-
-            System.out.println("SUCCESS: Room updated to " + newRoom);
+            return true;
+        } catch (IOException e) {
+            return false;
         }
     }
 
@@ -192,7 +285,9 @@ public class HallOfficeDashboardController {
                 case 7:
                     TerminalUI.tPrompt("Enter Room ID: ");
                     String rid = FastInput.readLine().trim();
-                    new StudentRoomDashboard(new StudentRoomDashboardController(new RoomService())).showComplaints(rid);
+                    new StudentRoomDashboard(
+                            new StudentRoomDashboardController(new RoomService())
+                    ).showComplaints(rid);
                     ConsoleUtil.pause();
                     break;
                 case 0:
@@ -203,5 +298,11 @@ public class HallOfficeDashboardController {
                     ConsoleUtil.pause();
             }
         }
+    }
+
+    private static class StudentRecord {
+        String id;
+        String name;
+        String oldRoom;
     }
 }
