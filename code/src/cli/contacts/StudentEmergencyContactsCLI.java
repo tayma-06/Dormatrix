@@ -11,9 +11,8 @@ public class StudentEmergencyContactsCLI {
     private final Scanner sc = Input.SC;
 
     public void show() {
-        System.out.println();
-        System.out.println(controller.renderBoard());
-        System.out.print("Press Enter to go back...");
-        sc.nextLine();
+        utils.ConsoleUtil.clearScreen();
+        controller.renderBoard();
+        utils.TerminalUI.tPause();
     }
 }

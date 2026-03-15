@@ -11,15 +11,15 @@ import java.util.List;
 
 public class ComplaintView {
 
-    public void studentMenu() {
-        TerminalUI.tSubDashboard("COMPLAINT (STUDENT)", new String[]{
-            "[1] File a Complaint",
-            "[2] View My Complaints",
-                "[3] Set preferred visit time",
-                "[4] Request reschedule",
-            "[0] Back"
-        });
-    }
+//    public void studentMenu() {
+//        TerminalUI.tSubDashboard("COMPLAINT (STUDENT)", new String[]{
+//            "[1] File a Complaint",
+//            "[2] View My Complaints",
+//                "[3] Set preferred visit time",
+//                "[4] Request reschedule",
+//            "[0] Back"
+//        });
+//    }
 
     public void attendantMenu() {
         TerminalUI.tSubDashboard("COMPLAINT (ATTENDANT)", new String[]{
