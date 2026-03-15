@@ -62,6 +62,7 @@ public class Complaint{
     {
         this.status = status;
     }
+    public void setTags(String t) { this.tags = t; }
 
     public String getComplaintId(){ return complaintId; }
     public String getStudentId(){ return studentId; }

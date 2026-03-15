@@ -183,9 +183,23 @@ public class WorkerScheduleController {
         sb.append("Room         : ").append(c.getStudentRoomNo()).append("\n");
         sb.append("Worker       : ")
                 .append(c.getAssignedWorkerId() == null || c.getAssignedWorkerId().trim().isEmpty()
-                        ? "(not assigned)"
-                        : c.getAssignedWorkerId())
-                .append("\n\n");
+                        ? "(not assigned)" : c.getAssignedWorkerId())
+                .append("\n");
+
+        // ── Student scheduling preference ──
+        String pref = cli.complaint.StudentComplaintCLI.extractTag(
+                c.getTags(), cli.complaint.StudentComplaintCLI.SCHED_PREF_PREFIX);
+        String req  = cli.complaint.StudentComplaintCLI.extractTag(
+                c.getTags(), cli.complaint.StudentComplaintCLI.SCHED_REQ_PREFIX);
+
+        if (pref != null) {
+            sb.append("Student Pref : ").append(pref).append("\n");
+        }
+        if (req != null) {
+            sb.append("Reschedule ? : ").append(req).append("\n");
+        }
+
+        sb.append("\n");
         sb.append(routineController.renderMaskedRoutineForStudent(c.getStudentId()));
         return sb.toString();
     }
@@ -455,18 +469,26 @@ public class WorkerScheduleController {
             Complaint c = all.get(i);
             if (c.getStatus() == ComplaintStatus.RESOLVED) continue;
 
-            String room = (c.getStudentRoomNo() == null || c.getStudentRoomNo().trim().isEmpty())
-                    ? "?"
-                    : c.getStudentRoomNo().trim();
-
+            String room     = (c.getStudentRoomNo() == null || c.getStudentRoomNo().trim().isEmpty())
+                    ? "?" : c.getStudentRoomNo().trim();
             String category = c.getCategory() == null ? "UNKNOWN" : c.getCategory().name();
 
-            String num    = String.format("%-4s", n + ".");           // e.g. "1.  "
-            String id     = String.format("%-8s", c.getComplaintId()); // e.g. "C-3     "
-            String cat    = String.format("%-15s", category);          // e.g. "PLUMBING       "
+            String num    = String.format("%-4s", n + ".");
+            String id     = String.format("%-8s", c.getComplaintId());
+            String cat    = String.format("%-15s", category);
             String roomStr = "Room " + room;
 
-            labels.add(num + id + "  |  " + cat + "  |  " + roomStr);
+            // ── Student scheduling note badges ──
+            String pref = cli.complaint.StudentComplaintCLI.extractTag(
+                    c.getTags(), cli.complaint.StudentComplaintCLI.SCHED_PREF_PREFIX);
+            String req  = cli.complaint.StudentComplaintCLI.extractTag(
+                    c.getTags(), cli.complaint.StudentComplaintCLI.SCHED_REQ_PREFIX);
+
+            String badge = "";
+            if (pref != null) badge += " [PREF]";
+            if (req  != null) badge += " [RESCHEDULE REQ]";
+
+            labels.add(num + id + "  |  " + cat + "  |  " + roomStr + badge);
             n++;
         }
 

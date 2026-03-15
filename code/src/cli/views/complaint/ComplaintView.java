@@ -15,6 +15,8 @@ public class ComplaintView {
         TerminalUI.tSubDashboard("COMPLAINT (STUDENT)", new String[]{
             "[1] File a Complaint",
             "[2] View My Complaints",
+                "[3] Set preferred visit time",
+                "[4] Request reschedule",
             "[0] Back"
         });
     }
