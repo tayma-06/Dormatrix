@@ -50,8 +50,8 @@ public class RoomController {
         this.rooms = loadRooms();
 
         String roomNumber = getStudentRoomNumber(studentIdentifier);
-        Room roomDetails = null;
 
+        Room roomDetails = null;
         if (!roomNumber.equals("UNASSIGNED") && !roomNumber.equals("N/A")) {
             roomDetails = getRoomWithRealOccupancy(roomNumber);
         }
@@ -64,12 +64,12 @@ public class RoomController {
             if (choice == 1) {
                 if (roomNumber.equals("UNASSIGNED") || roomNumber.equals("N/A")) {
                     TerminalUI.tError("You do not have a room assigned yet.");
+                    ConsoleUtil.pause();
                 } else {
                     new StudentRoomDashboard(
                             new StudentRoomDashboardController(new RoomService())
                     ).showComplaints(roomNumber);
                 }
-                ConsoleUtil.pause();
             } else {
                 ConsoleUtil.clearScreen();
                 stayInMenu = false;

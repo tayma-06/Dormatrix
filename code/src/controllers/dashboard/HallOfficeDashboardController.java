@@ -288,7 +288,6 @@ public class HallOfficeDashboardController {
                     new StudentRoomDashboard(
                             new StudentRoomDashboardController(new RoomService())
                     ).showComplaints(rid);
-                    ConsoleUtil.pause();
                     break;
                 case 0:
                     ConsoleUtil.clearScreen();
