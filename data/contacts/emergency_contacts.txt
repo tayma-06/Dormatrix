@@ -1,7 +1,0 @@
-HALL_ATTENDANT_1|Hall Attendant 1||||
-HALL_ATTENDANT_2|Hall Attendant 2||||
-AMBULANCE|Ambulance||||
-MEDICAL_CENTRE|Medical Centre||||
-PHARMACY|Pharmacy||||
-FIRE_SERVICE|Fire Service||||
-SECURITY_DESK|Security Desk||||
