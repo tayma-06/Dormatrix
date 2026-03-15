@@ -1,4 +1,7 @@
 package models.enums;
 
-public class RoomChangeApplicationStatus {
+public enum RoomChangeApplicationStatus {
+    PENDING,
+    REJECTED,
+    COMPLETED
 }

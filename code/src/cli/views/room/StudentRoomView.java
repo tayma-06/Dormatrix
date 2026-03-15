@@ -10,6 +10,8 @@ public class StudentRoomView {
 
     private static final MenuItem[] MENU = {
             new MenuItem(1, "View My Room Complaints"),
+            new MenuItem(2, "Apply For Room Change"),
+            new MenuItem(3, "View My Room Change Applications"),
             new MenuItem(0, "Back")
     };
 
@@ -46,6 +48,7 @@ public class StudentRoomView {
             return new String[]{
                     "Room Number : (not assigned)",
                     "Status      : " + ConsoleColors.Accent.WARNING + "PENDING ASSIGNMENT" + RESET,
+                    "Room Change : " + ConsoleColors.Accent.MUTED + "Unavailable until a room is assigned" + RESET,
                     "Next Step   : Contact the Hall Office for room allocation."
             };
         }
@@ -54,6 +57,7 @@ public class StudentRoomView {
             return new String[]{
                     "Room Number : " + roomNumber,
                     "Status      : " + ConsoleColors.Accent.WARNING + "DETAILS UNAVAILABLE" + RESET,
+                    "Room Change : You may still submit a request if needed.",
                     "Info        : Room record could not be loaded right now."
             };
         }
@@ -67,7 +71,8 @@ public class StudentRoomView {
                 "Occupancy   : " + room.getCurrentOccupancy() + "/" + room.getCapacity(),
                 "Status      : " + statusColor + (room.isAvailable() ? "AVAILABLE" : "FULL") + RESET,
                 "Space Meter : " + buildOccupancyBar(room.getCurrentOccupancy(), room.getCapacity(), 18),
-                "Note        : Use the menu below to inspect complaint activity."
+                "Room Change : Submit an application if you want to move rooms.",
+                "Note        : Complaints and room-change requests are available below."
         };
     }
 

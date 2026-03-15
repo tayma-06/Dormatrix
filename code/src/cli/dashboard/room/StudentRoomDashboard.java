@@ -1,23 +1,21 @@
 package cli.dashboard.room;
 
-import cli.dashboard.Dashboard;
+import cli.forms.room.RoomChangeApplicationForm;
 import cli.views.room.StudentRoomView;
 import controllers.dashboard.room.StudentRoomDashboardController;
 import libraries.collections.MyArrayList;
-import libraries.collections.MyString;
 import models.complaints.Complaint;
-import models.enums.ComplaintStatus;
 import models.room.Room;
+import models.room.RoomChangeApplication;
+import org.jline.terminal.Attributes;
+import org.jline.terminal.Terminal;
+import org.jline.utils.NonBlockingReader;
 import utils.ConsoleColors;
 import utils.ConsoleUtil;
 import utils.FastInput;
 import utils.TerminalUI;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-public class StudentRoomDashboard implements Dashboard {
+public class StudentRoomDashboard {
 
     private final StudentRoomDashboardController controller;
     private final StudentRoomView view;
@@ -27,12 +25,15 @@ public class StudentRoomDashboard implements Dashboard {
         this.view = new StudentRoomView();
     }
 
-    @Override
-    public void show(String studentIdentifier) {
-        String roomNumber = controller.getStudentRoomNumber(studentIdentifier);
-        Room room = controller.getRoomDetails(roomNumber);
+    private enum NavKey {
+        UP, DOWN, ENTER, ZERO, NONE
+    }
 
+    public void show(String studentIdentifier) {
         while (true) {
+            String roomNumber = controller.getStudentRoomNumber(studentIdentifier);
+            Room room = controller.getRoomDetails(roomNumber);
+
             ConsoleUtil.clearScreen();
             int choice = view.show(roomNumber, room);
 
@@ -48,6 +49,10 @@ public class StudentRoomDashboard implements Dashboard {
                 } else {
                     showComplaints(roomNumber);
                 }
+            } else if (choice == 2) {
+                new RoomChangeApplicationForm(controller).show(studentIdentifier, roomNumber);
+            } else if (choice == 3) {
+                showMyApplications(studentIdentifier);
             }
         }
     }
@@ -58,281 +63,312 @@ public class StudentRoomDashboard implements Dashboard {
         if (list.size() == 0) {
             ConsoleUtil.clearScreen();
             TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
-            TerminalUI.tBoxTop();
-            TerminalUI.tBoxTitle("ROOM COMPLAINTS");
-            TerminalUI.tBoxSep();
-            TerminalUI.tBoxLine("Room : " + roomNumber);
-            TerminalUI.tBoxLine("No complaints found for this room.");
-            TerminalUI.tBoxSep();
-            TerminalUI.tBoxLine("Press Enter to continue...");
-            TerminalUI.tBoxBottom();
-            FastInput.readLine();
+            TerminalUI.tError("No complaints found for room " + roomNumber + ".");
+            TerminalUI.tPause();
             return;
         }
 
         int selected = 0;
 
         while (true) {
-            drawComplaintBrowser(roomNumber, list, selected);
+            if (selected >= list.size()) selected = list.size() - 1;
+            if (selected < 0) selected = 0;
 
-            int key;
-            try {
-                key = readNavKey();
-            } catch (Exception e) {
-                return;
-            }
+            renderComplaintPreview(roomNumber, list, selected);
+            NavKey key = readNavKey();
 
-            if (key == Key.UP) {
+            if (key == NavKey.UP) {
                 selected = (selected - 1 + list.size()) % list.size();
-            } else if (key == Key.DOWN) {
+            } else if (key == NavKey.DOWN) {
                 selected = (selected + 1) % list.size();
-            } else if (key == Key.ENTER || key == Key.ESC || key == 0) {
+            } else if (key == NavKey.ENTER || key == NavKey.ZERO) {
+                TerminalUI.cleanup();
                 return;
             }
         }
     }
 
-    private void drawComplaintBrowser(String roomNumber, MyArrayList<Complaint> list, int selected) {
+    public void showMyApplications(String studentIdentifier) {
+        MyArrayList<RoomChangeApplication> list = controller.getRoomChangeApplications(studentIdentifier);
+
+        if (list.size() == 0) {
+            ConsoleUtil.clearScreen();
+            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+            TerminalUI.tError("You have not submitted any room change application.");
+            TerminalUI.tPause();
+            return;
+        }
+
+        int selected = 0;
+
+        while (true) {
+            if (selected >= list.size()) selected = list.size() - 1;
+            if (selected < 0) selected = 0;
+
+            renderApplicationPreview(list, selected);
+            NavKey key = readNavKey();
+
+            if (key == NavKey.UP) {
+                selected = (selected - 1 + list.size()) % list.size();
+            } else if (key == NavKey.DOWN) {
+                selected = (selected + 1) % list.size();
+            } else if (key == NavKey.ENTER || key == NavKey.ZERO) {
+                TerminalUI.cleanup();
+                return;
+            }
+        }
+    }
+
+    private void renderComplaintPreview(String roomNumber, MyArrayList<Complaint> list, int selected) {
         ConsoleUtil.clearScreen();
         TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
         System.out.print(TerminalUI.HIDE_CUR);
 
-        int totalW = Math.min(TerminalUI.termW() - 4, 116);
-        int totalCol = TerminalUI.centerCol(totalW);
-        int leftW = 44;
-        int rightW = totalW - leftW - 3;
-        int topRow = 3;
+        int termW = TerminalUI.termW();
+        int leftCol = Math.max(3, termW / 14);
+        int topRow = 5;
+        int leftW = Math.min(44, Math.max(36, termW / 3));
+        int rightCol = leftCol + leftW + 3;
+        int rightW = Math.max(44, termW - rightCol - leftCol);
 
-        int visible = Math.max(5, Math.min(10, TerminalUI.termH() - 14));
-        int start = Math.max(0, selected - visible / 2);
-        if (start + visible > list.size()) {
-            start = Math.max(0, list.size() - visible);
+        drawPanel(topRow, leftCol, leftW, 17, "ROOM COMPLAINTS");
+        drawPanel(topRow, rightCol, rightW, 18, "COMPLAINT DETAILS");
+
+        put(topRow + 2, leftCol + 2,
+                ConsoleColors.ThemeText.SOFT_WHITE
+                        + "Room " + roomNumber + "   |   Total: " + list.size()
+                        + TerminalUI.RESET);
+
+        int start = Math.max(0, selected - 4);
+        int end = Math.min(list.size(), start + 10);
+        if (end - start < 10) {
+            start = Math.max(0, end - 10);
         }
-        int end = Math.min(list.size(), start + visible);
 
-        List<String> left = new ArrayList<>();
-        left.add("Room: " + roomNumber + "   Total: " + list.size());
-        left.add("");
-
+        int row = topRow + 4;
         for (int i = start; i < end; i++) {
             Complaint c = list.get(i);
-            String marker = i == selected ? "> " : "  ";
-            String id = TerminalUI.padL(c.getComplaintId(), 12);
-            String status = shortStatus(c.getStatus());
-            left.add(marker + id + "  " + status);
-        }
+            boolean isSelected = i == selected;
 
-        if (start > 0 || end < list.size()) {
-            left.add("");
-            left.add("Showing " + (start + 1) + "-" + end + " of " + list.size());
+            String line = String.format("%-14s %-12s",
+                    c.getComplaintId(),
+                    c.getStatus().name());
+
+            String fg = isSelected ? ConsoleColors.FG_BLACK : ConsoleColors.ThemeText.SOFT_WHITE;
+            String bg = isSelected ? ConsoleColors.bgRGB(210, 195, 245) : TerminalUI.getActivePanelBgColor();
+
+            put(row++, leftCol + 2, bg + fg + pad(line, leftW - 4) + TerminalUI.RESET);
         }
 
         Complaint c = list.get(selected);
 
-        List<String> right = new ArrayList<>();
-        right.add("Complaint ID   : " + c.getComplaintId());
-        right.add("Status         : " + coloredStatus(c.getStatus()));
-        right.add("Category       : " + pretty(c.getCategory().name()));
-        right.add("Priority       : " + pretty(String.valueOf(c.getPriority())));
-        right.add("AssignedWorker : " + workerText(c));
-        right.add("Student        : " + valueOrDash(c.getStudentName()));
-        right.add("Room           : " + valueOrDash(c.getStudentRoomNo()));
-        right.add("");
+        put(topRow + 2, rightCol + 2, kv("Complaint ID", c.getComplaintId()));
+        put(topRow + 3, rightCol + 2, kv("Status", c.getStatus().name()));
+        put(topRow + 4, rightCol + 2, kv("Category", c.getCategory().name()));
+        put(topRow + 5, rightCol + 2, kv("Priority", c.getPriority().name()));
 
-        right.add("Description");
-        String[] wrappedDesc = ConsoleUtil.wrapText(valueOrDash(c.getDescription()), Math.max(18, rightW - 4));
-        for (String line : wrappedDesc) {
-            right.add(line);
+        String worker = c.getAssignedWorkerId();
+        if (worker == null || worker.trim().isEmpty()) {
+            worker = "(none)";
+        }
+        put(topRow + 6, rightCol + 2, kv("Worker", worker));
+
+        put(topRow + 8, rightCol + 2,
+                ConsoleColors.ThemeText.SOFT_WHITE + "Description" + TerminalUI.RESET);
+
+        String[] desc = wrap(c.getDescription(), Math.max(20, rightW - 6));
+        for (int i = 0; i < Math.min(desc.length, 5); i++) {
+            put(topRow + 9 + i, rightCol + 2,
+                    ConsoleColors.FG_BRIGHT_WHITE + desc[i] + TerminalUI.RESET);
         }
 
-        String tags = c.getTags();
-        if (tags != null && !tags.trim().isEmpty()) {
-            right.add("");
-            right.add("Tags");
-            String[] wrappedTags = ConsoleUtil.wrapText(tags.trim(), Math.max(18, rightW - 4));
-            for (String line : wrappedTags) {
-                right.add(line);
-            }
-        }
-
-        drawPanel(topRow, totalCol, leftW, "COMPLAINT LIST", left, selected - start + 2, 2);
-        drawPanel(topRow, totalCol + leftW + 3, rightW, "COMPLAINT DETAILS", right, -1, -1);
-
-        int footerRow = topRow + Math.max(left.size(), right.size()) + 4;
-        TerminalUI.at(footerRow, totalCol);
-        System.out.print(
+        put(topRow + 17, leftCol,
                 ConsoleColors.Accent.MUTED
-                        + "Use Up/Down keys to inspect complaint details. Press Enter or 0 to return."
-                        + TerminalUI.RESET
-        );
+                        + "Up/Down browse   Enter/0 return"
+                        + TerminalUI.RESET);
+
         System.out.flush();
     }
 
-    private void drawPanel(int row, int col, int width, String title, List<String> lines, int selectedLineIndex, int contentStartLine) {
-        String box = TerminalUI.getActiveBoxColor();
-        String panel = TerminalUI.getActivePanelBgColor();
-        String text = TerminalUI.getActiveTextColor();
+    private void renderApplicationPreview(MyArrayList<RoomChangeApplication> list, int selected) {
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        System.out.print(TerminalUI.HIDE_CUR);
 
-        int inner = Math.max(10, width - 2);
+        int termW = TerminalUI.termW();
+        int leftCol = Math.max(3, termW / 14);
+        int topRow = 5;
+        int leftW = Math.min(46, Math.max(38, termW / 3));
+        int rightCol = leftCol + leftW + 3;
+        int rightW = Math.max(44, termW - rightCol - leftCol);
 
-        TerminalUI.at(row++, col);
-        System.out.print(box + panel + "╔" + "═".repeat(inner) + "╗" + TerminalUI.RESET);
+        drawPanel(topRow, leftCol, leftW, 17, "MY ROOM CHANGE APPLICATIONS");
+        drawPanel(topRow, rightCol, rightW, 19, "APPLICATION DETAILS");
 
-        TerminalUI.at(row++, col);
-        System.out.print(
-                box + panel + "║"
-                        + TerminalUI.BOLD + text + panel + TerminalUI.padC(title, inner)
-                        + box + panel + "║" + TerminalUI.RESET
-        );
+        put(topRow + 2, leftCol + 2,
+                ConsoleColors.ThemeText.SOFT_WHITE
+                        + "Applications: " + list.size()
+                        + TerminalUI.RESET);
 
-        TerminalUI.at(row++, col);
-        System.out.print(box + panel + "╠" + "═".repeat(inner) + "╣" + TerminalUI.RESET);
-
-        for (int i = 0; i < lines.size(); i++) {
-            String raw = lines.get(i) == null ? "" : lines.get(i);
-            boolean isSelected = selectedLineIndex >= 0 && i >= contentStartLine && i == selectedLineIndex;
-
-            String rowBg = isSelected ? ConsoleColors.bgRGB(185, 165, 220) : panel;
-            String rowFg = isSelected ? ConsoleColors.fgRGB(25, 15, 55) : text;
-
-            TerminalUI.at(row++, col);
-            System.out.print(
-                    box + panel + "║ "
-                            + rowBg + rowFg + fitLine(raw, inner - 2)
-                            + box + panel + " ║" + TerminalUI.RESET
-            );
+        int start = Math.max(0, selected - 4);
+        int end = Math.min(list.size(), start + 10);
+        if (end - start < 10) {
+            start = Math.max(0, end - 10);
         }
 
-        TerminalUI.at(row, col);
-        System.out.print(box + panel + "╚" + "═".repeat(inner) + "╝" + TerminalUI.RESET);
+        int row = topRow + 4;
+        for (int i = start; i < end; i++) {
+            RoomChangeApplication app = list.get(i);
+            boolean isSelected = i == selected;
+
+            String line = String.format("%-14s %-10s",
+                    app.getApplicationId(),
+                    app.getStatus().name());
+
+            String fg = isSelected ? ConsoleColors.FG_BLACK : ConsoleColors.ThemeText.SOFT_WHITE;
+            String bg = isSelected ? ConsoleColors.bgRGB(210, 195, 245) : TerminalUI.getActivePanelBgColor();
+
+            put(row++, leftCol + 2, bg + fg + pad(line, leftW - 4) + TerminalUI.RESET);
+        }
+
+        RoomChangeApplication app = list.get(selected);
+        put(topRow + 2, rightCol + 2, kv("Application ID", app.getApplicationId()));
+        put(topRow + 3, rightCol + 2, kv("Current Room", app.getCurrentRoom()));
+        put(topRow + 4, rightCol + 2, kv("Requested Room", app.getRequestedRoom()));
+        put(topRow + 5, rightCol + 2, kv("Status", app.getStatus().name()));
+        put(topRow + 6, rightCol + 2, kv("Submitted At", app.getSubmittedAt()));
+
+        String reviewedBy = app.getReviewedBy();
+        if (reviewedBy == null || reviewedBy.trim().isEmpty()) reviewedBy = "(not reviewed)";
+        put(topRow + 7, rightCol + 2, kv("Reviewed By", reviewedBy));
+
+        String reviewedAt = app.getReviewedAt();
+        if (reviewedAt == null || reviewedAt.trim().isEmpty()) reviewedAt = "(not reviewed)";
+        put(topRow + 8, rightCol + 2, kv("Reviewed At", reviewedAt));
+
+        put(topRow + 10, rightCol + 2,
+                ConsoleColors.ThemeText.SOFT_WHITE + "Reason" + TerminalUI.RESET);
+        String[] reason = wrap(app.getReason(), Math.max(20, rightW - 6));
+        for (int i = 0; i < Math.min(reason.length, 3); i++) {
+            put(topRow + 11 + i, rightCol + 2,
+                    ConsoleColors.FG_BRIGHT_WHITE + reason[i] + TerminalUI.RESET);
+        }
+
+        put(topRow + 15, rightCol + 2,
+                ConsoleColors.ThemeText.SOFT_WHITE + "Review Note" + TerminalUI.RESET);
+        String review = app.getReviewNote();
+        if (review == null || review.trim().isEmpty()) review = "(none)";
+        String[] note = wrap(review, Math.max(20, rightW - 6));
+        for (int i = 0; i < Math.min(note.length, 3); i++) {
+            put(topRow + 16 + i, rightCol + 2,
+                    ConsoleColors.FG_BRIGHT_WHITE + note[i] + TerminalUI.RESET);
+        }
+
+        put(topRow + 18, leftCol,
+                ConsoleColors.Accent.MUTED
+                        + "Up/Down browse   Enter/0 return"
+                        + TerminalUI.RESET);
+
         System.out.flush();
     }
 
-    private String fitLine(String text, int width) {
-        if (text == null) {
-            text = "";
-        }
+    private NavKey readNavKey() {
+        Terminal terminal = TerminalUI.getJLineTerminal();
 
-        if (!text.contains("\u001B")) {
-            text = TerminalUI.truncate(text, width);
-        }
-
-        int visible = TerminalUI.stripAnsi(text).length();
-        if (visible > width) {
-            String plain = TerminalUI.stripAnsi(text);
-            plain = TerminalUI.truncate(plain, width);
-            visible = plain.length();
-            return plain + " ".repeat(Math.max(0, width - visible));
-        }
-
-        return text + " ".repeat(Math.max(0, width - visible));
-    }
-
-    private String pretty(String value) {
-        return value == null ? "" : value.replace('_', ' ');
-    }
-
-    private String shortStatus(ComplaintStatus status) {
-        if (status == null) return "UNKNOWN";
-        return switch (status) {
-            case SUBMITTED -> "SUBMITTED";
-            case ASSIGNED -> "ASSIGNED";
-            case IN_PROGRESS -> "IN-PROGRESS";
-            case RESOLVED -> "RESOLVED";
-        };
-    }
-
-    private String coloredStatus(ComplaintStatus status) {
-        if (status == null) return "UNKNOWN";
-        return switch (status) {
-            case SUBMITTED -> ConsoleColors.Accent.WARNING + "SUBMITTED" + TerminalUI.RESET;
-            case ASSIGNED -> ConsoleColors.Accent.INPUT + "ASSIGNED" + TerminalUI.RESET;
-            case IN_PROGRESS -> ConsoleColors.ThemeText.STUDENT_TEXT + "IN_PROGRESS" + TerminalUI.RESET;
-            case RESOLVED -> ConsoleColors.Accent.SUCCESS + "RESOLVED" + TerminalUI.RESET;
-        };
-    }
-
-    private String workerText(Complaint c) {
-        String wid = c.getAssignedWorkerId();
-        boolean blank = wid == null || new MyString(wid).trim().isEmpty();
-        return blank ? "(not assigned)" : wid;
-    }
-
-    private String valueOrDash(String s) {
-        if (s == null || s.trim().isEmpty()) {
-            return "(none)";
-        }
-        return s.trim();
-    }
-
-    private static final class Key {
-        static final int UP = -101;
-        static final int DOWN = -102;
-        static final int ENTER = -103;
-        static final int ESC = -104;
-    }
-
-    private int readNavKey() throws Exception {
-        if (TerminalUI.getJLineTerminal() != null) {
-            org.jline.terminal.Attributes saved = TerminalUI.getJLineTerminal().enterRawMode();
-            org.jline.utils.NonBlockingReader reader = TerminalUI.getJLineTerminal().reader();
+        if (terminal != null) {
+            Attributes saved = terminal.enterRawMode();
+            NonBlockingReader reader = terminal.reader();
 
             try {
                 while (true) {
-                    int c = reader.read();
-                    if (c == -1) {
-                        continue;
-                    }
+                    int ch = reader.read();
+                    if (ch == -1) continue;
 
-                    if (c == 27) {
+                    if (ch == 27) {
                         int n1 = reader.read(80);
                         if (n1 == '[' || n1 == 'O') {
                             int n2 = reader.read(80);
-                            if (n2 == 'A') return Key.UP;
-                            if (n2 == 'B') return Key.DOWN;
+                            if (n2 == 'A') return NavKey.UP;
+                            if (n2 == 'B') return NavKey.DOWN;
                         }
-                        return Key.ESC;
+                        continue;
                     }
 
-                    if (c == 13 || c == 10) return Key.ENTER;
-                    if (c == 3) return 0;
-                    if (c >= '0' && c <= '9') return c - '0';
+                    if (ch == 13 || ch == 10) return NavKey.ENTER;
+                    if (ch == '0') return NavKey.ZERO;
                 }
+            } catch (Exception ignored) {
             } finally {
-                TerminalUI.getJLineTerminal().setAttributes(saved);
-                System.out.print(TerminalUI.SHOW_CUR);
-                System.out.flush();
+                terminal.setAttributes(saved);
             }
         }
 
-        TerminalUI.setRaw();
-        InputStream in = System.in;
+        String line = FastInput.readLine().trim();
+        if ("0".equals(line)) return NavKey.ZERO;
+        if ("w".equalsIgnoreCase(line) || "k".equalsIgnoreCase(line)) return NavKey.UP;
+        if ("s".equalsIgnoreCase(line) || "j".equalsIgnoreCase(line)) return NavKey.DOWN;
+        return NavKey.ENTER;
+    }
 
-        try {
-            while (true) {
-                int c = in.read();
-                if (c == -1) {
-                    continue;
-                }
+    private void drawPanel(int row, int col, int width, int height, String title) {
+        String box = TerminalUI.getActiveBoxColor();
+        String panel = TerminalUI.getActivePanelBgColor();
 
-                if (c == 27) {
-                    if (in.available() == 0) return Key.ESC;
-                    int n1 = in.read();
-                    if (n1 == '[' || n1 == 'O') {
-                        int n2 = in.read();
-                        if (n2 == 'A') return Key.UP;
-                        if (n2 == 'B') return Key.DOWN;
-                    }
-                    return Key.ESC;
-                }
+        put(row, col, box + panel + "╔" + "═".repeat(width) + "╗" + TerminalUI.RESET);
+        put(row + 1, col, box + panel + "║" + padCenter(title, width) + box + panel + "║" + TerminalUI.RESET);
+        put(row + 2, col, box + panel + "╠" + "═".repeat(width) + "╣" + TerminalUI.RESET);
 
-                if (c == 13 || c == 10) return Key.ENTER;
-                if (c >= '0' && c <= '9') return c - '0';
-            }
-        } finally {
-            TerminalUI.setCooked();
-            System.out.print(TerminalUI.SHOW_CUR);
-            System.out.flush();
+        for (int i = 3; i < height - 1; i++) {
+            put(row + i, col, box + panel + "║" + " ".repeat(width) + "║" + TerminalUI.RESET);
         }
+
+        put(row + height - 1, col, box + panel + "╚" + "═".repeat(width) + "╝" + TerminalUI.RESET);
+    }
+
+    private String kv(String key, String value) {
+        return ConsoleColors.ThemeText.SOFT_WHITE
+                + String.format("%-14s : ", key)
+                + ConsoleColors.FG_BRIGHT_WHITE
+                + (value == null ? "N/A" : value)
+                + TerminalUI.RESET;
+    }
+
+    private void put(int row, int col, String text) {
+        TerminalUI.at(row, col);
+        System.out.print(text);
+    }
+
+    private String pad(String s, int w) {
+        if (s.length() >= w) return s.substring(0, w);
+        return s + " ".repeat(w - s.length());
+    }
+
+    private String padCenter(String s, int w) {
+        if (s.length() >= w) return s.substring(0, w);
+        int left = (w - s.length()) / 2;
+        int right = w - s.length() - left;
+        return " ".repeat(left) + s + " ".repeat(right);
+    }
+
+    private String[] wrap(String text, int max) {
+        if (text == null || text.trim().isEmpty()) {
+            return new String[]{"(none)"};
+        }
+
+        java.util.ArrayList<String> lines = new java.util.ArrayList<>();
+        String remaining = text.trim();
+
+        while (remaining.length() > max) {
+            int cut = remaining.lastIndexOf(' ', max);
+            if (cut <= 0) cut = max;
+            lines.add(remaining.substring(0, cut).trim());
+            remaining = remaining.substring(cut).trim();
+        }
+
+        if (!remaining.isEmpty()) {
+            lines.add(remaining);
+        }
+
+        return lines.toArray(new String[0]);
     }
 }

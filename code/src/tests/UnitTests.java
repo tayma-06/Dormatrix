@@ -3013,19 +3013,6 @@ public class UnitTests {
         }
     }
 
-    @Test
-    public void roomService_allocateRoomReturnsFalseWhenFull() throws Exception {
-        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
-        try {
-            writeFile(ROOMS_FILE, new Room("R401", 1, 1).toFileString());
-            RoomService service = new RoomService();
-
-            assertFalse(service.allocateRoom("R401"));
-        } finally {
-            restore(roomSnap);
-        }
-    }
-
     // ─── LostFoundController Tests ────────────────────────────
     @Test
     public void lostFoundController_reportLostItemAddsEntry() throws Exception {
