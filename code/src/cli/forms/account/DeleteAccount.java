@@ -1,10 +1,10 @@
 package cli.forms.account;
 
 import controllers.account.DeleteAccountController;
-import utils.ConsoleUtil;
+import controllers.authentication.AuthController;
 import utils.FastInput;
-import utils.InputHelper;
-import utils.TerminalUI;
+
+import static utils.TerminalUI.*;
 
 public class DeleteAccount {
 
@@ -15,39 +15,51 @@ public class DeleteAccount {
     }
 
     public void show() {
-        ConsoleUtil.clearScreen();
-        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
-        TerminalUI.at(2, 1);
-        TerminalUI.tSubDashboard("DELETE ACCOUNT", new String[]{
-            "[1] Student",
-            "[2] Attendant",
-            "[3] Maintenance Worker",
-            "[4] Store-in-Charge",
-            "[5] Hall Office",
-            "[6] Admin",
-            "[7] Cafeteria Manager",
-            "[0] Back"
+        fillBackground(getActiveBgColor());
+        at(2, 1);
+
+        tSubDashboard("DELETE ACCOUNT", new String[]{
+                "[1] Student",
+                "[2] Attendant",
+                "[3] Maintenance Worker",
+                "[4] Store-in-Charge",
+                "[5] Hall Office",
+                "[6] Admin",
+                "[7] Cafeteria Manager",
+                "[0] Back"
         });
 
         int roleChoice = FastInput.readInt();
-        if (roleChoice == 0) return;
+        if (roleChoice == 0) {
+            return;
+        }
 
-        TerminalUI.tPrompt("Enter User ID to delete: ");
+        fillBackground(getActiveBgColor());
+        at(2, 1);
+
+        tBoxTop();
+        tBoxTitle("DELETE ACCOUNT");
+        tBoxSep();
+        tBoxLine("Enter the target user ID and confirm admin credentials.");
+        tBoxBottom();
+        tEmpty();
+
+        tPrompt("Enter User ID to delete: ");
         String idToDelete = FastInput.readNonEmptyLine();
 
-        TerminalUI.tEmpty();
-        TerminalUI.tBoxTop();
-        TerminalUI.tBoxTitle("SECURITY WARNING");
-        TerminalUI.tBoxSep();
-        TerminalUI.tBoxLine("You are about to delete a user.");
-        TerminalUI.tBoxLine("Please re-enter your ADMIN credentials to confirm.");
-        TerminalUI.tBoxBottom();
+        tEmpty();
+        tBoxTop();
+        tBoxTitle("SECURITY WARNING");
+        tBoxSep();
+        tBoxLine("You are about to permanently delete a user account.");
+        tBoxLine("Please re-enter ADMIN credentials to continue.");
+        tBoxBottom();
+        tEmpty();
 
-        TerminalUI.tPrompt("Admin Username: ");
+        tPrompt("Admin Username: ");
         String adminUser = FastInput.readNonEmptyLine();
 
-        TerminalUI.tPrompt("Admin Password: ");
-        String adminPass = InputHelper.readPassword().getValue();
+        String adminPass = AuthController.readPassword("Admin Password: ").getValue();
 
         String result = controller.deleteUserWithAdminConfirmation(
                 roleChoice,
@@ -56,11 +68,14 @@ public class DeleteAccount {
                 adminPass
         );
 
-        TerminalUI.tEmpty();
+        fillBackground(getActiveBgColor());
+        at(2, 1);
+
         if (result.toLowerCase().contains("success") || result.toLowerCase().contains("deleted")) {
-            TerminalUI.tSuccess(result);
+            tSuccess(result);
         } else {
-            TerminalUI.tError(result);
+            tError(result);
         }
+        tPause();
     }
 }

@@ -1,0 +1,11 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Dormatrix",
+			"type": "shell",
+			"command": "cmd /c setup.bat",
+			"group": "build"
+		}
+	]
+}

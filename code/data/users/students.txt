@@ -22,5 +22,4 @@
 230042101|Ayesha Siddiqua|STUDENT|CSE|62afa2d2|01700000001|ayesha@iut-dhaka.edu|318
 230042121|A|STUDENT|CSE|4e17ee20|0012891891239|dkndknadkn@iut-dhaka.edu|319
 230042114|Procheta Silvie|STUDENT|SWE|4e17e6e2|01700000000|prochetasilvie@iut-dhaka.edu|301
-
 230012154|Faiza Habib|STUDENT|IPE|62afa2d2|01779977966|faizahabib@iut-dhaka.edu|306

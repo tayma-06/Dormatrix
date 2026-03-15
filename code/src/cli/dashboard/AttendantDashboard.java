@@ -21,6 +21,7 @@ public class AttendantDashboard implements Dashboard {
             new MenuItem(4, "View Student Routine"),
             new MenuItem(5, "Announcements"),
             new MenuItem(6, "Manage Emergency Contacts"),
+            new MenuItem(7, "Edit Profile"),
             new MenuItem(0, "Logout")
     };
 

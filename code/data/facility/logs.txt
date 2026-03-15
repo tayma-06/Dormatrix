@@ -38,7 +38,3 @@
 [2026/03/07 12:10:41] Khadiza Sultana checked in to Seat 1
 [2026/03/07 12:11:57] User Khadiza Sultana reported lost item: Water Pot
 [2026/03/12 00:52:29] User Khadiza Sultana reported lost item: Water Bottol
-[2026/03/11 12:40:24] Seat 6 reserved by Ayman Binta Altaf Nondiny
-[2026/03/11 12:40:54] AUTO-RELEASE: Seat 6 vacated (No-show by Ayman Binta Altaf Nondiny)
-[2026/03/11 12:41:12] Seat 6 reserved by Ayman Binta Altaf Nondiny
-[2026/03/11 12:41:17] Ayman Binta Altaf Nondiny checked in to Seat 6
