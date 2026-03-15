@@ -1,0 +1,28 @@
+# Compiled class files
+*.class
+out/
+
+# Test artifacts
+test_data/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*~
+*.bak
+*.swp
+*.tmp
+
+# Documentation build
+docs/_build/
+
+# IDE files
+../.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/

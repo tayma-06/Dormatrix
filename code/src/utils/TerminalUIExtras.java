@@ -354,4 +354,62 @@ public final class TerminalUIExtras {
             }
         }
     }
+
+    public static void tCustomInputRow(String label) {
+        int col    = TerminalUI.boxCol();
+        int iw     = TerminalUI.innerW();
+        String box = TerminalUI.getActiveBoxColor();
+        String bg  = TerminalUI.getActivePanelBgColor();
+        int fieldW = iw - label.length() - 2;
+
+        System.out.print(
+                "\u001B[" + col + "G"
+                        + box + bg + "║ "
+                        + ConsoleColors.FG_WHITE + label + TerminalUI.RESET + bg
+                        + " ".repeat(Math.max(0, fieldW))
+                        + box + bg + " ║" + TerminalUI.RESET + "\n"
+        );
+        TerminalUI.tBoxBottom();
+        // Position cursor inside the field
+        System.out.print(TerminalUI.SHOW_CUR
+                + "\u001B[2A\u001B[" + (col + 2 + label.length()) + "G");
+        System.out.flush();
+    }
+
+
+    public static String readLineOrEsc() {
+        Terminal term = getSharedTerminal();
+        if (term == null) return FastInput.readLine();
+
+        StringBuilder sb = new StringBuilder();
+        Attributes saved = term.enterRawMode();
+        NonBlockingReader reader = term.reader();
+
+        try {
+            while (true) {
+                int c = reader.read();
+                if (c == -1) continue;
+                if (c == 27) return null;           // ESC → cancel
+                if (c == 13 || c == 10) return sb.toString().trim(); // Enter → confirm
+                if (c == 127 || c == 8) {           // Backspace
+                    if (sb.length() > 0) {
+                        sb.deleteCharAt(sb.length() - 1);
+                        // Erase last char on screen
+                        System.out.print("\b \b");
+                        System.out.flush();
+                    }
+                    continue;
+                }
+                if (c >= 32) {                      // printable char
+                    sb.append((char) c);
+                    System.out.print((char) c);
+                    System.out.flush();
+                }
+            }
+        } catch (IOException e) {
+            return sb.toString().trim();
+        } finally {
+            term.setAttributes(saved);
+        }
+    }
 }

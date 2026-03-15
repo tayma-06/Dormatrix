@@ -1,57 +1,106 @@
 package cli.announcement;
 
-import cli.Input;
 import controllers.announcement.AnnouncementController;
+import utils.*;
+import utils.TerminalUI.MenuItem;
 
-import java.util.Scanner;
+import static utils.TerminalUI.*;
+import static utils.TerminalUIExtras.*;
 
 public class AttendantAnnouncementCLI {
 
     private final AnnouncementController controller = new AnnouncementController();
-    private final Scanner sc = Input.SC;
+
+    private static final MenuItem[] MENU = {
+            new MenuItem(1, "View Announcements"),
+            new MenuItem(2, "Post Announcement"),
+            new MenuItem(0, "Back"),
+    };
 
     public void show(String username) {
         while (true) {
-            System.out.println();
-            System.out.println("1. View announcements");
-            System.out.println("2. Post announcement");
-            System.out.println("0. Back");
-            System.out.print("Enter choice: ");
-
-            int ch = readInt();
-            if (ch == 0) return;
-
-            if (ch == 1) {
-                System.out.println(controller.renderBoard());
-            } else if (ch == 2) {
-                String title = readNonEmpty("Title: ");
-                String body = readNonEmpty("Message: ");
-                controller.postAnnouncement(username, title, body);
-                System.out.println("Announcement posted.");
-            } else {
-                System.out.println("Invalid choice.");
-            }
-        }
-    }
-
-    private int readInt() {
-        while (true) {
-            String line = sc.nextLine().trim();
-            if (line.isEmpty()) continue;
             try {
-                return Integer.parseInt(line);
-            } catch (Exception e) {
-                System.out.print("Invalid number. Enter again: ");
-            }
-        }
-    }
+                ConsoleUtil.clearScreen();
+                BackgroundFiller.applyAttendantTheme();
+                TerminalUI.setActiveTheme(
+                        ConsoleColors.fgRGB(40, 220, 210),
+                        ConsoleColors.ThemeText.ATTENDANT_TEXT,
+                        ConsoleColors.bgRGB(0, 28, 26)
+                );
+                TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
 
-    private String readNonEmpty(String prompt) {
-        while (true) {
-            System.out.print(prompt);
-            String line = sc.nextLine().trim();
-            if (!line.isEmpty()) return line;
-            System.out.println("Input can not be empty.");
+                drawDashboard(
+                        "ANNOUNCEMENTS", "",
+                        MENU,
+                        ConsoleColors.ThemeText.ATTENDANT_TEXT,
+                        ConsoleColors.fgRGB(40, 220, 210),
+                        null, 3
+                );
+
+                int ch = readChoiceArrow();
+
+                if (ch == 0) return;
+
+                ConsoleUtil.clearScreen();
+                BackgroundFiller.applyAttendantTheme();
+                TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                TerminalUI.at(2, 1);
+
+                if (ch == 1) {
+                    controller.renderBoard();
+                    tPause();
+
+                } else if (ch == 2) {
+                    tBoxTop();
+                    tBoxTitle("POST ANNOUNCEMENT");
+                    tBoxSep();
+                    tBoxLine("Enter announcement details below.");
+                    tBoxSep();
+                    tBoxLine("  [ESC] Cancel and go back", ConsoleColors.fgRGB(160, 150, 60));  // ← add this
+                    tBoxSep();
+                    tCustomInputRow("Title  : ");
+                    String title = readLineOrEsc();
+                    if (title == null) continue;   // ESC pressed → go back to menu
+
+                    if (title.isEmpty()) {
+                        tError("Title cannot be empty.");
+                        tPause();
+                        continue;
+                    }
+
+                    ConsoleUtil.clearScreen();
+                    BackgroundFiller.applyAttendantTheme();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+
+                    tBoxTop();
+                    tBoxTitle("POST ANNOUNCEMENT");
+                    tBoxSep();
+                    tBoxLine("Title: " + title);
+                    tBoxSep();
+                    tBoxLine("  [ESC] Cancel and go back", ConsoleColors.fgRGB(160, 150, 60));  // ← add this
+                    tBoxSep();
+                    tCustomInputRow("Message: ");
+                    String body = readLineOrEsc();
+                    if (body == null) continue;    // ESC pressed → go back to menu
+
+                    if (body.isEmpty()) {
+                        tError("Message cannot be empty.");
+                        tPause();
+                        continue;
+                    }
+
+                    controller.postAnnouncement(username, title, body);
+                    tBoxTop();
+                    tBoxLine("Announcement posted successfully.");
+                    tBoxBottom();
+                    tPause();
+                }
+
+            } catch (Exception e) {
+                TerminalUI.cleanup();
+                System.err.println("[AttendantAnnouncementCLI] " + e.getMessage());
+            }
         }
     }
 }

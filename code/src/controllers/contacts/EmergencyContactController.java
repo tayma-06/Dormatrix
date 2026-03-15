@@ -36,24 +36,23 @@ public class EmergencyContactController {
     public String renderBoard() {
         ensureDefaults();
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("EMERGENCY CONTACTS\n");
-        sb.append("--------------------------------------------------------------\n");
+        utils.TerminalUI.tBoxTop();
+        utils.TerminalUI.tBoxTitle("EMERGENCY CONTACTS");
 
         for (int i = 0; i < KEYS.length; i++) {
             EmergencyContactEntry entry = getOrDefault(KEYS[i], LABELS[i]);
-
-            sb.append("[").append(i + 1).append("] ").append(entry.getLabel()).append("\n");
-            sb.append("    Contact : ").append(show(entry.getContactName())).append("\n");
-            sb.append("    Phone   : ").append(show(entry.getPhone())).append("\n");
+            utils.TerminalUI.tBoxSep();
+            utils.TerminalUI.tBoxLine(String.format("%-5s%s",
+                    "[" + (i + 1) + "]", entry.getLabel()));
+            utils.TerminalUI.tBoxLine("  Contact : " + show(entry.getContactName()));
+            utils.TerminalUI.tBoxLine("  Phone   : " + show(entry.getPhone()));
             if (entry.getNote() != null && !entry.getNote().trim().isEmpty()) {
-                sb.append("    Note    : ").append(entry.getNote().trim()).append("\n");
+                utils.TerminalUI.tBoxLine("  Note    : " + entry.getNote().trim());
             }
-            sb.append("\n");
         }
 
-        sb.append("--------------------------------------------------------------\n");
-        return sb.toString();
+        utils.TerminalUI.tBoxBottom();
+        return "";
     }
 
     public String renderEditMenu() {

@@ -61,7 +61,7 @@ public class AttendantDashboard implements Dashboard {
                 int choice = readChoiceArrow();
 
                 if (choice == 0) {
-                    BackgroundFiller.applyTheme(THEME);
+                    BackgroundFiller.applyAttendantTheme();
                     showLogout();
                     BackgroundFiller.resetTheme();
                     return;
@@ -71,6 +71,17 @@ public class AttendantDashboard implements Dashboard {
                     new AttendantComplaintCLI().start();
                     continue;
                 }
+
+                //  clear before any sub-screen
+                ConsoleUtil.clearScreen();
+                BackgroundFiller.applyAttendantTheme();
+                TerminalUI.setActiveTheme(
+                        ConsoleColors.fgRGB(40, 220, 210),
+                        ConsoleColors.ThemeText.ATTENDANT_TEXT,
+                        ConsoleColors.bgRGB(0, 28, 26)
+                );
+                TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                TerminalUI.at(2, 1);
 
                 controller.handleInput(choice, username);
 

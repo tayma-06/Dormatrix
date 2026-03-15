@@ -33,18 +33,23 @@ public class AttendantDashboardController {
     private final Scanner sc = new Scanner(System.in);
 
     public void handleInput(int choice, String username) {
+        // Always clear before any sub-screen
+        utils.ConsoleUtil.clearScreen();
+        utils.BackgroundFiller.applyAttendantTheme();
+        utils.TerminalUI.setActiveTheme(
+                utils.ConsoleColors.fgRGB(40, 220, 210),
+                utils.ConsoleColors.ThemeText.ATTENDANT_TEXT,
+                utils.ConsoleColors.bgRGB(0, 28, 26)
+        );
+        utils.TerminalUI.fillBackground(utils.TerminalUI.getActiveBgColor());
+        utils.TerminalUI.at(2, 1);
+
         switch (choice) {
-//            case 1:
-//                System.out.println("Handling Student Complaints...");
-//                complaintsMenu();
-//                break;
             case 2:
                 new AttendantWorkerScheduleCLI().show(username);
                 break;
-
-            case 3: // Lost & Found
+            case 3:
                 LostFoundView attendantLfView = new LostFoundView();
-                // Pass 'true' because the Hall Attendant IS allowed to add found items
                 attendantLfView.showMainBoard(username, true);
                 break;
             case 4:
@@ -63,7 +68,7 @@ public class AttendantDashboardController {
                 mainDashboard.show();
                 break;
             default:
-                System.out.println("Invalid choice. Please try again.");
+                utils.TerminalUI.tError("Invalid choice.");
         }
     }
 
