@@ -47,7 +47,7 @@ public class AttendantAnnouncementCLI {
                 TerminalUI.at(2, 1);
 
                 if (ch == 1) {
-                    controller.renderBoard();
+                    controller.renderAllBoard();
                     tPause();
 
                 } else if (ch == 2) {
@@ -90,7 +90,36 @@ public class AttendantAnnouncementCLI {
                         continue;
                     }
 
-                    controller.postAnnouncement(username, title, body);
+                    ConsoleUtil.clearScreen();
+                    BackgroundFiller.applyAttendantTheme();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+
+                    tBoxTop();
+                    tBoxTitle("POST ANNOUNCEMENT");
+                    tBoxSep();
+                    tBoxLine("Title: " + title);
+                    tBoxSep();
+                    tBoxLine("Expiry date format: YYYY-MM-DD  e.g. 2026-04-01");
+                    tBoxLine("Leave blank = never expires.");
+                    tBoxLine("  [ESC] Cancel and go back", ConsoleColors.fgRGB(160, 150, 60));
+                    tBoxSep();
+                    tCustomInputRow("Expires  : ");
+                    String expiresAt = readLineOrEsc();
+                    if (expiresAt == null) continue;
+
+                    // Validate date format if not blank
+                    if (!expiresAt.isEmpty()) {
+                        try {
+                            java.time.LocalDate.parse(expiresAt.trim());
+                        } catch (Exception e) {
+                            tError("Invalid date format. Use YYYY-MM-DD.");
+                            tPause();
+                            continue;
+                        }
+                    }
+
+                    controller.postAnnouncement(username, title, body, expiresAt);
                     tBoxTop();
                     tBoxLine("Announcement posted successfully.");
                     tBoxBottom();

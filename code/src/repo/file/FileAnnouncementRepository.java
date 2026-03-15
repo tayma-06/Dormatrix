@@ -26,7 +26,8 @@ public class FileAnnouncementRepository {
                     announcement.getAuthorName(),
                     announcement.getTitle(),
                     announcement.getBody(),
-                    announcement.getCreatedAt()
+                    announcement.getCreatedAt(),
+                    announcement.getExpiresAt()   // ← new field
             ));
             bw.newLine();
         } catch (IOException e) {
@@ -45,12 +46,11 @@ public class FileAnnouncementRepository {
             MyArrayList<String> p = TextFile.split(line);
             if (p.size() < 5) continue;
 
+            // handle old 5-field records gracefully — expiresAt defaults to ""
+            String expiresAt = p.size() >= 6 ? p.get(5) : "";
+
             out.add(new Announcement(
-                    p.get(0),
-                    p.get(1),
-                    p.get(2),
-                    p.get(3),
-                    p.get(4)
+                    p.get(0), p.get(1), p.get(2), p.get(3), p.get(4), expiresAt
             ));
         }
 
