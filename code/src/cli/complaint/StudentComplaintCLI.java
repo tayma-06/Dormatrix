@@ -16,6 +16,7 @@ import models.users.StudentPublicInfo;
 import module.complaint.ComplaintModule;
 import repo.file.FileComplaintRepository;
 import repo.file.FileMaintenanceWorkerRepository;
+import utils.BackgroundFiller;
 import utils.ConsoleUtil;
 import utils.FastInput;
 import utils.TerminalUI;
@@ -43,206 +44,266 @@ public class StudentComplaintCLI {
 
     private final FileComplaintRepository repo = new FileComplaintRepository();
 
+    private static final TerminalUI.MenuItem[] MENU = {
+            new TerminalUI.MenuItem(1, "File a Complaint"),
+            new TerminalUI.MenuItem(2, "View My Complaints"),
+            new TerminalUI.MenuItem(3, "Set Preferred Visit Time"),
+            new TerminalUI.MenuItem(4, "Request Reschedule"),
+            new TerminalUI.MenuItem(0, "Back"),
+    };
+
+
     public void start(String studentIdentifier) {
         while (true) {
-            ConsoleUtil.clearScreen();
-            view.studentMenu();
-            int ch = form.readInt();
-
-            if (ch == 0) {
+            try {
                 ConsoleUtil.clearScreen();
-                return;
-            }
+                BackgroundFiller.applyStudentTheme();
+                TerminalUI.setActiveTheme(
+                        utils.ConsoleColors.fgRGB(60, 140, 255),
+                        utils.ConsoleColors.ThemeText.STUDENT_TEXT,
+                        utils.ConsoleColors.bgRGB(0, 6, 45)
+                );
+                TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+
+                TerminalUI.drawDashboard(
+                        "COMPLAINT (STUDENT)", "",
+                        MENU,
+                        utils.ConsoleColors.ThemeText.STUDENT_TEXT,
+                        utils.ConsoleColors.fgRGB(60, 140, 255),
+                        null, 3
+                );
+
+                int ch = TerminalUI.readChoiceArrow();
+
+                if (ch == 0) {
+                    ConsoleUtil.clearScreen();
+                    return;
+                }
+
+                // clear before any sub-screen
+                ConsoleUtil.clearScreen();
+                BackgroundFiller.applyStudentTheme();
+                TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                TerminalUI.at(2, 1);
 
             // ── [1] File a new complaint ──────────────────────────────────
-            if (ch == 1) {
-                MyOptional<StudentPublicInfo> infoOpt = resolveStudentPublicInfo(studentIdentifier);
-                if (infoOpt.isEmpty()) {
-                    view.error("Could not identify student (name/id mismatch).");
-                    continue;
-                }
+                if (ch == 1) {
+                    MyOptional<StudentPublicInfo> infoOpt = resolveStudentPublicInfo(studentIdentifier);
+                    if (infoOpt.isEmpty()) {
+                        tError("Could not identify student.");
+                        tPause();
+                        continue;
+                    }
 
-                ComplaintCategory cat = form.readCategory();
-                if (cat == null) return;
+                    ComplaintCategory cat = form.readCategory();
+                    if (cat == null) return;
 
-                String desc = form.readNonEmpty("Enter complaint description: ");
-                Complaint c = module.fileComplaint(infoOpt.get(), cat, desc);
-                view.filed(c);
-                ConsoleUtil.pause();
+                    String desc = form.readNonEmpty("Enter complaint description: ");
 
-                // ── [2] View my complaints ────────────────────────────────────
-            } else if (ch == 2) {
-                MyOptional<StudentPublicInfo> infoOpt = resolveStudentPublicInfo(studentIdentifier);
-                if (infoOpt.isEmpty()) {
-                    view.error("Could not identify student (name/id mismatch).");
-                    continue;
-                }
+                    try {
+                        Complaint c = module.fileComplaint(infoOpt.get(), cat, desc);
+                        view.filed(c);
+                    } catch (IllegalStateException e) {
+                        tBoxTop();
+                        tBoxTitle("CANNOT FILE COMPLAINT");
+                        tBoxSep();
+                        tBoxLine("You must be assigned to a room before filing a complaint.");
+                        tBoxLine("Please contact the Hall Office to get a room assigned.");
+                        tBoxBottom();
+                    }
+                    tPause();
+                } else if (ch == 2) {
+                    MyOptional<StudentPublicInfo> infoOpt = resolveStudentPublicInfo(studentIdentifier);
+                    if (infoOpt.isEmpty()) {
+                        view.error("Could not identify student (name/id mismatch).");
+                        continue;
+                    }
 
-                MyArrayList<Complaint> mine = repo.findByStudentId(infoOpt.get().getStudentId());
-                view.studentList(mine);
-                ConsoleUtil.pause();
-
-                // ── [3] Set preferred time for a complaint's maintenance visit ─
-            } else if (ch == 3) {
-                MyOptional<StudentPublicInfo> infoOpt = resolveStudentPublicInfo(studentIdentifier);
-                if (infoOpt.isEmpty()) {
-                    view.error("Could not identify student.");
+                    MyArrayList<Complaint> mine = repo.findByStudentId(infoOpt.get().getStudentId());
+                    view.studentList(mine);
                     ConsoleUtil.pause();
-                    continue;
-                }
 
-                MyArrayList<Complaint> mine = getUnresolvedComplaints(infoOpt.get().getStudentId());
-                if (mine.size() == 0) {
+                    // ── [3] Set preferred time for a complaint's maintenance visit ─
+                } else if (ch == 3) {
+                    MyOptional<StudentPublicInfo> infoOpt = resolveStudentPublicInfo(studentIdentifier);
+                    if (infoOpt.isEmpty()) {
+                        view.error("Could not identify student.");
+                        ConsoleUtil.pause();
+                        continue;
+                    }
+
+                    MyArrayList<Complaint> mine = getUnresolvedComplaints(infoOpt.get().getStudentId());
+                    if (mine.size() == 0) {
+                        tBoxTop();
+                        tBoxTitle("SET PREFERRED VISIT TIME");
+                        tBoxSep();
+                        tBoxLine("You have no unresolved complaints.");
+                        tBoxBottom();
+                        tPause();
+                        continue;
+                    }
+
+                    // Arrow-key picker for student's own complaints
+                    String[] labels = buildComplaintLabels(mine);
+                    int idx;
+                    try {
+                        idx = tArrowSelect("SELECT COMPLAINT", labels);
+                    } catch (InterruptedException e) {
+                        continue;
+                    }
+                    if (idx < 0 || idx >= mine.size()) continue;
+
+                    Complaint selected = mine.get(idx);
+
+                    // Show existing preference if any
+                    String existing = extractTag(selected.getTags(), SCHED_PREF_PREFIX);
+                    if (existing != null) {
+                        tBoxTop();
+                        tBoxLine("Current preference: " + existing);
+                        tBoxBottom();
+                    }
+
+                    // Collect preferred day
+                    String[] dayOptions = {
+                            "[1] Monday", "[2] Tuesday", "[3] Wednesday", "[4] Thursday",
+                            "[5] Friday", "[6] Saturday", "[7] Sunday", "[8] Any day"
+                    };
+                    int dayIdx;
+                    try { dayIdx = tArrowSelect("PREFERRED DAY", dayOptions); }
+                    catch (InterruptedException e) { continue; }
+
+                    String dayStr = (dayIdx >= 0 && dayIdx < dayOptions.length)
+                            ? dayOptions[dayIdx] : "Any day";
+
+                    // ← clear before time slot picker
+                    ConsoleUtil.clearScreen();
+                    BackgroundFiller.applyStudentTheme();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+
+
+                    // Collect preferred time of day
+                    String[] timeOptions = {
+                            "[1] 08:00 - 10:00", "[2] 10:00 - 12:00", "[3] 12:00 - 14:00",
+                            "[4] 14:00 - 16:00", "[5] 16:00 - 18:00", "[6] 18:00 - 20:00", "[7] Any time"
+                    };
+                    int timeIdx;
+                    try { timeIdx = tArrowSelect("PREFERRED TIME SLOT", timeOptions); }
+                    catch (InterruptedException e) { continue; }
+
+                    String timeStr = (timeIdx >= 0 && timeIdx < timeOptions.length)
+                            ? timeOptions[timeIdx] : "Any time";
+
+                    // ← clear before showing note box
+                    ConsoleUtil.clearScreen();
+                    BackgroundFiller.applyStudentTheme();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+
                     tBoxTop();
-                    tBoxTitle("SET PREFERRED VISIT TIME");
+                    tBoxTitle("ADDITIONAL NOTE");
                     tBoxSep();
-                    tBoxLine("You have no unresolved complaints.");
+                    tBoxLine("Optional - press Enter to skip");
+                    tBoxSep();
+                    tCustomInputRow("Your Note  : ");
+                    String note = FastInput.readLine().trim();
+
+                    String prefValue = dayStr + ", " + timeStr + (note.isEmpty() ? "" : " - " + note);
+
+                 // Remove old preference tag if exists, then append new one
+                    String cleanedTags = removePrefixedTag(selected.getTags(), SCHED_PREF_PREFIX);
+                    setTagsDirect(selected, cleanedTags);
+                    selected.appendTagNote(SCHED_PREF_PREFIX + prefValue);
+
+                    if (repo.update(selected)) {
+                        tBoxTop();
+                        tBoxLine("Preference saved: " + prefValue);
                     tBoxBottom();
+                    } else {
+                        tError("Failed to save preference.");
+                    }
                     tPause();
-                    continue;
-                }
 
-                // Arrow-key picker for student's own complaints
-                String[] labels = buildComplaintLabels(mine);
-                int idx;
-                try {
-                    idx = tArrowSelect("SELECT COMPLAINT", labels);
-                } catch (InterruptedException e) {
-                    continue;
-                }
-                if (idx < 0 || idx >= mine.size()) continue;
+                    // ── [4] Request reschedule of a complaint ─────────────────────
+                } else if (ch == 4) {
+                    MyOptional<StudentPublicInfo> infoOpt = resolveStudentPublicInfo(studentIdentifier);
+                    if (infoOpt.isEmpty()) {
+                        view.error("Could not identify student.");
+                        ConsoleUtil.pause();
+                        continue;
+                    }
+                    MyArrayList<Complaint> mine = getUnresolvedComplaints(infoOpt.get().getStudentId());
+                    if (mine.size() == 0) {
+                        tBoxTop();
+                        tBoxTitle("REQUEST RESCHEDULE");
+                        tBoxSep();
+                        tBoxLine("You have no unresolved complaints.");
+                        tBoxBottom();
+                        tPause();
+                        continue;
+                    }
 
-                Complaint selected = mine.get(idx);
+                    // Arrow-key picker
+                    String[] labels = buildComplaintLabels(mine);
+                    int idx;
+                    try {
+                            idx = tArrowSelect("SELECT COMPLAINT TO RESCHEDULE", labels);
+                    } catch (InterruptedException e) {
+                        continue;
+                    }
+                    if (idx < 0 || idx >= mine.size()) continue;
 
-                // Show existing preference if any
-                String existing = extractTag(selected.getTags(), SCHED_PREF_PREFIX);
-                if (existing != null) {
+                    // ← clear screen before showing next box
+                    ConsoleUtil.clearScreen();
+                    BackgroundFiller.applyStudentTheme();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+
+                    Complaint selected = mine.get(idx);
+
+                    // Show existing reschedule request if any
+                    String existing = extractTag(selected.getTags(), SCHED_REQ_PREFIX);
+                    if (existing != null) {
+                        tBoxTop();
+                        tBoxLine("Existing request: " + existing);
+                        tBoxBottom();
+                    }
+
                     tBoxTop();
-                    tBoxLine("Current preference: " + existing);
-                    tBoxBottom();
-                }
+                    tBoxTitle("RESCHEDULE REASON");
+                    tBoxSep();
+                    tBoxLine("Enter reason for reschedule request:");
+                    tBoxSep();
+                    tCustomInputRow("Your Note  : ");
+                    String reason = FastInput.readLine().trim();
+                    if (reason.isEmpty()) {
+                        tError("Reason cannot be empty.");
+                        tPause();
+                        continue;
+                    }
 
-                // Collect preferred day
-                tBoxTop();
-                tBoxTitle("PREFERRED VISIT TIME");
-                tBoxSep();
-                tBoxLine("Choose preferred day:");
-                tBoxLine("  [1] Monday    [2] Tuesday   [3] Wednesday");
-                tBoxLine("  [4] Thursday  [5] Friday    [6] Saturday");
-                tBoxLine("  [7] Sunday    [0] Any day");
-                tBoxSep();
-                tInputRow();
+                    // Remove old reschedule request if any, then append new
+                    String cleanedTags = removePrefixedTag(selected.getTags(), SCHED_REQ_PREFIX);
+                    setTagsDirect(selected, cleanedTags);
+                    selected.appendTagNote(SCHED_REQ_PREFIX + reason);
 
-                int dayChoice;
-                try { dayChoice = Integer.parseInt(FastInput.readLine().trim()); }
-                catch (NumberFormatException e) { dayChoice = 0; }
+                    if (repo.update(selected)) {
+                        tBoxTop();
+                        tBoxLine("Reschedule request sent to attendant.");
+                        tBoxBottom();
+                    } else {
+                        tError("Failed to send request.");
+                    }
+                    tPause();
 
-                String[] days = {"Any day", "Monday", "Tuesday", "Wednesday",
-                        "Thursday", "Friday", "Saturday", "Sunday"};
-                String dayStr = (dayChoice >= 0 && dayChoice <= 7) ? days[dayChoice] : "Any day";
-
-                // Collect preferred time of day
-                tBoxTop();
-                tBoxLine("Choose preferred time slot:");
-                tBoxLine("  [1] 08:00 - 10:00    [2] 10:00 - 12:00");
-                tBoxLine("  [3] 12:00 - 14:00    [4] 14:00 - 16:00");
-                tBoxLine("  [5] 16:00 - 18:00    [6] 18:00 - 20:00");
-                tBoxLine("  [0] Any time");
-                tBoxSep();
-                tInputRow();
-
-                int timeChoice;
-                try { timeChoice = Integer.parseInt(FastInput.readLine().trim()); }
-                catch (NumberFormatException e) { timeChoice = 0; }
-
-                String[] times = {"Any time", "08-10", "10-12", "12-14", "14-16", "16-18", "18-20"};
-                String timeStr = (timeChoice >= 0 && timeChoice <= 6) ? times[timeChoice] : "Any time";
-
-                // Optional note
-                tPrompt("Additional note (optional, press Enter to skip): ");
-                String note = FastInput.readLine().trim();
-
-                String prefValue = dayStr + ", " + timeStr + (note.isEmpty() ? "" : " - " + note);
-
-                // Remove old preference tag if exists, then append new one
-                String cleanedTags = removePrefixedTag(selected.getTags(), SCHED_PREF_PREFIX);
-                setTagsDirect(selected, cleanedTags);
-                selected.appendTagNote(SCHED_PREF_PREFIX + prefValue);
-
-                if (repo.update(selected)) {
-                    tBoxTop();
-                    tBoxLine("Preference saved: " + prefValue);
-                    tBoxBottom();
                 } else {
-                    tError("Failed to save preference.");
-                }
-                tPause();
-
-                // ── [4] Request reschedule of a complaint ─────────────────────
-            } else if (ch == 4) {
-                MyOptional<StudentPublicInfo> infoOpt = resolveStudentPublicInfo(studentIdentifier);
-                if (infoOpt.isEmpty()) {
-                    view.error("Could not identify student.");
+                    view.error("Invalid choice.");
                     ConsoleUtil.pause();
-                    continue;
                 }
 
-                MyArrayList<Complaint> mine = getUnresolvedComplaints(infoOpt.get().getStudentId());
-                if (mine.size() == 0) {
-                    tBoxTop();
-                    tBoxTitle("REQUEST RESCHEDULE");
-                    tBoxSep();
-                    tBoxLine("You have no unresolved complaints.");
-                    tBoxBottom();
-                    tPause();
-                    continue;
-                }
-
-                // Arrow-key picker
-                String[] labels = buildComplaintLabels(mine);
-                int idx;
-                try {
-                    idx = tArrowSelect("SELECT COMPLAINT TO RESCHEDULE", labels);
-                } catch (InterruptedException e) {
-                    continue;
-                }
-                if (idx < 0 || idx >= mine.size()) continue;
-
-                Complaint selected = mine.get(idx);
-
-                // Show existing reschedule request if any
-                String existing = extractTag(selected.getTags(), SCHED_REQ_PREFIX);
-                if (existing != null) {
-                    tBoxTop();
-                    tBoxLine("Existing request: " + existing);
-                    tBoxBottom();
-                }
-
-                tPrompt("Reason for reschedule request: ");
-                String reason = FastInput.readLine().trim();
-                if (reason.isEmpty()) {
-                    tError("Reason cannot be empty.");
-                    tPause();
-                    continue;
-                }
-
-                // Remove old reschedule request if any, then append new
-                String cleanedTags = removePrefixedTag(selected.getTags(), SCHED_REQ_PREFIX);
-                setTagsDirect(selected, cleanedTags);
-                selected.appendTagNote(SCHED_REQ_PREFIX + reason);
-
-                if (repo.update(selected)) {
-                    tBoxTop();
-                    tBoxLine("Reschedule request sent to attendant.");
-                    tBoxBottom();
-                } else {
-                    tError("Failed to send request.");
-                }
-                tPause();
-
-            } else {
-                view.error("Invalid choice.");
-                ConsoleUtil.pause();
+            } catch (Exception e) {
+                TerminalUI.cleanup();
+                System.err.println("[StudentComplaintCLI] " + e.getMessage());
             }
         }
     }
@@ -269,8 +330,9 @@ public class StudentComplaintCLI {
                     ? "?" : c.getStudentRoomNo().trim();
             String pref = extractTag(c.getTags(), SCHED_PREF_PREFIX) != null ? " [PREF SET]" : "";
             String req  = extractTag(c.getTags(), SCHED_REQ_PREFIX)  != null ? " [RESCHEDULE REQ]" : "";
-            labels[i] = String.format("%-8s | %-15s | Room %-6s%s%s",
-                    c.getComplaintId(), cat, room, pref, req);
+
+            labels[i] = String.format("%-5s%-8s | %-15s | Room %-6s%s%s",
+                    "[" + (i + 1) + "]", c.getComplaintId(), cat, room, pref, req);
         }
         return labels;
     }

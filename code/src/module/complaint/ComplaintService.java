@@ -33,6 +33,12 @@ public class ComplaintService {
     }
 
     public Complaint createComplaint(StudentPublicInfo info, ComplaintCategory cat, String desc){
+        // ── Room check — must be assigned before filing ──
+        String room = info.getRoomNo();
+        if (room == null || room.trim().isEmpty() || room.trim().equalsIgnoreCase("UNASSIGNED")) {
+            throw new IllegalStateException("Student must be assigned to a room before filing a complaint.");
+        }
+
         ComplaintPolicy.DormDecision decision = comPolicy.decide(cat, desc);
 
         Complaint c = Complaint.createNew(
@@ -47,7 +53,7 @@ public class ComplaintService {
         try {
             MyOptional<String> chosenWorkerId = autoAssignWorker(cat);
             if (chosenWorkerId.isPresent()){
-                c.assignTo(chosenWorkerId.get()); // status ASSIGNED
+                c.assignTo(chosenWorkerId.get());
             }
         } catch (RuntimeException ex) {
             c.clearAssignment();
