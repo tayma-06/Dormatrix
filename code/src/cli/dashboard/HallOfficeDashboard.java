@@ -17,6 +17,7 @@ public class HallOfficeDashboard implements Dashboard {
             new MenuItem(2, "View Student Complaints"),
             new MenuItem(3, "View Worker Schedule"),
             new MenuItem(4, "Handle Attendant Task"),
+            new MenuItem(5, "Edit Profile"),
             new MenuItem(0, "Logout"),
     };
 

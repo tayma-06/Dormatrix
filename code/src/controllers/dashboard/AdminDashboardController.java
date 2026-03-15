@@ -4,6 +4,7 @@ import cli.dashboard.account.AccountDashboard;
 import cli.dashboard.room.RoomDashboard;
 import cli.forms.account.CreateAccount;
 import cli.forms.account.DeleteAccount;
+import cli.profile.EditProfileCLI;
 import cli.views.account.SearchUser;
 import cli.views.account.ViewAccount;
 
@@ -59,6 +60,7 @@ public class AdminDashboardController {
             case 2 -> deleteAccountForm.show();
             case 3 -> accountDashboard.show(username);
             case 4 -> roomDashboard.show(username);
+            case 5 -> new EditProfileCLI(username, "ADMIN").start();
             default -> {
             }
         }

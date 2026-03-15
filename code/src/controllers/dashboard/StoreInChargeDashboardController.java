@@ -1,6 +1,7 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
+import cli.profile.EditProfileCLI;
 import cli.views.store.*;
 
 public class StoreInChargeDashboardController {
@@ -26,6 +27,11 @@ public class StoreInChargeDashboardController {
             case 3:
                 // Sales Summary with various report options
                 salesSummary.show();
+                break;
+
+            case 4:
+                EditProfileCLI editProfileCLI = new EditProfileCLI(username, "STORE_IN_CHARGE");
+                editProfileCLI.start();
                 break;
 
             case 0:

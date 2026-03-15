@@ -25,6 +25,7 @@ public class StudentDashboard implements Dashboard {
             new MenuItem(8, "View Announcements"),
             new MenuItem(9, "Store Shopping Cart"),
             new MenuItem(10, "Emergency Contacts"),
+            new MenuItem(11, "Edit Profile"),
             new MenuItem(0, "Logout"),
     };
 

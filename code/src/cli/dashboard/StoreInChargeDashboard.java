@@ -17,6 +17,7 @@ public class StoreInChargeDashboard implements Dashboard {
             new MenuItem(1, "Inventory Management"),
             new MenuItem(2, "Process Purchase"),
             new MenuItem(3, "Sales Summary & Reports"),
+            new MenuItem(4, "Edit Profile"),
             new MenuItem(0, "Logout"),
     };
 

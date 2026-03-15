@@ -3,6 +3,7 @@ package controllers.dashboard;
 import cli.complaint.StudentComplaintCLI;
 import cli.dashboard.MainDashboard;
 import cli.forms.food.MealTokenPurchase;
+import cli.profile.EditProfileCLI;
 import cli.routine.StudentRoutineCLI;
 import cli.announcement.AnnouncementBoardCLI;
 import cli.contacts.StudentEmergencyContactsCLI;
@@ -23,6 +24,7 @@ public class StudentDashboardController {
     private final LaundryController laundryController;
     private final FacilityDashboard facilityDashboard;
     private final StudentRoutineCLI studentRoutineCLI;
+    private EditProfileCLI editProfileCLI;
 
     public StudentDashboardController() {
         this.mealTokenPurchase = new MealTokenPurchase();
@@ -69,6 +71,10 @@ public class StudentDashboardController {
                 break;
             case 10:
                 new StudentEmergencyContactsCLI().show();
+                break;
+            case 11:
+                this.editProfileCLI = new EditProfileCLI(username, "STUDENT");
+                editProfileCLI.start();
                 break;
             case 0:
                 mainDashboard.show();

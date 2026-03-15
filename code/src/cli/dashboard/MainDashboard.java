@@ -2,14 +2,18 @@ package cli.dashboard;
 
 import controllers.dashboard.MainDashboardController;
 import libraries.collections.MyString;
-import utils.*;
+import utils.BackgroundFiller;
+import utils.ConsoleColors;
+import utils.ConsoleUtil;
+import utils.FastInput;
+import utils.TerminalUI;
 
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
+import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
-import org.jline.reader.EndOfFileException;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 
 import java.io.IOException;
 
@@ -23,6 +27,8 @@ public class MainDashboard {
     private static Terminal jlineTerminal = null;
     private static LineReader jlineReader = null;
     private static boolean jlineReady = false;
+
+    private static final char PASSWORD_MASK = '\u2022';
 
     private static void initJLine() {
         if (jlineTerminal != null) {
@@ -39,23 +45,24 @@ public class MainDashboard {
         }
     }
 
-    private static final char PASSWORD_MASK = '\u2022';
-
     private static MyString readMaskedPassword() {
         initJLine();
+
         if (jlineReady && jlineReader != null) {
             try {
-                String raw = jlineReader.readLine("", null, (Character) PASSWORD_MASK, null);
+                String raw = jlineReader.readLine("", null, PASSWORD_MASK, null);
                 return new MyString(raw == null ? "" : raw);
             } catch (UserInterruptException | EndOfFileException e) {
                 return new MyString("");
             }
         }
+
         java.io.Console console = System.console();
         if (console != null) {
             char[] chars = console.readPassword();
             return new MyString(chars == null ? "" : new String(chars));
         }
+
         return new MyString(FastInput.readNonEmptyLine());
     }
 
@@ -92,25 +99,34 @@ public class MainDashboard {
                 );
                 System.out.print(HIDE_CUR);
 
-                int afterBanner = drawBanner(2);
+                boolean compact = termH() < 24;
 
-                String sub = "IUT Female Dormitory  ·  Islamic University of Technology";
-                Thread.sleep(100);
-                typewrite(afterBanner + 1, sub, ConsoleColors.Accent.MUTED, 12);
-
-                int menuStartRow = afterBanner + 3;
-                MenuItem[] menuItems = {
-                        new MenuItem(1, "Student"),
-                        new MenuItem(2, "Attendant"),
-                        new MenuItem(3, "Maintenance Worker"),
-                        new MenuItem(4, "Store-in-Charge"),
-                        new MenuItem(5, "Hall Office"),
-                        new MenuItem(6, "Admin"),
-                        new MenuItem(7, "Cafeteria Manager"),
-                        new MenuItem(0, "Exit"),
+                int menuStartRow;
+                TerminalUI.MenuItem[] menuItems = {
+                        new TerminalUI.MenuItem(1, "Student"),
+                        new TerminalUI.MenuItem(2, "Attendant"),
+                        new TerminalUI.MenuItem(3, "Maintenance Worker"),
+                        new TerminalUI.MenuItem(4, "Store-in-Charge"),
+                        new TerminalUI.MenuItem(5, "Hall Office"),
+                        new TerminalUI.MenuItem(6, "Admin"),
+                        new TerminalUI.MenuItem(7, "Cafeteria Manager"),
+                        new TerminalUI.MenuItem(0, "Exit"),
                 };
 
-                drawDashboard(
+                if (compact) {
+                    menuStartRow = 2;
+                } else {
+                    int afterBanner = drawBanner(2);
+                    animateBannerShimmer(2, 1, 12);
+
+                    String sub = "IUT Female Dormitory  ·  Islamic University of Technology";
+                    Thread.sleep(80);
+                    typewrite(afterBanner + 1, sub, ConsoleColors.Accent.MUTED, 8);
+
+                    menuStartRow = afterBanner + 3;
+                }
+
+                int choice = readChoiceArrowScrollable(
                         "WELCOME TO IUT FEMALE DORMITORY",
                         "Select your role to continue",
                         menuItems,
@@ -120,7 +136,6 @@ public class MainDashboard {
                         menuStartRow
                 );
 
-                int choice = readChoiceArrow();
                 System.out.print(RESET);
 
                 if (choice == 0) {
@@ -138,27 +153,31 @@ public class MainDashboard {
                         THEME.inputBg()
                 );
 
-                drawBanner(2);
-                typewrite(afterBanner + 1, sub, ConsoleColors.Accent.MUTED, 0);
+                int loginTopRow = compact
+                        ? Math.max(2, centerRow(9) - 1)
+                        : Math.max(8, centerRow(9));
 
-                int mid = afterBanner + 4;
-                int col = boxCol();
-                int iw = innerW();
+                if (!compact) {
+                    int afterBanner = drawBanner(2);
+                    String sub = "IUT Female Dormitory  ·  Islamic University of Technology";
+                    typewrite(afterBanner + 1, sub, ConsoleColors.Accent.MUTED, 0);
+                    loginTopRow = afterBanner + 4;
+                }
 
-                drawLoginBox(mid, col, iw, THEME.panelBg(), THEME.inputBg());
+                drawLoginBox(loginTopRow, boxCol(), innerW(), THEME.panelBg(), THEME.inputBg());
 
-                at(mid + 4, col + 14);
+                at(loginTopRow + 4, boxCol() + 14);
                 System.out.print(THEME.inputBg() + THEME.text());
                 System.out.flush();
                 MyString username = new MyString(FastInput.readNonEmptyLine());
 
-                at(mid + 6, col + 14);
+                at(loginTopRow + 6, boxCol() + 14);
                 System.out.print(THEME.inputBg() + THEME.text());
                 System.out.flush();
                 MyString password = readMaskedPassword();
 
                 System.out.print(RESET);
-                at(mid + 10, 1);
+                at(loginTopRow + 10, 1);
 
                 TerminalUI.setActiveTheme(
                         THEME.box(),
@@ -167,6 +186,7 @@ public class MainDashboard {
                         THEME.panelBg(),
                         THEME.inputBg()
                 );
+
                 controller.handleRoleInput(choice, username, password);
 
             } catch (Exception e) {

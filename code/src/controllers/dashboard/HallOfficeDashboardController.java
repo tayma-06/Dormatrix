@@ -2,6 +2,7 @@ package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
 import cli.dashboard.room.StudentRoomDashboard;
+import cli.profile.EditProfileCLI;
 import cli.views.complaint.ComplaintView;
 import controllers.dashboard.room.StudentRoomDashboardController;
 import controllers.room.RoomController;
@@ -37,6 +38,10 @@ public class HallOfficeDashboardController {
                 break;
             case 4:
                 TerminalUI.tPrint(">> Feature [Attendant Task] is under development.");
+                break;
+            case 5:
+                EditProfileCLI editProfileCLI = new EditProfileCLI(username, "HALL_OFFICER");
+                editProfileCLI.start();
                 break;
             case 0:
                 mainDashboard.show();
