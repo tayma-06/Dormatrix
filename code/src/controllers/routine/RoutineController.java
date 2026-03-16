@@ -207,6 +207,64 @@ public class RoutineController {
         return isPrivateByDefaultNightSlot(fullSlotIndex);
     }
 
+    public String renderStudentRoutineWithHighlight(String studentId, int hlRow, int hlCol) {
+        String[][] cells = new String[12][7];
+        fillCells(cells, studentId, true);
+
+        String title = "STUDENT ROUTINE (24 HOURS)";
+        MyOptional<StudentPublicInfo> infoOpt = studentRepo.findPublicInfoById(studentId);
+        if (infoOpt.isPresent()) {
+            StudentPublicInfo info = infoOpt.get();
+            title += " - " + info.getName() + " / Room " + info.getRoomNo();
+        }
+        return buildTableWithHighlight(title, FULL_SLOT_LABELS, cells, hlRow, hlCol);
+    }
+
+    private String buildTableWithHighlight(String title, String[] rowLabels,
+                                           String[][] cells, int hlRow, int hlCol) {
+        String HL_BG   = "\u001B[48;2;160;130;0m";
+        String HL_FG   = "\u001B[38;2;255;255;120m";
+        String HL_BOLD = "\u001B[1m";
+        String RST     = "\u001B[0m";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(title).append("\n");
+        sb.append(buildBorder("┌", "┬", "┐")).append("\n");
+        sb.append("│").append(center("TIME", TIME_COL_WIDTH));
+        for (int i = 0; i < 7; i++) {
+            DayOfWeek day = columnToDay(i);
+            String label = dayShort(day);
+            if (day == TimeManager.nowDay()) label = "*" + label + "*";
+            sb.append("│").append(center(label, CELL_WIDTH));
+        }
+        sb.append("│\n");
+        sb.append(buildBorder("├", "┼", "┤")).append("\n");
+
+        for (int r = 0; r < rowLabels.length; r++) {
+            sb.append("│").append(center(rowLabels[r], TIME_COL_WIDTH));
+            for (int c = 0; c < 7; c++) {
+                String cell = cells[r][c] == null ? "" : cells[r][c];
+                if (r == hlRow && c == hlCol) {
+                    // highlighted cell — clip to CELL_WIDTH-2, pad to CELL_WIDTH
+                    String clipped = cell.length() > CELL_WIDTH - 2
+                            ? cell.substring(0, CELL_WIDTH - 3) + "…"
+                            : cell;
+                    String padded = clipped + repeat(" ", CELL_WIDTH - clipped.length());
+                    sb.append("│").append(HL_BG).append(HL_FG).append(HL_BOLD)
+                            .append(padded).append(RST);
+                } else {
+                    sb.append("│").append(pad(clip(cell, CELL_WIDTH - 2), CELL_WIDTH));
+                }
+            }
+            sb.append("│\n");
+            if (r < rowLabels.length - 1) sb.append(buildBorder("├", "┼", "┤")).append("\n");
+        }
+
+        sb.append(buildBorder("└", "┴", "┘")).append("\n");
+        sb.append("Note: 20:00-04:00 remains private/busy by default for complaint scheduling.\n");
+        return sb.toString();
+    }
+
     private void fillCells(String[][] cells, String studentId, boolean studentView) {
         MyArrayList<StudentRoutineEntry> entries = routineRepo.findByStudentId(studentId);
 

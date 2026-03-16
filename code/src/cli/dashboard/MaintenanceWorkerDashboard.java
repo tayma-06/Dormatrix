@@ -15,7 +15,7 @@ public class MaintenanceWorkerDashboard implements Dashboard {
 
     private static final MenuItem[] MENU = {
             new MenuItem(1, "View Work Field"),
-            new MenuItem(2, "View Assigned Tasks"),
+            new MenuItem(2, "View Task"),
             new MenuItem(3, "View Routine"),
             new MenuItem(4, "View Profile"),
             new MenuItem(0, "Logout"),

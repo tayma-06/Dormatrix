@@ -35,10 +35,12 @@ public final class TerminalUIExtras {
     //    ESC / Q          cancel   -> returns -1
     // ─────────────────────────────────────────────────────────────
 
-    public static int tArrowSelect(String title, String[] items) throws InterruptedException {
+    public static int tArrowSelect(String title, String[] items, boolean fillBg) throws InterruptedException {
         // ── Fill background first ─────────────────────────────────
-        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
-        TerminalUI.at(2, 1);
+        if (fillBg) {
+            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+            TerminalUI.at(2, 1);
+        }
 
 
         if (items == null || items.length == 0) {
@@ -212,6 +214,10 @@ public final class TerminalUIExtras {
         }
     }
 
+    public static int tArrowSelect(String title, String[] items) throws InterruptedException {
+        return tArrowSelect(title, items, true);  // default: fill background
+    }
+
     // ─────────────────────────────────────────────────────────────
     //  Draw / update the "Your choice no:" input row
     // ─────────────────────────────────────────────────────────────
@@ -302,7 +308,7 @@ public final class TerminalUIExtras {
     //  Returns a best-guess if the terminal doesn't respond.
     // ─────────────────────────────────────────────────────────────
 
-    private static int getCursorRow() {
+    public static int getCursorRow() {
         try {
             System.out.print("\u001B[6n");
             System.out.flush();
