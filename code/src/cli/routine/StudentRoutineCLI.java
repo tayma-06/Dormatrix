@@ -18,28 +18,6 @@ public class StudentRoutineCLI {
     private final RoutineController controller = new RoutineController();
     private static final String STUDENT_FILE = "data/users/students.txt";
 
-    // ── Table layout constants (must match RoutineController) ─────
-    // Table printed starting at row 3:
-    //   row 3              = title line
-    //   row 4              = top border  ┌──...──┐
-    //   row 5              = header      │ TIME │ MON │...
-    //   row 6              = divider     ├──...──┤
-    //   row 7 + r*2        = slot r content row  (r = 0..11)
-    //   row 8 + r*2        = slot r divider row
-    //   row 30             = bottom border └──...──┘
-    //   row 31             = note line
-    private static final int SLOT_0_ROW      = 7;   // terminal row of first slot content
-    private static final int CELL_W          = 12;  // matches RoutineController.CELL_WIDTH
-    private static final int CELL_CONTENT_W  = 10;  // CELL_W - 2
-    private static final int TIME_COL_W      = 10;  // matches RoutineController.TIME_COL_WIDTH
-    // terminal col where day c content starts:
-    //   1(border) + 10(TIME) + 1(border) = col 12 for border, col 13 for MON content
-    //   each subsequent day: + 13 (1 border + 12 cell)
-    private static final int DAY_0_COL       = 13;  // MON content start col (1-based)
-    private static final int DAY_COL_STRIDE  = 13;
-
-    private static final int HINT_ROW        = 33;
-
     private static final String[] DAY_NAMES = {
             "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
     };
@@ -48,6 +26,9 @@ public class StudentRoutineCLI {
             "08:00-10:00", "10:00-12:00", "12:00-14:00", "14:00-16:00",
             "16:00-18:00", "18:00-20:00", "20:00-22:00", "22:00-24:00"
     };
+
+    private static final String HINT =
+            "  [←↑↓→] Navigate    [Enter] View/Edit/Clear    [ESC/Q] Back";
 
     // ─────────────────────────────────────────────────────────────
     //  Entry point
@@ -58,17 +39,8 @@ public class StudentRoutineCLI {
 
         while (true) {
             try {
-                clearAndRefresh();
-                System.out.print(HIDE_CUR);
-
-                TerminalUI.at(3, 1);
-                controller.printStudentRoutine(studentId);
-                drawHint();
-
-                String[][] cells = loadCells(studentId);
-                boolean exit = navigateTable(studentId, cells);
+                boolean exit = navigateTable(studentId);
                 if (exit) return;
-
             } catch (Exception e) {
                 cleanup();
                 System.err.println("[StudentRoutineCLI] " + e.getMessage());
@@ -77,14 +49,30 @@ public class StudentRoutineCLI {
     }
 
     // ─────────────────────────────────────────────────────────────
+    //  Draw table with current highlight at (hlRow, hlCol)
+    // ─────────────────────────────────────────────────────────────
+
+    private void drawTable(String studentId, int hlRow, int hlCol) {
+        clearAndRefresh();
+        System.out.print(HIDE_CUR);
+        TerminalUI.at(3, 1);
+        // Use the new highlight-aware render
+        System.out.print(controller.renderStudentRoutineWithHighlight(studentId, hlRow, hlCol));
+
+        // Draw hint bar below table
+        System.out.println();
+        System.out.print(ConsoleColors.fgRGB(160, 150, 60) + HINT + RESET);
+        System.out.flush();
+    }
+
+    // ─────────────────────────────────────────────────────────────
     //  Interactive navigator
     // ─────────────────────────────────────────────────────────────
 
-    private boolean navigateTable(String studentId, String[][] cells) throws Exception {
+    private boolean navigateTable(String studentId) throws Exception {
         int selRow = 0, selCol = 0;
 
-        highlightCell(selRow, selCol, cells[selRow][selCol], true);
-        System.out.flush();
+        drawTable(studentId, selRow, selCol);
 
         Terminal term = TerminalUI.getJLineTerminal();
         if (term == null) {
@@ -112,40 +100,32 @@ public class StudentRoutineCLI {
                             case 'D': newCol = (selCol - 1 +  7) %  7; break; // LEFT
                         }
                         if (newRow != selRow || newCol != selCol) {
-                            highlightCell(selRow, selCol, cells[selRow][selCol], false);
                             selRow = newRow;
                             selCol = newCol;
-                            highlightCell(selRow, selCol, cells[selRow][selCol], true);
-                            System.out.flush();
+                            // Redraw whole table with new highlight
+                            term.setAttributes(saved);
+                            drawTable(studentId, selRow, selCol);
+                            saved = term.enterRawMode();
                         }
                     } else {
-                        return true;  // bare ESC → exit
+                        return true; // bare ESC → exit
                     }
                     continue;
                 }
 
-                if (c == 13 || c == 10) {   // Enter → cell action
+                if (c == 13 || c == 10) {       // Enter → cell action
                     term.setAttributes(saved);
                     System.out.print(SHOW_CUR);
 
-                    boolean changed = handleCellAction(studentId, selRow, selCol, cells);
+                    handleCellAction(studentId, selRow, selCol);
 
-                    // Redraw table
-                    clearAndRefresh();
-                    System.out.print(HIDE_CUR);
-                    TerminalUI.at(3, 1);
-                    controller.printStudentRoutine(studentId);
-                    drawHint();
-
-                    if (changed) cells = loadCells(studentId);
-
+                    // Redraw after possible change
+                    drawTable(studentId, selRow, selCol);
                     saved = term.enterRawMode();
-                    highlightCell(selRow, selCol, cells[selRow][selCol], true);
-                    System.out.flush();
                     continue;
                 }
 
-                if (c == 3 || c == 'q' || c == 'Q') return true;  // Ctrl+C or Q
+                if (c == 3 || c == 'q' || c == 'Q') return true; // Ctrl+C or Q
             }
         } finally {
             term.setAttributes(saved);
@@ -155,39 +135,15 @@ public class StudentRoutineCLI {
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Highlight a cell on the rendered table
-    // ─────────────────────────────────────────────────────────────
-
-    private void highlightCell(int row, int col, String content, boolean on) {
-        int termRow = SLOT_0_ROW + row * 2;
-        int termCol = DAY_0_COL + col * DAY_COL_STRIDE;
-
-        String bg   = on ? ConsoleColors.bgRGB(160, 130, 0)   : getActiveBgColor();
-        String fg   = on ? ConsoleColors.fgRGB(255, 255, 120) : getActiveTextColor();
-        String bold = on ? BOLD : "";
-
-        String cell = (content == null) ? "" : content;
-        if (cell.length() > CELL_CONTENT_W) {
-            cell = cell.substring(0, CELL_CONTENT_W - 1) + "…";
-        }
-        // pad to exactly CELL_W
-        String padded = cell + " ".repeat(Math.max(0, CELL_W - cell.length()));
-
-        TerminalUI.at(termRow, termCol);
-        System.out.print(bg + fg + bold + padded + RESET);
-    }
-
-    // ─────────────────────────────────────────────────────────────
     //  Cell action popup
     // ─────────────────────────────────────────────────────────────
 
-    private boolean handleCellAction(String studentId, int row, int col,
-                                     String[][] cells) throws InterruptedException {
+    private void handleCellAction(String studentId, int row, int col)
+            throws InterruptedException {
         String dayName  = DAY_NAMES[col];
         String slotName = SLOT_NAMES[row];
-        String content  = cells[row][col];
+        String content  = controller.getSlotContent(studentId, col + 1, row + 1);
 
-        // ── Show full content ─────────────────────────────────────
         clearAndRefresh();
         tBoxTop();
         tBoxTitle(dayName + "  |  " + slotName);
@@ -209,14 +165,13 @@ public class StudentRoutineCLI {
         }
         tBoxBottom();
 
-        // ── Action picker ─────────────────────────────────────────
         String[] options = {"Edit this slot", "Clear this slot", "Cancel"};
         int idx;
         try { idx = tArrowSelect("SLOT OPTIONS", options); }
-        catch (InterruptedException e) { return false; }
-        if (idx < 0 || idx == 2) return false;
+        catch (InterruptedException e) { return; }
+        if (idx < 0 || idx == 2) return;
 
-        if (idx == 0) {                                 // EDIT
+        if (idx == 0) {                         // EDIT
             clearAndRefresh();
             tBoxTop();
             tBoxTitle("EDIT SLOT");
@@ -231,7 +186,7 @@ public class StudentRoutineCLI {
             tBoxSep();
             tCustomInputRow("Content : ");
             String newContent = readLineOrEsc();
-            if (newContent == null || newContent.trim().isEmpty()) return false;
+            if (newContent == null || newContent.trim().isEmpty()) return;
 
             controller.setSlot(studentId, col + 1, row + 1, newContent.trim());
             clearAndRefresh();
@@ -239,23 +194,22 @@ public class StudentRoutineCLI {
             tBoxLine("Slot updated: " + dayName + " " + slotName);
             tBoxBottom();
             tPause();
-            return true;
 
-        } else {                                        // CLEAR
+        } else {                                // CLEAR
             if (content == null || content.trim().isEmpty()) {
                 clearAndRefresh();
                 tBoxTop();
                 tBoxLine("This slot is already empty.");
                 tBoxBottom();
                 tPause();
-                return false;
+                return;
             }
 
             clearAndRefresh();
             String[] confirm = {"Yes, clear it", "Cancel"};
             int cidx;
             try { cidx = tArrowSelect("CONFIRM CLEAR", confirm); }
-            catch (InterruptedException e) { return false; }
+            catch (InterruptedException e) { return; }
 
             if (cidx == 0) {
                 controller.clearSlot(studentId, col + 1, row + 1);
@@ -264,43 +218,12 @@ public class StudentRoutineCLI {
                 tBoxLine("Slot cleared: " + dayName + " " + slotName);
                 tBoxBottom();
                 tPause();
-                return true;
-            }
-            return false;
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    //  Load all cell contents into 12×7 array
-    // ─────────────────────────────────────────────────────────────
-
-    private String[][] loadCells(String studentId) {
-        String[][] cells = new String[12][7];
-        for (int r = 0; r < 12; r++) {
-            for (int c = 0; c < 7; c++) {
-                String content = controller.getSlotContent(studentId, c + 1, r + 1);
-                cells[r][c] = (content == null) ? "" : content;
             }
         }
-        return cells;
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Navigation hint bar below the table
-    // ─────────────────────────────────────────────────────────────
-
-    private void drawHint() {
-        TerminalUI.at(HINT_ROW, TerminalUI.boxCol());
-        System.out.print(
-                ConsoleColors.fgRGB(160, 150, 60)
-                        + "  [←↑↓→] Navigate    [Enter] View / Edit / Clear    [ESC] Back    [Q] Back"
-                        + RESET
-        );
-        System.out.flush();
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    //  Fallback menu if JLine terminal unavailable
+    //  Fallback menu (no JLine)
     // ─────────────────────────────────────────────────────────────
 
     private boolean showFallbackMenu(String studentId) throws Exception {
@@ -325,40 +248,44 @@ public class StudentRoutineCLI {
     }
 
     private void handleEditFallback(String studentId) throws InterruptedException {
-        int day  = pickFallback("SELECT DAY",  DAY_NAMES);  if (day  < 0) return;
-        int slot = pickFallback("SELECT SLOT", SLOT_NAMES); if (slot < 0) return;
+        int col = pickFallback("SELECT DAY",  DAY_NAMES);   if (col < 0) return;
+        int row = pickFallback("SELECT SLOT", SLOT_NAMES);  if (row < 0) return;
         clearAndRefresh();
         tBoxTop(); tBoxTitle("EDIT SLOT"); tBoxSep();
-        tBoxLine("Day  : " + DAY_NAMES[day]);
-        tBoxLine("Slot : " + SLOT_NAMES[slot]); tBoxSep();
+        tBoxLine("Day  : " + DAY_NAMES[col]);
+        tBoxLine("Slot : " + SLOT_NAMES[row]); tBoxSep();
         tBoxLine("  [ESC] Cancel", ConsoleColors.fgRGB(160, 150, 60)); tBoxSep();
         tCustomInputRow("Content : ");
         String content = readLineOrEsc();
         if (content == null || content.trim().isEmpty()) return;
-        controller.setSlot(studentId, day + 1, slot + 1, content.trim());
+        controller.setSlot(studentId, col + 1, row + 1, content.trim());
         tBoxTop(); tBoxLine("Slot updated."); tBoxBottom(); tPause();
     }
 
     private void handleClearFallback(String studentId) throws InterruptedException {
-        int day  = pickFallback("SELECT DAY",  DAY_NAMES);  if (day  < 0) return;
-        int slot = pickFallback("SELECT SLOT", SLOT_NAMES); if (slot < 0) return;
+        int col = pickFallback("SELECT DAY",  DAY_NAMES);  if (col < 0) return;
+        int row = pickFallback("SELECT SLOT", SLOT_NAMES); if (row < 0) return;
         clearAndRefresh();
         String[] confirm = {"Yes, clear it", "Cancel"};
         int cidx;
         try { cidx = tArrowSelect("CONFIRM CLEAR", confirm); }
         catch (InterruptedException e) { return; }
-        if (cidx == 0) { controller.clearSlot(studentId, day + 1, slot + 1); tBoxTop(); tBoxLine("Cleared."); tBoxBottom(); tPause(); }
+        if (cidx == 0) {
+            controller.clearSlot(studentId, col + 1, row + 1);
+            tBoxTop(); tBoxLine("Cleared."); tBoxBottom(); tPause();
+        }
     }
 
     private void handleViewFallback(String studentId) throws InterruptedException {
-        int day  = pickFallback("SELECT DAY",  DAY_NAMES);  if (day  < 0) return;
-        int slot = pickFallback("SELECT SLOT", SLOT_NAMES); if (slot < 0) return;
-        String content = controller.getSlotContent(studentId, day + 1, slot + 1);
+        int col = pickFallback("SELECT DAY",  DAY_NAMES);  if (col < 0) return;
+        int row = pickFallback("SELECT SLOT", SLOT_NAMES); if (row < 0) return;
+        String content = controller.getSlotContent(studentId, col + 1, row + 1);
         clearAndRefresh();
         tBoxTop(); tBoxTitle("SLOT CONTENT"); tBoxSep();
-        tBoxLine("Day  : " + DAY_NAMES[day]);
-        tBoxLine("Slot : " + SLOT_NAMES[slot]); tBoxSep();
-        tBoxLine(content == null || content.trim().isEmpty() ? "(empty)" : "Content : " + content);
+        tBoxLine("Day  : " + DAY_NAMES[col]);
+        tBoxLine("Slot : " + SLOT_NAMES[row]); tBoxSep();
+        tBoxLine(content == null || content.trim().isEmpty()
+                ? "(empty)" : "Content : " + content);
         tBoxBottom(); tPause();
     }
 
@@ -401,6 +328,7 @@ public class StudentRoutineCLI {
         return null;
     }
 }
+
 
 
 
