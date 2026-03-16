@@ -61,6 +61,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import controllers.room.RoomChangeApplicationController;
+import controllers.dashboard.room.RoomChangeRequestDashboardController;
+import controllers.dashboard.room.StudentRoomDashboardController;
+import models.room.RoomChangeApplication;
+
 import controllers.authentication.ConfigLoader;
 
 @RunWith(JUnit4.class)
@@ -173,7 +178,46 @@ public class UnitTests {
         return null;
     }
 
-    // ─── Fake AccountManager for account-controller tests ─────
+    private String roomChangeRepoPath() throws Exception {
+        RoomChangeApplicationController controller = new RoomChangeApplicationController(new RoomService());
+        Object repo = getPrivateField(controller, "repo");
+        String path = discoverTxtPathFromObject(repo);
+        assertNotNull("Could not discover room change repository file path.", path);
+        return path;
+    }
+
+    private FileSnapshot snapshotRoomChangeRepo() throws Exception {
+        return snapshot(roomChangeRepoPath());
+    }
+
+    private String studentLine(String id, String name, String room) {
+        return id + "|" + name + "|STUDENT|CSE|hash|01700000000|" + id.toLowerCase() + "@iut-dhaka.edu|" + room;
+    }
+
+    private String roomLines(Room... rooms) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < rooms.length; i++) {
+            sb.append(rooms[i].toFileString());
+            if (i < rooms.length - 1) {
+                sb.append(System.lineSeparator());
+            }
+        }
+        return sb.toString();
+    }
+
+    private RoomChangeApplicationController newRoomChangeController() {
+        return new RoomChangeApplicationController(new RoomService());
+    }
+
+    private StudentRoomDashboardController newStudentRoomDashboardController() {
+        return new StudentRoomDashboardController(new RoomService());
+    }
+
+    private String firstApplicationIdFor(RoomChangeApplicationController controller, String studentIdOrName) {
+        MyArrayList<RoomChangeApplication> apps = controller.getApplicationsByStudent(studentIdOrName);
+        assertTrue("Expected at least one application for " + studentIdOrName, apps.size() > 0);
+        return apps.get(0).getApplicationId();
+    }
 
     private static class TestAccountManager extends AccountManager {
         private final Map<String, String> fileMap = new HashMap<>();
@@ -2944,13 +2988,20 @@ public class UnitTests {
     @Test
     public void roomController_allocateFullRoomReturnsFalse() throws Exception {
         FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
         try {
-            writeFile(ROOMS_FILE, new Room("R101", 2, 2).toFileString());
+            writeFile(ROOMS_FILE, new Room("R101", 2, 0).toFileString());
+
+            writeFile(STUDENTS_FILE,
+                    studentLine("230042135", "Khadiza Sultana", "R101") + System.lineSeparator()
+                            + studentLine("230042136", "Sara Ahmed", "R101"));
+
             RoomController controller = new RoomController();
 
             assertFalse(controller.allocateRoom("R101"));
         } finally {
             restore(roomSnap);
+            restore(studentSnap);
         }
     }
 
@@ -2998,18 +3049,27 @@ public class UnitTests {
     @Test
     public void roomService_getAvailableRoomsReturnsOnlyAvailableOnes() throws Exception {
         FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
         try {
             writeFile(ROOMS_FILE,
-                    new Room("R101", 2, 2).toFileString() + System.lineSeparator()
-                    + new Room("R102", 3, 1).toFileString() + System.lineSeparator());
+                    new Room("R101", 2, 0).toFileString() + System.lineSeparator()
+                            + new Room("R102", 3, 0).toFileString() + System.lineSeparator());
+
+            writeFile(STUDENTS_FILE,
+                    studentLine("230042135", "Khadiza Sultana", "R101") + System.lineSeparator()
+                            + studentLine("230042136", "Sara Ahmed", "R101") + System.lineSeparator()
+                            + studentLine("230042137", "Nusrat Jahan", "R102"));
 
             RoomService service = new RoomService();
             java.util.List<Room> available = service.getAvailableRooms();
 
             assertEquals(1, available.size());
             assertEquals("R102", available.get(0).getRoomId());
+            assertEquals(1, available.get(0).getCurrentOccupancy());
+            assertEquals(3, available.get(0).getCapacity());
         } finally {
             restore(roomSnap);
+            restore(studentSnap);
         }
     }
 
@@ -4034,6 +4094,1061 @@ public class UnitTests {
             assertNull(ConfigLoader.getAdminEmail());
         } finally {
             restore(snap);
+        }
+    }
+
+    // ─── Room Change: RoomService Tests ──────────────────────────
+
+    @Test
+    public void roomService_resolveStudentIdByIdAndName() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, "");
+            writeFile(STUDENTS_FILE,
+                    studentLine("230042135", "Khadiza Sultana", "301") + System.lineSeparator() +
+                            studentLine("230042136", "Sara Ahmed", "302"));
+
+            RoomService service = new RoomService();
+            assertEquals("230042135", service.resolveStudentId("230042135"));
+            assertEquals("230042136", service.resolveStudentId("Sara Ahmed"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_resolveStudentIdReturnsNullForUnknownOrBlank() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, "");
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+
+            RoomService service = new RoomService();
+            assertNull(service.resolveStudentId("UNKNOWN"));
+            assertNull(service.resolveStudentId(""));
+            assertNull(service.resolveStudentId(null));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_getStudentNameByIdAndName() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, "");
+            writeFile(STUDENTS_FILE,
+                    studentLine("230042135", "Khadiza Sultana", "301") + System.lineSeparator() +
+                            studentLine("230042136", "Sara Ahmed", "302"));
+
+            RoomService service = new RoomService();
+            assertEquals("Khadiza Sultana", service.getStudentName("230042135"));
+            assertEquals("Sara Ahmed", service.getStudentName("Sara Ahmed"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_getStudentNameReturnsNullForUnknown() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, "");
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+
+            RoomService service = new RoomService();
+            assertNull(service.getStudentName("NOPE"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_roomExistsHandlesValidAndInvalidInput() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE, "");
+
+            RoomService service = new RoomService();
+            assertTrue(service.roomExists("301"));
+            assertTrue(service.roomExists("302"));
+            assertFalse(service.roomExists("999"));
+            assertFalse(service.roomExists(""));
+            assertFalse(service.roomExists(null));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_isRoomAvailableReturnsTrueForAvailableRoom() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+
+            RoomService service = new RoomService();
+            assertTrue(service.isRoomAvailable("301"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_isRoomAvailableReturnsFalseForFullOrMissingRoom() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 1, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+
+            RoomService service = new RoomService();
+            assertFalse(service.isRoomAvailable("301"));
+            assertFalse(service.isRoomAvailable("999"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_changeStudentRoomRejectsNullOrBlankArguments() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0), new Room("302", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+
+            RoomService service = new RoomService();
+            assertFalse(service.changeStudentRoom(null, "302"));
+            assertFalse(service.changeStudentRoom("", "302"));
+            assertFalse(service.changeStudentRoom("230042135", null));
+            assertFalse(service.changeStudentRoom("230042135", ""));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_changeStudentRoomReturnsFalseWhenTargetRoomDoesNotExist() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+
+            RoomService service = new RoomService();
+            assertFalse(service.changeStudentRoom("230042135", "999"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_changeStudentRoomReturnsFalseWhenTargetRoomIsFull() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 1, 0)
+            ));
+            writeFile(STUDENTS_FILE,
+                    studentLine("230042135", "Khadiza Sultana", "301") + System.lineSeparator() +
+                            studentLine("230042136", "Sara Ahmed", "302"));
+
+            RoomService service = new RoomService();
+            assertFalse(service.changeStudentRoom("230042135", "302"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_changeStudentRoomReturnsFalseWhenStudentNotFound() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+
+            RoomService service = new RoomService();
+            assertFalse(service.changeStudentRoom("999999999", "302"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_changeStudentRoomReturnsFalseWhenMovingToSameRoom() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+
+            RoomService service = new RoomService();
+            assertFalse(service.changeStudentRoom("230042135", "301"));
+
+            String studentsAfter = readFile(STUDENTS_FILE);
+            assertTrue(studentsAfter.contains("|301"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_changeStudentRoomSuccessfullyUpdatesStudentAndOccupancy() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE,
+                    studentLine("230042135", "Khadiza Sultana", "301") + System.lineSeparator() +
+                            studentLine("230042136", "Sara Ahmed", "301"));
+
+            RoomService service = new RoomService();
+            assertTrue(service.changeStudentRoom("230042135", "302"));
+
+            String studentsAfter = readFile(STUDENTS_FILE);
+            assertTrue(studentsAfter.contains("230042135|Khadiza Sultana|STUDENT|CSE|hash|01700000000|230042135@iut-dhaka.edu|302"));
+
+            Room oldRoom = service.getRoomDetailsWithRealOccupancy("301");
+            Room newRoom = service.getRoomDetailsWithRealOccupancy("302");
+
+            assertNotNull(oldRoom);
+            assertNotNull(newRoom);
+            assertEquals(1, oldRoom.getCurrentOccupancy());
+            assertEquals(1, newRoom.getCurrentOccupancy());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+
+// ─── Room Change: RoomChangeApplicationController Tests ─────
+
+    @Test
+    public void roomChange_submitApplicationFailsWhenStudentCannotBeIdentified() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0), new Room("302", 4, 0)));
+            writeFile(STUDENTS_FILE, "");
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            assertEquals("Could not identify student.",
+                    controller.submitApplication("UNKNOWN", "302", "Need room change"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_submitApplicationFailsWhenStudentHasNoAssignedRoom() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0), new Room("302", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", ""));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            assertEquals("You do not have an assigned room yet.",
+                    controller.submitApplication("230042135", "302", "Need room change"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_submitApplicationFailsWhenRequestedRoomIsBlank() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0), new Room("302", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            assertEquals("Requested room is required.",
+                    controller.submitApplication("230042135", "", "Need room change"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_submitApplicationFailsWhenReasonIsBlank() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0), new Room("302", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            assertEquals("Reason is required.",
+                    controller.submitApplication("230042135", "302", "   "));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_submitApplicationFailsWhenRequestedRoomDoesNotExist() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            assertEquals("Requested room does not exist.",
+                    controller.submitApplication("230042135", "999", "Need room change"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_submitApplicationFailsWhenRequestedRoomMatchesCurrentRoom() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            assertEquals("Requested room is the same as your current room.",
+                    controller.submitApplication("230042135", "301", "Need room change"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_submitApplicationSucceedsByStudentId() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            String msg = controller.submitApplication("230042135", "302", "My roommates bully me");
+            assertEquals("Room change application submitted successfully!", msg);
+
+            MyArrayList<RoomChangeApplication> mine = controller.getApplicationsByStudent("230042135");
+            assertEquals(1, mine.size());
+
+            RoomChangeApplication app = mine.get(0);
+            assertEquals("230042135", app.getStudentId());
+            assertEquals("Khadiza Sultana", app.getStudentName());
+            assertEquals("301", app.getCurrentRoom());
+            assertEquals("302", app.getRequestedRoom());
+            assertEquals("My roommates bully me", app.getReason());
+            assertEquals(RoomChangeApplicationStatus.PENDING, app.getStatus());
+            assertEquals("", app.getReviewedBy());
+            assertEquals("", app.getReviewNote());
+            assertEquals("", app.getReviewedAt());
+            assertTrue(app.getApplicationId().startsWith("RCA-"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_submitApplicationSucceedsByStudentName() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            String msg = controller.submitApplication("Khadiza Sultana", "302", "Need quieter room");
+            assertEquals("Room change application submitted successfully!", msg);
+
+            MyArrayList<RoomChangeApplication> mine = controller.getApplicationsByStudent("230042135");
+            assertEquals(1, mine.size());
+            assertEquals("302", mine.get(0).getRequestedRoom());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_submitApplicationBlocksSecondPendingRequest() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0),
+                    new Room("303", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            assertEquals("Room change application submitted successfully!",
+                    controller.submitApplication("230042135", "302", "Need quieter room"));
+
+            assertEquals("You already have a pending room change application.",
+                    controller.submitApplication("230042135", "303", "Another request"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_getApplicationsByStudentReturnsEmptyForUnknownStudent() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, "");
+            writeFile(STUDENTS_FILE, "");
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            assertEquals(0, controller.getApplicationsByStudent("UNKNOWN").size());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_getPendingApplicationsReturnsOnlyPendingOnes() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0),
+                    new Room("303", 4, 0),
+                    new Room("304", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE,
+                    studentLine("230042135", "Khadiza Sultana", "301") + System.lineSeparator() +
+                            studentLine("230042136", "Sara Ahmed", "304"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            controller.submitApplication("230042135", "302", "Need room change");
+            controller.submitApplication("230042136", "303", "Need room change too");
+
+            String appId = firstApplicationIdFor(controller, "230042135");
+            assertEquals("Room change application rejected.",
+                    controller.reject(appId, "Officer", "Rejected for test"));
+
+            MyArrayList<RoomChangeApplication> pending = controller.getPendingApplications();
+            assertEquals(1, pending.size());
+            assertEquals("230042136", pending.get(0).getStudentId());
+            assertEquals(RoomChangeApplicationStatus.PENDING, pending.get(0).getStatus());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_getByIdReturnsSavedApplication() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0), new Room("302", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            controller.submitApplication("230042135", "302", "Need room change");
+
+            String appId = firstApplicationIdFor(controller, "230042135");
+            MyOptional<RoomChangeApplication> opt = controller.getById(appId);
+
+            assertFalse(opt.isEmpty());
+            assertEquals(appId, opt.get().getApplicationId());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_getByIdReturnsEmptyForMissingApplication() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, "");
+            writeFile(STUDENTS_FILE, "");
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            assertTrue(controller.getById("NOPE").isEmpty());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_approveReturnsNotFoundWhenApplicationMissing() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, "");
+            writeFile(STUDENTS_FILE, "");
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            assertEquals("Application not found.",
+                    controller.approveAndMove("NOPE", "Officer", "Approved"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_rejectReturnsNotFoundWhenApplicationMissing() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, "");
+            writeFile(STUDENTS_FILE, "");
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            assertEquals("Application not found.",
+                    controller.reject("NOPE", "Officer", "Rejected"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_approveFailsWhenApplicationAlreadyRejected() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0), new Room("302", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            controller.submitApplication("230042135", "302", "Need room change");
+
+            String appId = firstApplicationIdFor(controller, "230042135");
+            controller.reject(appId, "Officer", "Rejected");
+            assertEquals("Only pending applications can be processed.",
+                    controller.approveAndMove(appId, "Officer", "Approve after reject"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_rejectFailsWhenApplicationAlreadyCompleted() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            controller.submitApplication("230042135", "302", "Need room change");
+
+            String appId = firstApplicationIdFor(controller, "230042135");
+            controller.approveAndMove(appId, "Officer", "Approved");
+            assertEquals("Only pending applications can be processed.",
+                    controller.reject(appId, "Officer", "Reject after completion"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_approveFailsWhenRequestedRoomNoLongerExists() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            controller.submitApplication("230042135", "302", "Need room change");
+            String appId = firstApplicationIdFor(controller, "230042135");
+
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0)));
+
+            assertEquals("Requested room no longer exists.",
+                    controller.approveAndMove(appId, "Officer", "Approved"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_approveFailsWhenRequestedRoomIsCurrentlyFull() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 1, 0)
+            ));
+            writeFile(STUDENTS_FILE,
+                    studentLine("230042135", "Khadiza Sultana", "301") + System.lineSeparator() +
+                            studentLine("230042136", "Sara Ahmed", "302"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            controller.submitApplication("230042135", "302", "Need room change");
+            String appId = firstApplicationIdFor(controller, "230042135");
+
+            assertEquals("Requested room is currently full. Move cannot be completed.",
+                    controller.approveAndMove(appId, "Officer", "Approved"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_approveFailsWhenStudentCanNoLongerBeMoved() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            controller.submitApplication("230042135", "302", "Need room change");
+            String appId = firstApplicationIdFor(controller, "230042135");
+
+            writeFile(STUDENTS_FILE, "");
+
+            assertEquals("Could not complete room move.",
+                    controller.approveAndMove(appId, "Officer", "Approved"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_approveSuccessfullyMovesStudentAndCompletesApplication() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE,
+                    studentLine("230042135", "Khadiza Sultana", "301") + System.lineSeparator() +
+                            studentLine("230042136", "Sara Ahmed", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            controller.submitApplication("230042135", "302", "My roommates bully me");
+            String appId = firstApplicationIdFor(controller, "230042135");
+
+            String msg = controller.approveAndMove(appId, "Tahmina Chowdhury", "Approved and moved.");
+            assertEquals("Room change approved and completed successfully.", msg);
+
+            RoomService service = new RoomService();
+            assertEquals("302", service.getStudentRoomNumber("230042135"));
+
+            Room oldRoom = service.getRoomDetailsWithRealOccupancy("301");
+            Room newRoom = service.getRoomDetailsWithRealOccupancy("302");
+            assertEquals(1, oldRoom.getCurrentOccupancy());
+            assertEquals(1, newRoom.getCurrentOccupancy());
+
+            MyOptional<RoomChangeApplication> opt = controller.getById(appId);
+            assertFalse(opt.isEmpty());
+            RoomChangeApplication app = opt.get();
+
+            assertEquals(RoomChangeApplicationStatus.COMPLETED, app.getStatus());
+            assertEquals("Tahmina Chowdhury", app.getReviewedBy());
+            assertEquals("Approved and moved.", app.getReviewNote());
+            assertNotNull(app.getReviewedAt());
+            assertFalse(app.getReviewedAt().trim().isEmpty());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChange_rejectSuccessfullyMarksApplicationRejectedAndLeavesRoomUnchanged() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController controller = newRoomChangeController();
+            controller.submitApplication("230042135", "302", "Need room change");
+            String appId = firstApplicationIdFor(controller, "230042135");
+
+            String msg = controller.reject(appId, "Tahmina Chowdhury", "Rejected for now");
+            assertEquals("Room change application rejected.", msg);
+
+            RoomService service = new RoomService();
+            assertEquals("301", service.getStudentRoomNumber("230042135"));
+
+            MyOptional<RoomChangeApplication> opt = controller.getById(appId);
+            assertFalse(opt.isEmpty());
+            RoomChangeApplication app = opt.get();
+
+            assertEquals(RoomChangeApplicationStatus.REJECTED, app.getStatus());
+            assertEquals("Tahmina Chowdhury", app.getReviewedBy());
+            assertEquals("Rejected for now", app.getReviewNote());
+            assertNotNull(app.getReviewedAt());
+            assertFalse(app.getReviewedAt().trim().isEmpty());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+
+// ─── Room Change: StudentRoomDashboardController Tests ──────
+
+    @Test
+    public void studentRoomDashboardController_getStudentRoomNumberDelegatesToService() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            StudentRoomDashboardController controller = newStudentRoomDashboardController();
+            assertEquals("301", controller.getStudentRoomNumber("230042135"));
+            assertEquals("301", controller.getStudentRoomNumber("Khadiza Sultana"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void studentRoomDashboardController_getRoomDetailsReturnsNullForUnassignedAndNA() {
+        StudentRoomDashboardController controller = newStudentRoomDashboardController();
+        assertNull(controller.getRoomDetails("UNASSIGNED"));
+        assertNull(controller.getRoomDetails("N/A"));
+    }
+
+    @Test
+    public void studentRoomDashboardController_getRoomDetailsReturnsRealRoomDetails() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0)));
+            writeFile(STUDENTS_FILE,
+                    studentLine("230042135", "Khadiza Sultana", "301") + System.lineSeparator() +
+                            studentLine("230042136", "Sara Ahmed", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            StudentRoomDashboardController controller = newStudentRoomDashboardController();
+            Room room = controller.getRoomDetails("301");
+
+            assertNotNull(room);
+            assertEquals("301", room.getRoomId());
+            assertEquals(2, room.getCurrentOccupancy());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void studentRoomDashboardController_submitRoomChangeApplicationDelegatesValidation() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(new Room("301", 4, 0), new Room("302", 4, 0)));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            StudentRoomDashboardController controller = newStudentRoomDashboardController();
+            assertEquals("Requested room is the same as your current room.",
+                    controller.submitRoomChangeApplication("230042135", "301", "Need room change"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void studentRoomDashboardController_getRoomChangeApplicationsReturnsOnlyThatStudentsApps() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0),
+                    new Room("303", 4, 0),
+                    new Room("304", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE,
+                    studentLine("230042135", "Khadiza Sultana", "301") + System.lineSeparator() +
+                            studentLine("230042136", "Sara Ahmed", "304"));
+            writeFile(roomChangeRepoPath(), "");
+
+            StudentRoomDashboardController controller = newStudentRoomDashboardController();
+            controller.submitRoomChangeApplication("230042135", "302", "Need room change");
+            controller.submitRoomChangeApplication("230042136", "303", "Another need");
+
+            MyArrayList<RoomChangeApplication> mine = controller.getRoomChangeApplications("230042135");
+            assertEquals(1, mine.size());
+            assertEquals("230042135", mine.get(0).getStudentId());
+            assertEquals("302", mine.get(0).getRequestedRoom());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+
+// ─── Room Change: RoomChangeRequestDashboardController Tests ─
+
+    @Test
+    public void roomChangeRequestDashboardController_getPendingApplicationsDelegatesCorrectly() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController submitController = newRoomChangeController();
+            submitController.submitApplication("230042135", "302", "Need room change");
+
+            RoomChangeRequestDashboardController dashboardController = new RoomChangeRequestDashboardController();
+            MyArrayList<RoomChangeApplication> pending = dashboardController.getPendingApplications();
+
+            assertEquals(1, pending.size());
+            assertEquals("230042135", pending.get(0).getStudentId());
+            assertEquals(RoomChangeApplicationStatus.PENDING, pending.get(0).getStatus());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChangeRequestDashboardController_getByIdReturnsEmptyForMissingApplication() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, "");
+            writeFile(STUDENTS_FILE, "");
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeRequestDashboardController controller = new RoomChangeRequestDashboardController();
+            assertTrue(controller.getById("NOPE").isEmpty());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChangeRequestDashboardController_rejectDelegatesCorrectly() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController submitController = newRoomChangeController();
+            submitController.submitApplication("230042135", "302", "Need room change");
+            String appId = firstApplicationIdFor(submitController, "230042135");
+
+            RoomChangeRequestDashboardController dashboardController = new RoomChangeRequestDashboardController();
+            String msg = dashboardController.reject(appId, "Officer", "Rejected by hall office");
+
+            assertEquals("Room change application rejected.", msg);
+
+            MyOptional<RoomChangeApplication> opt = submitController.getById(appId);
+            assertFalse(opt.isEmpty());
+            assertEquals(RoomChangeApplicationStatus.REJECTED, opt.get().getStatus());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
+        }
+    }
+
+    @Test
+    public void roomChangeRequestDashboardController_approveAndMoveDelegatesCorrectly() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        FileSnapshot repoSnap = snapshotRoomChangeRepo();
+        try {
+            writeFile(ROOMS_FILE, roomLines(
+                    new Room("301", 4, 0),
+                    new Room("302", 4, 0)
+            ));
+            writeFile(STUDENTS_FILE, studentLine("230042135", "Khadiza Sultana", "301"));
+            writeFile(roomChangeRepoPath(), "");
+
+            RoomChangeApplicationController submitController = newRoomChangeController();
+            submitController.submitApplication("230042135", "302", "Need room change");
+            String appId = firstApplicationIdFor(submitController, "230042135");
+
+            RoomChangeRequestDashboardController dashboardController = new RoomChangeRequestDashboardController();
+            String msg = dashboardController.approveAndMove(appId, "Officer", "Approved by hall office");
+
+            assertEquals("Room change approved and completed successfully.", msg);
+
+            RoomService service = new RoomService();
+            assertEquals("302", service.getStudentRoomNumber("230042135"));
+
+            MyOptional<RoomChangeApplication> opt = submitController.getById(appId);
+            assertFalse(opt.isEmpty());
+            assertEquals(RoomChangeApplicationStatus.COMPLETED, opt.get().getStatus());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+            restore(repoSnap);
         }
     }
 }
