@@ -35,10 +35,12 @@ public final class TerminalUIExtras {
     //    ESC / Q          cancel   -> returns -1
     // ─────────────────────────────────────────────────────────────
 
-    public static int tArrowSelect(String title, String[] items) throws InterruptedException {
+    public static int tArrowSelect(String title, String[] items, boolean fillBg) throws InterruptedException {
         // ── Fill background first ─────────────────────────────────
-        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
-        TerminalUI.at(2, 1);
+        if (fillBg) {
+            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+            TerminalUI.at(2, 1);
+        }
 
 
         if (items == null || items.length == 0) {
@@ -210,6 +212,10 @@ public final class TerminalUIExtras {
             term.setAttributes(saved);
             System.out.flush();
         }
+    }
+
+    public static int tArrowSelect(String title, String[] items) throws InterruptedException {
+        return tArrowSelect(title, items, true);  // default: fill background
     }
 
     // ─────────────────────────────────────────────────────────────

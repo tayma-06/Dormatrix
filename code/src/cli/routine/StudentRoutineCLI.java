@@ -144,30 +144,23 @@ public class StudentRoutineCLI {
         String slotName = SLOT_NAMES[row];
         String content  = controller.getSlotContent(studentId, col + 1, row + 1);
 
+        // ── Define preview first ──────────────────────────────────
+        String preview = (content == null || content.trim().isEmpty())
+                ? "(empty)"
+                : content.length() > 40 ? content.substring(0, 40) + "…" : content;
+
+        // ── Draw content info box ─────────────────────────────────
         clearAndRefresh();
         tBoxTop();
         tBoxTitle(dayName + "  |  " + slotName);
         tBoxSep();
-
-        if (content == null || content.trim().isEmpty()) {
-            tBoxLine("Content : (empty)");
-        } else {
-            int wrap = 55;
-            String full = content;
-            if (full.length() <= wrap) {
-                tBoxLine("Content : " + full);
-            } else {
-                tBoxLine("Content : " + full.substring(0, wrap));
-                for (int i = wrap; i < full.length(); i += wrap) {
-                    tBoxLine("          " + full.substring(i, Math.min(i + wrap, full.length())));
-                }
-            }
-        }
+        tBoxLine("Content : " + preview);
         tBoxBottom();
 
-        String[] options = {"Edit this slot", "Clear this slot", "Cancel"};
+        // ── Options picker ────────────────────────────────────────
+        String[] options = {"[1] Edit this slot", "[2] Clear this slot", "[3] Cancel"};
         int idx;
-        try { idx = tArrowSelect("SLOT OPTIONS", options); }
+        try { idx = tArrowSelect("SLOT OPTIONS", options, false); }
         catch (InterruptedException e) { return; }
         if (idx < 0 || idx == 2) return;
 
@@ -206,7 +199,7 @@ public class StudentRoutineCLI {
             }
 
             clearAndRefresh();
-            String[] confirm = {"Yes, clear it", "Cancel"};
+            String[] confirm = {"[1] Yes, clear it", "[2] Cancel"};
             int cidx;
             try { cidx = tArrowSelect("CONFIRM CLEAR", confirm); }
             catch (InterruptedException e) { return; }
@@ -266,7 +259,7 @@ public class StudentRoutineCLI {
         int col = pickFallback("SELECT DAY",  DAY_NAMES);  if (col < 0) return;
         int row = pickFallback("SELECT SLOT", SLOT_NAMES); if (row < 0) return;
         clearAndRefresh();
-        String[] confirm = {"Yes, clear it", "Cancel"};
+        String[] confirm = {"[1] Yes, clear it", "[2] Cancel"};
         int cidx;
         try { cidx = tArrowSelect("CONFIRM CLEAR", confirm); }
         catch (InterruptedException e) { return; }
