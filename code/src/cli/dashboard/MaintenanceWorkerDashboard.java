@@ -14,9 +14,9 @@ public class MaintenanceWorkerDashboard implements Dashboard {
     private static final BackgroundFiller.Theme THEME = BackgroundFiller.MAINTENANCE;
 
     private static final MenuItem[] MENU = {
-            new MenuItem(1, "View Assigned Tasks"),
-            new MenuItem(2, "Update Task Status"),
-            new MenuItem(3, "View Announcements"),
+            new MenuItem(1, "View Work Field"),
+            new MenuItem(2, "View Assigned Tasks"),
+            new MenuItem(3, "View Routine"),
             new MenuItem(4, "View Profile"),
             new MenuItem(0, "Logout"),
     };

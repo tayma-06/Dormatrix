@@ -14,6 +14,7 @@ public class AttendantEmergencyContactsCLI {
     private static final MenuItem[] MENU = {
             new MenuItem(1, "Update a Contact"),
             new MenuItem(2, "Clear a Contact"),
+            new MenuItem(3, "View All Contacts"),
             new MenuItem(0, "Back"),
     };
 
@@ -34,86 +35,100 @@ public class AttendantEmergencyContactsCLI {
                         ConsoleColors.bgRGB(0, 28, 26)
                 );
                 TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
-                TerminalUI.at(2, 1);
 
-                // Show contacts board
-                controller.renderBoard();
-
-                // Draw action menu below
+                // Show action menu ONLY — no board on this screen
                 drawDashboard(
                         "EMERGENCY CONTACTS", "",
                         MENU,
                         ConsoleColors.ThemeText.ATTENDANT_TEXT,
                         ConsoleColors.fgRGB(40, 220, 210),
-                        null, getCursorRowAfterBoard()
+                        null, 3
                 );
 
                 int choice = readChoiceArrow();
                 if (choice == 0) return;
 
-                // Contact picker
-                String[] contactOptions = new String[CONTACT_LABELS.length];
-                for (int i = 0; i < CONTACT_LABELS.length; i++) {
-                    contactOptions[i] = String.format("%-5s%s",
-                            "[" + (i + 1) + "]", CONTACT_LABELS[i]);
-                }
-
+                // Clear before next screen
                 ConsoleUtil.clearScreen();
                 BackgroundFiller.applyAttendantTheme();
                 TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
                 TerminalUI.at(2, 1);
 
-                int idx;
-                try { idx = tArrowSelect("SELECT CONTACT", contactOptions); }
-                catch (InterruptedException e) { continue; }
-                if (idx < 0) continue;
-                int option = idx + 1;
+                if (choice == 1 || choice == 2) {
+                    // Show board first so attendant knows what to pick
+                    controller.renderBoard();
 
-                ConsoleUtil.clearScreen();
-                BackgroundFiller.applyAttendantTheme();
-                TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
-                TerminalUI.at(2, 1);
-
-                if (choice == 1) {
-                    tBoxTop();
-                    tBoxTitle("UPDATE: " + CONTACT_LABELS[idx]);
-                    tBoxSep();
-                    tCustomInputRow("Contact Name : ");
-                    String contactName = FastInput.readLine().trim();
-
-                    tBoxTop();
-                    tBoxSep();
-                    tCustomInputRow("Phone Number : ");
-                    String phone = FastInput.readLine().trim();
-
-                    tBoxTop();
-                    tBoxSep();
-                    tCustomInputRow("Note (opt.)  : ");
-                    String note = FastInput.readLine().trim();
-
-                    boolean ok = controller.updateKnownContact(option, contactName, phone, note, username);
-                    if (ok) { tBoxTop(); tBoxLine("Contact updated successfully."); tBoxBottom(); }
-                    else      tError("Could not update contact.");
-                    tPause();
-
-                } else if (choice == 2) {
-                    tBoxTop();
-                    tBoxTitle("CLEAR: " + CONTACT_LABELS[idx]);
-                    tBoxSep();
-                    tBoxLine("This will clear all info for this contact.");
-                    tBoxBottom();
-
-                    String[] confirm = {"Yes, clear it", "Cancel"};
-                    int cidx;
-                    try { cidx = tArrowSelect("CONFIRM CLEAR", confirm); }
-                    catch (InterruptedException e) { continue; }
-
-                    if (cidx == 0) {
-                        boolean ok = controller.clearKnownContact(option, username);
-                        if (ok) { tBoxTop(); tBoxLine("Contact cleared."); tBoxBottom(); }
-                        else      tError("Could not clear contact.");
-                        tPause();
+                    // Then show contact picker
+                    String[] contactOptions = new String[CONTACT_LABELS.length];
+                    for (int i = 0; i < CONTACT_LABELS.length; i++) {
+                        contactOptions[i] = String.format("%-5s%s",
+                                "[" + (i + 1) + "]", CONTACT_LABELS[i]);
                     }
+
+                    int idx;
+                    try { idx = tArrowSelect("SELECT CONTACT", contactOptions); }
+                    catch (InterruptedException e) { continue; }
+                    if (idx < 0) continue;
+                    int option = idx + 1;
+
+                    ConsoleUtil.clearScreen();
+                    BackgroundFiller.applyAttendantTheme();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+
+                    if (choice == 1) {
+                        tBoxTop();
+                        tBoxTitle("UPDATE: " + CONTACT_LABELS[idx]);
+                        tBoxSep();
+                        tBoxLine("  [ESC] Cancel and go back", ConsoleColors.fgRGB(160, 150, 60));
+                        tBoxSep();
+                        tCustomInputRow("Contact Name : ");
+                        String contactName = readLineOrEsc();
+                        if (contactName == null) continue;
+
+                        tBoxTop();
+                        tBoxSep();
+                        tBoxLine("  [ESC] Cancel and go back", ConsoleColors.fgRGB(160, 150, 60));
+                        tBoxSep();
+                        tCustomInputRow("Phone Number : ");
+                        String phone = readLineOrEsc();
+                        if (phone == null) continue;
+
+                        tBoxTop();
+                        tBoxSep();
+                        tBoxLine("  [ESC] Cancel and go back", ConsoleColors.fgRGB(160, 150, 60));
+                        tBoxSep();
+                        tCustomInputRow("Note (opt.)  : ");
+                        String note = readLineOrEsc();
+                        if (note == null) continue;
+
+                        boolean ok = controller.updateKnownContact(option, contactName, phone, note, username);
+                        if (ok) { tBoxTop(); tBoxLine("Contact updated successfully."); tBoxBottom(); }
+                        else tError("Could not update contact.");
+                        tPause();
+
+                    } else {
+                        tBoxTop();
+                        tBoxTitle("CLEAR: " + CONTACT_LABELS[idx]);
+                        tBoxSep();
+                        tBoxLine("This will clear all info for this contact.");
+                        tBoxBottom();
+
+                        String[] confirm = {"Yes, clear it", "Cancel"};
+                        int cidx;
+                        try { cidx = tArrowSelect("CONFIRM CLEAR", confirm); }
+                        catch (InterruptedException e) { continue; }
+
+                        if (cidx == 0) {
+                            boolean ok = controller.clearKnownContact(option, username);
+                            if (ok) { tBoxTop(); tBoxLine("Contact cleared."); tBoxBottom(); }
+                            else tError("Could not clear contact.");
+                            tPause();
+                        }
+                    }
+                } else if (choice == 3) {
+                    controller.renderBoard();
+                    tPause();
                 }
 
             } catch (Exception e) {
