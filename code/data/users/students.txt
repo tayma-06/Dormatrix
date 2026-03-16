@@ -19,7 +19,7 @@
 230042135|Khadiza Sultana|STUDENT|SWE|4e17fe04|01763016648|khadizasultana@iut-dhaka.edu|301
 230042141|Ayman Binta Altaf Nondiny|STUDENT|CSE|4e179aec|01645544768|aimin@iut-dhaka.edu|301
 230042139|Sayma Tasnim|STUDENT|SWE|4e17f28c|01700000000|saymatasnim@iut-dhaka.edu|301
-230042101|Ayesha Siddiqua|STUDENT|CSE|62afa2d2|01700000001|ayesha@iut-dhaka.edu|318
+230042101|Ayesha Siddiqua|STUDENT|CSE|62afa2d2|01700000001|ayesha@iut-dhaka.edu|306
 230042121|A|STUDENT|CSE|4e17ee20|0012891891239|dkndknadkn@iut-dhaka.edu|319
-230042114|Procheta Silvie|STUDENT|SWE|4e17e6e2|01700000000|prochetasilvie@iut-dhaka.edu|301
 230012154|Faiza Habib|STUDENT|IPE|62afa2d2|01779977966|faizahabib@iut-dhaka.edu|306
+230042114|Procheta Silvie|STUDENT|SWE|4e17e6e2|01700000000|prochetasilvie@iut-dhaka.edu|301

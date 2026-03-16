@@ -155,6 +155,14 @@ public class AuthController {
     }
 
     public boolean authenticateUser(MyString userId, MyString password, MyString role) {
+        if (userId == null || password == null || role == null) {
+            return false;
+        }
+
+        if (userId.getValue().trim().isEmpty()) {
+            return false;
+        }
+
         try {
             MyString normalizedRole = normalizeRole(role);
             File file = new File(getFilePath(normalizedRole).getValue());
@@ -257,6 +265,10 @@ public class AuthController {
     }
 
     public User getUserById(MyString userId, MyString role) {
+        if (userId == null || role == null || userId.getValue().trim().isEmpty()) {
+            return null;
+        }
+
         try {
             MyString normalizedRole = normalizeRole(role);
             File file = new File(getFilePath(normalizedRole).getValue());
@@ -287,6 +299,10 @@ public class AuthController {
     }
 
     public boolean changePassword(MyString userId, MyString role, MyString oldPass, MyString newPass) {
+        if (userId == null || role == null || oldPass == null || newPass == null) {
+            return false;
+        }
+
         MyString normalizedRole = normalizeRole(role);
 
         if (!authenticateUser(userId, oldPass, normalizedRole)) {
@@ -332,6 +348,10 @@ public class AuthController {
     }
 
     public boolean updatePhoneNumber(MyString userId, MyString role, MyString newPhone) {
+        if (userId == null || role == null || newPhone == null) {
+            return false;
+        }
+
         MyString normalizedRole = normalizeRole(role);
 
         File file = new File(getFilePath(normalizedRole).getValue());

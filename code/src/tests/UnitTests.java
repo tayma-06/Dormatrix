@@ -1,5 +1,6 @@
 package tests;
 
+import controllers.authentication.AccountManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -20,23 +21,213 @@ import models.complaints.*;
 import models.enums.*;
 import models.routine.RoutineEntry;
 import controllers.account.CreateAccountController;
-import controllers.authentication.AccountManager;
 import utils.RoleMapper;
 import utils.TimeManager;
+import controllers.profile.ProfileController; 
 
 import models.routine.StudentRoutineEntry;
 import models.schedule.WorkerVisitEntry;
-import models.enums.WorkerField;
-import models.users.MaintenanceWorker;
 import controllers.routine.RoutineController;
 import controllers.schedule.WorkerScheduleController;
+
+import controllers.store.DueController;
+import controllers.store.InventoryController;
+import controllers.store.PurchaseController;
+import controllers.store.PurchaseHistoryController;
+import controllers.store.SalesController;
+import controllers.store.SalesSummaryController;
+import controllers.room.RoomController;
+import controllers.room.RoomService;
+import controllers.miscellaneous.LostFoundController;
+import controllers.account.AccountRecordParser;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import controllers.account.SearchUserController;
+import controllers.account.ViewAccountController;
+import controllers.account.DeleteAccountController;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import controllers.authentication.ConfigLoader;
+
 @RunWith(JUnit4.class)
 public class UnitTests {
+    private static final String DUES_FILE = "data/store/dues.txt";
+    private static final String INVENTORY_FILE = "data/inventories/inventory.txt";
+    private static final String SALES_FILE = "data/store/sales.txt";
+    private static final String ROOMS_FILE = "data/rooms/rooms.txt";
+    private static final String STUDENTS_FILE = "data/users/students.txt";
+    private static final String LOST_FILE = "data/lostItems.txt";
+    private static final String FOUND_FILE = "data/foundItems.txt";
+
+    private static class FileSnapshot {
+
+        String path;
+        boolean existed;
+        String content;
+
+        FileSnapshot(String path, boolean existed, String content) {
+            this.path = path;
+            this.existed = existed;
+            this.content = content;
+        }
+    }
+
+    private FileSnapshot snapshot(String path) throws Exception {
+        if (path == null) {
+            return new FileSnapshot(null, false, "");
+        }
+        Path p = Paths.get(path);
+        if (Files.exists(p)) {
+            return new FileSnapshot(path, true, Files.readString(p, StandardCharsets.UTF_8));
+        }
+        return new FileSnapshot(path, false, "");
+    }
+
+    private void restore(FileSnapshot snap) throws Exception {
+        if (snap == null || snap.path == null) {
+            return;
+        }
+
+        Path p = Paths.get(snap.path);
+        if (snap.existed) {
+            if (p.getParent() != null) {
+                Files.createDirectories(p.getParent());
+            }
+            Files.writeString(p, snap.content == null ? "" : snap.content, StandardCharsets.UTF_8);
+        } else {
+            Files.deleteIfExists(p);
+        }
+    }
+
+    private void writeFile(String path, String content) throws Exception {
+        Path p = Paths.get(path);
+        if (p.getParent() != null) {
+            Files.createDirectories(p.getParent());
+        }
+        Files.writeString(p, content == null ? "" : content, StandardCharsets.UTF_8);
+    }
+
+    private String readFile(String path) throws Exception {
+        Path p = Paths.get(path);
+        if (!Files.exists(p)) {
+            return "";
+        }
+        return Files.readString(p, StandardCharsets.UTF_8);
+    }
+
+    private String captureOutput(Runnable action) {
+        PrintStream old = System.out;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(baos));
+        try {
+            action.run();
+        } finally {
+            System.out.flush();
+            System.setOut(old);
+        }
+        return baos.toString();
+    }
+
+    private Object getPrivateField(Object target, String fieldName) throws Exception {
+        Field f = target.getClass().getDeclaredField(fieldName);
+        f.setAccessible(true);
+        return f.get(target);
+    }
+
+    private String discoverTxtPathFromObject(Object obj) throws Exception {
+        if (obj == null) {
+            return null;
+        }
+
+        Class<?> c = obj.getClass();
+        while (c != null) {
+            Field[] fields = c.getDeclaredFields();
+            for (Field f : fields) {
+                f.setAccessible(true);
+                if (f.getType() == String.class) {
+                    Object v = f.get(obj);
+                    if (v instanceof String) {
+                        String s = (String) v;
+                        if (s.contains(".txt")) {
+                            return s;
+                        }
+                    }
+                }
+            }
+            c = c.getSuperclass();
+        }
+        return null;
+    }
+
+    // ─── Fake AccountManager for account-controller tests ─────
+
+    private static class TestAccountManager extends AccountManager {
+        private final Map<String, String> fileMap = new HashMap<>();
+        private boolean registerResult = true;
+        private final java.util.Set<String> existingUsers = new java.util.HashSet<>();
+
+        private User lastRegisteredUser;
+        private MyString lastRegisteredRole;
+
+        public void setFile(String role, String path) {
+            fileMap.put(role, path);
+        }
+
+        public void setRegisterResult(boolean registerResult) {
+            this.registerResult = registerResult;
+        }
+
+        public void addExistingUser(String id, String role) {
+            existingUsers.add(role + "|" + id);
+        }
+
+        public User getLastRegisteredUser() {
+            return lastRegisteredUser;
+        }
+
+        public MyString getLastRegisteredRole() {
+            return lastRegisteredRole;
+        }
+
+        @Override
+        public boolean userExists(MyString id, MyString role) {
+            return existingUsers.contains(role.getValue() + "|" + id.getValue());
+        }
+
+        @Override
+        public boolean registerUser(User user, MyString role) {
+            this.lastRegisteredUser = user;
+            this.lastRegisteredRole = role;
+            return registerResult;
+        }
+
+        @Override
+        public MyString getFilename(MyString role) {
+            String path = fileMap.get(role.getValue());
+            return new MyString(path == null ? "" : path);
+        }
+    }
+
+    private String createTempAccountFile(String prefix, String content) throws Exception {
+        Path file = Files.createTempFile(prefix, ".txt");
+        Files.writeString(file, content == null ? "" : content, StandardCharsets.UTF_8);
+        file.toFile().deleteOnExit();
+        return file.toString();
+    }
 
     // ─── HashFunction Tests ───────────────────────────────────
     @Test
@@ -1979,6 +2170,1870 @@ public class UnitTests {
         for (WorkerField field : fields) {
             MaintenanceWorker w = new MaintenanceWorker("WX", "Test", "MAINTENANCE_WORKER", "hash", "0170", field);
             assertEquals(field, w.getField());
+        }
+    }
+
+        // ─── Edit Profile / ProfileController Tests ───────────────
+
+    @Test
+    public void profileChangePassword_invalidUser_null() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.changePassword(
+                null,
+                new MyString("STUDENT"),
+                new MyString("old123"),
+                new MyString("new123"),
+                new MyString("new123")
+        );
+
+        assertEquals("Invalid user.", result);
+    }
+
+    @Test
+    public void profileChangePassword_invalidUser_blank() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.changePassword(
+                new MyString("   "),
+                new MyString("STUDENT"),
+                new MyString("old123"),
+                new MyString("new123"),
+                new MyString("new123")
+        );
+
+        assertEquals("Invalid user.", result);
+    }
+
+    @Test
+    public void profileChangePassword_invalidRole_null() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.changePassword(
+                new MyString("230042139"),
+                null,
+                new MyString("old123"),
+                new MyString("new123"),
+                new MyString("new123")
+        );
+
+        assertEquals("Invalid role.", result);
+    }
+
+    @Test
+    public void profileChangePassword_invalidRole_blank() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.changePassword(
+                new MyString("230042139"),
+                new MyString(" "),
+                new MyString("old123"),
+                new MyString("new123"),
+                new MyString("new123")
+        );
+
+        assertEquals("Invalid role.", result);
+    }
+
+    @Test
+    public void profileChangePassword_oldPasswordRequired() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.changePassword(
+                new MyString("230042139"),
+                new MyString("STUDENT"),
+                new MyString(""),
+                new MyString("new123"),
+                new MyString("new123")
+        );
+
+        assertEquals("Current password is required.", result);
+    }
+
+    @Test
+    public void profileChangePassword_newPasswordRequired() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.changePassword(
+                new MyString("230042139"),
+                new MyString("STUDENT"),
+                new MyString("old123"),
+                new MyString(""),
+                new MyString("new123")
+        );
+
+        assertEquals("New password is required.", result);
+    }
+
+    @Test
+    public void profileChangePassword_confirmPasswordRequired() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.changePassword(
+                new MyString("230042139"),
+                new MyString("STUDENT"),
+                new MyString("old123"),
+                new MyString("new123"),
+                new MyString("")
+        );
+
+        assertEquals("Confirm password is required.", result);
+    }
+
+    @Test
+    public void profileChangePassword_mismatchReturnsError() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.changePassword(
+                new MyString("230042139"),
+                new MyString("STUDENT"),
+                new MyString("old123"),
+                new MyString("new123"),
+                new MyString("new999")
+        );
+
+        assertEquals("New password and confirm password do not match.", result);
+    }
+
+    @Test
+    public void profileChangePassword_weakPasswordTooShortReturnsError() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.changePassword(
+                new MyString("230042139"),
+                new MyString("STUDENT"),
+                new MyString("old123"),
+                new MyString("ab1"),
+                new MyString("ab1")
+        );
+
+        assertEquals("Password must be at least 6 characters long and contain at least one number.", result);
+    }
+
+    @Test
+    public void profileChangePassword_weakPasswordNoDigitReturnsError() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.changePassword(
+                new MyString("230042139"),
+                new MyString("STUDENT"),
+                new MyString("old123"),
+                new MyString("abcdef"),
+                new MyString("abcdef")
+        );
+
+        assertEquals("Password must be at least 6 characters long and contain at least one number.", result);
+    }
+
+    @Test
+    public void profileChangePassword_unknownUserReturnsMappingError() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.changePassword(
+                new MyString("USER_DOES_NOT_EXIST_XYZ"),
+                new MyString("STUDENT"),
+                new MyString("old123"),
+                new MyString("new123"),
+                new MyString("new123")
+        );
+
+        assertEquals("Could not map this user to a valid user ID.", result);
+    }
+
+    @Test
+    public void profileUpdatePhone_invalidUser_null() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.updatePhoneNumber(
+                null,
+                new MyString("STUDENT"),
+                new MyString("01712345678")
+        );
+
+        assertEquals("Invalid user.", result);
+    }
+
+    @Test
+    public void profileUpdatePhone_invalidUser_blank() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.updatePhoneNumber(
+                new MyString(" "),
+                new MyString("STUDENT"),
+                new MyString("01712345678")
+        );
+
+        assertEquals("Invalid user.", result);
+    }
+
+    @Test
+    public void profileUpdatePhone_invalidRole_null() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.updatePhoneNumber(
+                new MyString("230042139"),
+                null,
+                new MyString("01712345678")
+        );
+
+        assertEquals("Invalid role.", result);
+    }
+
+    @Test
+    public void profileUpdatePhone_invalidRole_blank() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.updatePhoneNumber(
+                new MyString("230042139"),
+                new MyString(" "),
+                new MyString("01712345678")
+        );
+
+        assertEquals("Invalid role.", result);
+    }
+
+    @Test
+    public void profileUpdatePhone_phoneRequired() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.updatePhoneNumber(
+                new MyString("230042139"),
+                new MyString("STUDENT"),
+                new MyString("")
+        );
+
+        assertEquals("Phone number is required.", result);
+    }
+
+    @Test
+    public void profileUpdatePhone_invalidFormatReturnsError() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.updatePhoneNumber(
+                new MyString("230042139"),
+                new MyString("STUDENT"),
+                new MyString("12345")
+        );
+
+        assertEquals("Invalid phone number format.", result);
+    }
+
+    @Test
+    public void profileUpdatePhone_unknownUserReturnsMappingError() {
+        ProfileController controller = new ProfileController();
+
+        String result = controller.updatePhoneNumber(
+                new MyString("USER_DOES_NOT_EXIST_XYZ"),
+                new MyString("STUDENT"),
+                new MyString("01712345678"));
+
+        assertEquals("Could not map this user to a valid user ID.", result);
+    }
+
+    // ─── DueController Tests ──────────────────────────────────
+    @Test
+    public void dueController_getDueMissingReturnsZero() throws Exception {
+        FileSnapshot snap = snapshot(DUES_FILE);
+        try {
+            writeFile(DUES_FILE, "");
+            assertEquals(0.0, DueController.getDue("STU404"), 0.001);
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void dueController_addDueCreatesAndAccumulates() throws Exception {
+        FileSnapshot snap = snapshot(DUES_FILE);
+        try {
+            writeFile(DUES_FILE, "");
+            DueController.addDue("STU001", 25.0);
+            DueController.addDue("STU001", 10.5);
+
+            assertEquals(35.5, DueController.getDue("STU001"), 0.001);
+            assertTrue(readFile(DUES_FILE).contains("STU001,35.5"));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void dueController_payDueRemovesStudentEntry() throws Exception {
+        FileSnapshot snap = snapshot(DUES_FILE);
+        try {
+            writeFile(DUES_FILE,
+                    new DueRecord("STU001", 50.0).toFileString() + System.lineSeparator()
+                    + new DueRecord("STU002", 20.0).toFileString() + System.lineSeparator());
+
+            new DueController().payDue("STU001");
+
+            assertEquals(0.0, DueController.getDue("STU001"), 0.001);
+            assertEquals(20.0, DueController.getDue("STU002"), 0.001);
+        } finally {
+            restore(snap);
+        }
+    }
+
+    // ─── InventoryController Tests ────────────────────────────
+    @Test
+    public void inventoryController_getItemMissingReturnsNull() throws Exception {
+        FileSnapshot snap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE, "");
+            assertNull(InventoryController.getItem("I404"));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void inventoryController_addItemValidPersists() throws Exception {
+        FileSnapshot snap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE, "");
+            InventoryController controller = new InventoryController();
+
+            assertTrue(controller.addItem("I001", "Soap", 10, 25.0));
+
+            Item item = InventoryController.getItem("I001");
+            assertNotNull(item);
+            assertEquals("Soap", item.getName());
+            assertEquals(10, item.getQuantity());
+            assertEquals(25.0, item.getPrice(), 0.001);
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void inventoryController_addItemDuplicateReturnsFalse() throws Exception {
+        FileSnapshot snap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE, new Item("I001", "Soap", 10, 25.0).toFileString());
+            InventoryController controller = new InventoryController();
+
+            assertFalse(controller.addItem("I001", "Soap Again", 5, 30.0));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void inventoryController_updateItemUpdatesFields() throws Exception {
+        FileSnapshot snap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE, new Item("I001", "Soap", 10, 25.0).toFileString());
+            InventoryController controller = new InventoryController();
+
+            assertTrue(controller.updateItem("I001", "Premium Soap", 30, 35.5));
+
+            Item item = InventoryController.getItem("I001");
+            assertNotNull(item);
+            assertEquals("Premium Soap", item.getName());
+            assertEquals(30, item.getQuantity());
+            assertEquals(35.5, item.getPrice(), 0.001);
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void inventoryController_deleteItemRemovesItem() throws Exception {
+        FileSnapshot snap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE,
+                    new Item("I001", "Soap", 10, 25.0).toFileString() + System.lineSeparator()
+                    + new Item("I002", "Shampoo", 5, 50.0).toFileString());
+
+            InventoryController controller = new InventoryController();
+            assertTrue(controller.deleteItem("I001"));
+
+            assertNull(InventoryController.getItem("I001"));
+            assertNotNull(InventoryController.getItem("I002"));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void inventoryController_addStockIncreasesQuantity() throws Exception {
+        FileSnapshot snap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE, new Item("I001", "Soap", 10, 25.0).toFileString());
+            InventoryController controller = new InventoryController();
+
+            assertTrue(controller.addStock("I001", 7));
+            assertEquals(17, InventoryController.getItem("I001").getQuantity());
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void inventoryController_searchByNameIsCaseInsensitive() throws Exception {
+        FileSnapshot snap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE,
+                    new Item("I001", "Soap", 10, 25.0).toFileString() + System.lineSeparator()
+                    + new Item("I002", "Shampoo", 5, 50.0).toFileString() + System.lineSeparator()
+                    + new Item("I003", "Liquid Soap", 3, 20.0).toFileString());
+
+            InventoryController controller = new InventoryController();
+            Item[] results = controller.searchByName("soap");
+
+            assertEquals(2, results.length);
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void inventoryController_filterByPriceRangeSwapsMinAndMax() throws Exception {
+        FileSnapshot snap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE,
+                    new Item("I001", "Soap", 10, 25.0).toFileString() + System.lineSeparator()
+                    + new Item("I002", "Shampoo", 5, 50.0).toFileString() + System.lineSeparator()
+                    + new Item("I003", "Brush", 7, 15.0).toFileString());
+
+            InventoryController controller = new InventoryController();
+            Item[] results = controller.filterByPriceRange(40.0, 20.0);
+
+            assertEquals(1, results.length);
+            assertEquals("I001", results[0].getItemId());
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void inventoryController_getLowStockNegativeThresholdTreatsAsZero() throws Exception {
+        FileSnapshot snap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE,
+                    new Item("I001", "Soap", 0, 25.0).toFileString() + System.lineSeparator()
+                    + new Item("I002", "Shampoo", 1, 50.0).toFileString());
+
+            InventoryController controller = new InventoryController();
+            Item[] results = controller.getLowStockItems(-5);
+
+            assertEquals(1, results.length);
+            assertEquals("I001", results[0].getItemId());
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void inventoryController_getItemCountMatchesFileContents() throws Exception {
+        FileSnapshot snap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE,
+                    new Item("I001", "Soap", 10, 25.0).toFileString() + System.lineSeparator()
+                    + new Item("I002", "Shampoo", 5, 50.0).toFileString());
+
+            InventoryController controller = new InventoryController();
+            assertEquals(2, controller.getItemCount());
+        } finally {
+            restore(snap);
+        }
+    }
+
+    // ─── SalesController Tests ────────────────────────────────
+    @Test
+    public void salesController_recordSaleInvalidReturnsFalse() throws Exception {
+        FileSnapshot snap = snapshot(SALES_FILE);
+        try {
+            writeFile(SALES_FILE, "");
+            SalesController controller = new SalesController();
+
+            assertFalse(controller.recordSale(null, "I001", 1, 10.0));
+            assertFalse(controller.recordSale("STU001", null, 1, 10.0));
+            assertFalse(controller.recordSale("STU001", "I001", 0, 10.0));
+            assertFalse(controller.recordSale("STU001", "I001", 1, -5.0));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void salesController_recordSaleValidAppendsCsvLine() throws Exception {
+        FileSnapshot snap = snapshot(SALES_FILE);
+        try {
+            writeFile(SALES_FILE, "");
+            SalesController controller = new SalesController();
+
+            assertTrue(controller.recordSale("STU001", "I001", 2, 20.0));
+
+            String content = readFile(SALES_FILE);
+            assertTrue(content.contains("STU001,I001,2,20.00,"));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void salesController_recordCartSaleWritesMultipleLines() throws Exception {
+        FileSnapshot snap = snapshot(SALES_FILE);
+        try {
+            writeFile(SALES_FILE, "");
+            SalesController controller = new SalesController();
+            CartItem[] items = {
+                new CartItem("I001", "Soap", 2, 10.0),
+                new CartItem("I002", "Shampoo", 1, 50.0)
+            };
+
+            assertTrue(controller.recordCartSale("STU001", items));
+
+            String content = readFile(SALES_FILE);
+            assertTrue(content.contains("STU001,I001,2,20.00,"));
+            assertTrue(content.contains("STU001,I002,1,50.00,"));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    // ─── PurchaseController Tests ─────────────────────────────
+    @Test
+    public void purchaseController_purchaseInvalidDataReturnsFalse() {
+        PurchaseController controller = new PurchaseController(new InventoryController());
+        assertFalse(controller.purchase(null, "I001", 1, true));
+        assertFalse(controller.purchase("STU001", null, 1, true));
+        assertFalse(controller.purchase("STU001", "I001", 0, true));
+    }
+
+    @Test
+    public void purchaseController_purchaseMissingItemReturnsFalse() throws Exception {
+        FileSnapshot invSnap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE, "");
+            PurchaseController controller = new PurchaseController(new InventoryController());
+
+            assertFalse(controller.purchase("STU001", "I404", 1, true));
+        } finally {
+            restore(invSnap);
+        }
+    }
+
+    @Test
+    public void purchaseController_purchaseInsufficientStockReturnsFalse() throws Exception {
+        FileSnapshot invSnap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE, new Item("I001", "Soap", 1, 10.0).toFileString());
+            PurchaseController controller = new PurchaseController(new InventoryController());
+
+            assertFalse(controller.purchase("STU001", "I001", 5, true));
+        } finally {
+            restore(invSnap);
+        }
+    }
+
+    @Test
+    public void purchaseController_purchaseWithCreditUpdatesDueInventoryAndSales() throws Exception {
+        FileSnapshot invSnap = snapshot(INVENTORY_FILE);
+        FileSnapshot dueSnap = snapshot(DUES_FILE);
+        FileSnapshot salesSnap = snapshot(SALES_FILE);
+
+        try {
+            writeFile(INVENTORY_FILE, new Item("I001", "Soap", 5, 10.0).toFileString());
+            writeFile(DUES_FILE, "");
+            writeFile(SALES_FILE, "");
+
+            PurchaseController controller = new PurchaseController(new InventoryController());
+            boolean ok = controller.purchase("STU001", "I001", 2, true);
+
+            assertTrue(ok);
+            assertEquals(20.0, DueController.getDue("STU001"), 0.001);
+            assertEquals(3, InventoryController.getItem("I001").getQuantity());
+            assertTrue(readFile(SALES_FILE).contains("STU001,I001,2,20.00,"));
+        } finally {
+            restore(invSnap);
+            restore(dueSnap);
+            restore(salesSnap);
+        }
+    }
+
+    @Test
+    public void purchaseController_purchaseCartEmptyReturnsFalse() {
+        assertFalse(PurchaseController.purchaseCart("STU001", new CartItem[0], true));
+        assertFalse(PurchaseController.purchaseCart("STU001", null, true));
+        assertFalse(PurchaseController.purchaseCart(null, new CartItem[]{new CartItem("I001", "Soap", 1, 10.0)}, true));
+    }
+
+    @Test
+    public void purchaseController_purchaseCartMissingItemReturnsFalse() throws Exception {
+        FileSnapshot invSnap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE, "");
+            CartItem[] items = {new CartItem("I404", "Ghost", 1, 10.0)};
+
+            assertFalse(PurchaseController.purchaseCart("STU001", items, true));
+        } finally {
+            restore(invSnap);
+        }
+    }
+
+    @Test
+    public void purchaseController_purchaseCartInsufficientStockReturnsFalse() throws Exception {
+        FileSnapshot invSnap = snapshot(INVENTORY_FILE);
+        try {
+            writeFile(INVENTORY_FILE, new Item("I001", "Soap", 1, 10.0).toFileString());
+            CartItem[] items = {new CartItem("I001", "Soap", 5, 50.0)};
+
+            assertFalse(PurchaseController.purchaseCart("STU001", items, true));
+        } finally {
+            restore(invSnap);
+        }
+    }
+
+
+    @Test
+    public void purchaseController_getDuesReflectsStoredDue() throws Exception {
+        FileSnapshot dueSnap = snapshot(DUES_FILE);
+        try {
+            writeFile(DUES_FILE, "");
+            DueController.addDue("STU001", 55.0);
+
+            PurchaseController controller = new PurchaseController(new InventoryController());
+            assertEquals(55.0, controller.getDues("STU001"), 0.001);
+        } finally {
+            restore(dueSnap);
+        }
+    }
+
+    // ─── PurchaseHistoryController Tests ──────────────────────
+    @Test
+    public void purchaseHistoryController_showPurchaseHistoryShowsOnlyMatchingStudent() throws Exception {
+        FileSnapshot salesSnap = snapshot(SALES_FILE);
+        try {
+            writeFile(SALES_FILE,
+                    "STU001,I001,2,20.00,2099-01-01" + System.lineSeparator()
+                    + "STU002,I999,1,99.00,2099-01-01" + System.lineSeparator());
+
+            String out = captureOutput(() -> new PurchaseHistoryController().showPurchaseHistory("STU001"));
+
+            assertTrue(out.contains("PURCHASE HISTORY"));
+            assertTrue(out.contains("I001"));
+            assertFalse(out.contains("I999"));
+            assertTrue(out.contains("Total Purchases: 1"));
+            assertTrue(out.contains("Total Spent:     $20.00"));
+        } finally {
+            restore(salesSnap);
+        }
+    }
+
+    @Test
+    public void purchaseHistoryController_showRecentPurchasesFiltersOldRecords() throws Exception {
+        FileSnapshot salesSnap = snapshot(SALES_FILE);
+        try {
+            LocalDate today = LocalDate.now();
+            LocalDate oldDate = today.minusDays(30);
+
+            writeFile(SALES_FILE,
+                    "STU001,I001,2,20.00," + today + System.lineSeparator()
+                    + "STU001,I002,1,15.00," + oldDate + System.lineSeparator());
+
+            String out = captureOutput(() -> new PurchaseHistoryController().showRecentPurchases("STU001", 7));
+
+            assertTrue(out.contains("RECENT PURCHASE HISTORY"));
+            assertTrue(out.contains("I001"));
+            assertFalse(out.contains("I002"));
+            assertTrue(out.contains("Total Recent Purchases: 1"));
+        } finally {
+            restore(salesSnap);
+        }
+    }
+
+    // ─── SalesSummaryController Tests ─────────────────────────
+    @Test
+    public void salesSummaryController_showDailySummaryShowsTodayOnly() throws Exception {
+        FileSnapshot salesSnap = snapshot(SALES_FILE);
+        try {
+            LocalDate today = LocalDate.now();
+            LocalDate yesterday = today.minusDays(1);
+
+            writeFile(SALES_FILE,
+                    "STU001,I001,2,20.00," + today + System.lineSeparator()
+                    + "STU002,I002,1,50.00," + yesterday + System.lineSeparator());
+
+            String out = captureOutput(() -> new SalesSummaryController().showDailySummary());
+
+            assertTrue(out.contains("DAILY SALES SUMMARY"));
+            assertTrue(out.contains("STU001"));
+            assertTrue(out.contains("I001"));
+            assertFalse(out.contains("STU002"));
+            assertTrue(out.contains("Total Transactions: 1"));
+            assertTrue(out.contains("Total Revenue:      $20.00"));
+        } finally {
+            restore(salesSnap);
+        }
+    }
+
+    @Test
+    public void salesSummaryController_showCustomSummaryCountsRangeCorrectly() throws Exception {
+        FileSnapshot salesSnap = snapshot(SALES_FILE);
+        try {
+            writeFile(SALES_FILE,
+                    "STU001,I001,2,20.00,2099-01-01" + System.lineSeparator()
+                    + "STU002,I002,1,30.00,2099-01-03" + System.lineSeparator()
+                    + "STU003,I003,1,40.00,2099-02-01" + System.lineSeparator());
+
+            String out = captureOutput(()
+                    -> new SalesSummaryController().showCustomSummary(
+                            LocalDate.of(2099, 1, 1),
+                            LocalDate.of(2099, 1, 31)
+                    )
+            );
+
+            assertTrue(out.contains("SALES SUMMARY REPORT"));
+            assertTrue(out.contains("STU001"));
+            assertTrue(out.contains("STU002"));
+            assertFalse(out.contains("STU003"));
+            assertTrue(out.contains("Total Transactions: 2"));
+            assertTrue(out.contains("Total Revenue:      $50.00"));
+            assertTrue(out.contains("Average Sale:       $25.00"));
+        } finally {
+            restore(salesSnap);
+        }
+    }
+
+    // ─── RoomController Tests ─────────────────────────────────
+    @Test
+    public void roomController_addRoomPersistsRoom() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        try {
+            writeFile(ROOMS_FILE, "");
+            RoomController controller = new RoomController();
+
+            assertTrue(controller.addRoom("R901", 3));
+
+            boolean found = false;
+            for (Room r : controller.getAllRooms()) {
+                if ("R901".equals(r.getRoomId()) && r.getCapacity() == 3) {
+                    found = true;
+                    break;
+                }
+            }
+            assertTrue(found);
+        } finally {
+            restore(roomSnap);
+        }
+    }
+
+    @Test
+    public void roomController_allocateAndFreeRoomUpdatesOccupancy() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        try {
+            writeFile(ROOMS_FILE, new Room("R101", 2, 0).toFileString());
+            RoomController controller = new RoomController();
+
+            assertTrue(controller.allocateRoom("R101"));
+            Room afterAllocate = Room.fromString(readFile(ROOMS_FILE).trim());
+            assertNotNull(afterAllocate);
+            assertEquals(1, afterAllocate.getCurrentOccupancy());
+
+            controller.freeRoom("R101");
+            Room afterFree = Room.fromString(readFile(ROOMS_FILE).trim());
+            assertNotNull(afterFree);
+            assertEquals(0, afterFree.getCurrentOccupancy());
+        } finally {
+            restore(roomSnap);
+        }
+    }
+
+    @Test
+    public void roomController_allocateFullRoomReturnsFalse() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        try {
+            writeFile(ROOMS_FILE, new Room("R101", 2, 2).toFileString());
+            RoomController controller = new RoomController();
+
+            assertFalse(controller.allocateRoom("R101"));
+        } finally {
+            restore(roomSnap);
+        }
+    }
+
+    // ─── RoomService Tests ────────────────────────────────────
+    @Test
+    public void roomService_getStudentRoomNumberByIdAndName() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, "");
+            writeFile(STUDENTS_FILE,
+                    "STU001|Alice|STUDENT|CSE|hash|017|alice@iut-dhaka.edu|R201" + System.lineSeparator()
+                    + "STU002|Bob|STUDENT|EEE|hash|017|bob@iut-dhaka.edu|R202" + System.lineSeparator());
+
+            RoomService service = new RoomService();
+            assertEquals("R201", service.getStudentRoomNumber("STU001"));
+            assertEquals("R202", service.getStudentRoomNumber("Bob"));
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_getRoomDetailsUsesRealOccupancyFromStudentFile() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        FileSnapshot studentSnap = snapshot(STUDENTS_FILE);
+        try {
+            writeFile(ROOMS_FILE, new Room("R301", 4, 0).toFileString());
+            writeFile(STUDENTS_FILE,
+                    "STU001|Alice|STUDENT|CSE|hash|017|a@iut-dhaka.edu|R301" + System.lineSeparator()
+                    + "STU002|Bob|STUDENT|EEE|hash|017|b@iut-dhaka.edu|R301" + System.lineSeparator());
+
+            RoomService service = new RoomService();
+            Room room = service.getRoomDetailsWithRealOccupancy("R301");
+
+            assertNotNull(room);
+            assertEquals(2, room.getCurrentOccupancy());
+        } finally {
+            restore(roomSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void roomService_getAvailableRoomsReturnsOnlyAvailableOnes() throws Exception {
+        FileSnapshot roomSnap = snapshot(ROOMS_FILE);
+        try {
+            writeFile(ROOMS_FILE,
+                    new Room("R101", 2, 2).toFileString() + System.lineSeparator()
+                    + new Room("R102", 3, 1).toFileString() + System.lineSeparator());
+
+            RoomService service = new RoomService();
+            java.util.List<Room> available = service.getAvailableRooms();
+
+            assertEquals(1, available.size());
+            assertEquals("R102", available.get(0).getRoomId());
+        } finally {
+            restore(roomSnap);
+        }
+    }
+
+    // ─── LostFoundController Tests ────────────────────────────
+    @Test
+    public void lostFoundController_reportLostItemAddsEntry() throws Exception {
+        FileSnapshot lostSnap = snapshot(LOST_FILE);
+        FileSnapshot foundSnap = snapshot(FOUND_FILE);
+        try {
+            writeFile(LOST_FILE, "");
+            writeFile(FOUND_FILE, "");
+
+            LostFoundController controller = new LostFoundController();
+            controller.reportLostItem("Wallet", "Black leather wallet", "STU001");
+
+            java.util.List<String> lostItems = controller.getLostItems();
+            assertEquals(1, lostItems.size());
+            assertTrue(lostItems.get(0).contains("Wallet"));
+            assertTrue(lostItems.get(0).contains("STU001"));
+        } finally {
+            restore(lostSnap);
+            restore(foundSnap);
+        }
+    }
+
+    @Test
+    public void lostFoundController_addFoundItemAndClaimFlowWorks() throws Exception {
+        FileSnapshot lostSnap = snapshot(LOST_FILE);
+        FileSnapshot foundSnap = snapshot(FOUND_FILE);
+        try {
+            writeFile(LOST_FILE, "");
+            writeFile(FOUND_FILE, "");
+
+            LostFoundController controller = new LostFoundController();
+            controller.addFoundItem("Phone", "Samsung", "Library");
+
+            java.util.List<String> found = controller.getFoundItems();
+            assertEquals(1, found.size());
+
+            String id = found.get(0).split(",")[0];
+            assertTrue(controller.verifyAndClaim(id, "STU002"));
+
+            java.util.List<String> updated = controller.getFoundItems();
+            assertTrue(updated.get(0).contains(",true,STU002"));
+
+            assertFalse(controller.verifyAndClaim(id, "STU003"));
+        } finally {
+            restore(lostSnap);
+            restore(foundSnap);
+        }
+    }
+
+    // ─── AccountRecordParser Tests ────────────────────────────
+    @Test
+    public void accountRecordParser_parseStudentRecord() {
+        String raw = "230042139|Alice|STUDENT|CSE|hash|01712345678|alice@iut-dhaka.edu|R101";
+        AccountRecordParser.ParsedAccount parsed = AccountRecordParser.parse(raw);
+
+        assertNotNull(parsed);
+        assertEquals("230042139", parsed.getId());
+        assertEquals("Alice", parsed.getName());
+        assertEquals("STUDENT", parsed.getRole());
+        assertEquals("01712345678", parsed.getPhone());
+        assertEquals("alice@iut-dhaka.edu", parsed.getEmail());
+        assertEquals("CSE", parsed.getDepartment());
+        assertEquals("R101", parsed.getRoom());
+    }
+
+    @Test
+    public void accountRecordParser_parseMaintenanceWorkerRecord() {
+        String raw = "W001|Bob|MAINTENANCE_WORKER|N/A|hash|01700000000|PLUMBER";
+        AccountRecordParser.ParsedAccount parsed = AccountRecordParser.parse(raw);
+
+        assertNotNull(parsed);
+        assertEquals("W001", parsed.getId());
+        assertEquals("Bob", parsed.getName());
+        assertEquals("MAINTENANCE_WORKER", parsed.getRole());
+        assertEquals("01700000000", parsed.getPhone());
+        assertEquals("PLUMBER", parsed.getField());
+        assertNull(parsed.getEmail());
+    }
+
+    @Test
+    public void accountRecordParser_parseInvalidInputReturnsNull() {
+        assertNull(AccountRecordParser.parse(null));
+        assertNull(AccountRecordParser.parse(""));
+        assertNull(AccountRecordParser.parse("not-a-record"));
+    }
+
+    @Test
+    public void accountRecordParser_formatDetailsFormatsAndPrettyPrints() {
+        String raw = "W001|Bob|MAINTENANCE_WORKER|N/A|hash|01700000000|INTERNET_TECH";
+        String formatted = AccountRecordParser.formatDetails(raw);
+
+        assertNotNull(formatted);
+        assertTrue(formatted.contains("ID         : W001"));
+        assertTrue(formatted.contains("Name       : Bob"));
+        assertTrue(formatted.contains("Role       : MAINTENANCE WORKER"));
+        assertTrue(formatted.contains("Phone      : 01700000000"));
+        assertTrue(formatted.contains("Field      : INTERNET TECH"));
+    }
+
+    @Test
+    public void accountRecordParser_formatDetailsStudentIncludesRoomAndDepartment() {
+        String raw = "230042139|Alice|STUDENT|CSE|hash|01712345678|alice@iut-dhaka.edu|R101";
+        String formatted = AccountRecordParser.formatDetails(raw);
+
+        assertNotNull(formatted);
+        assertTrue(formatted.contains("Department : CSE"));
+        assertTrue(formatted.contains("Room       : R101"));
+        assertTrue(formatted.contains("Email      : alice@iut-dhaka.edu"));
+    }
+
+    // ─── CreateAccountController Tests ────────────────────────
+
+    @Test
+    public void createAccountController_createAccount_invalidRoleReturnsMessage() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("UNKNOWN"),
+                "U001",
+                "Alice",
+                "secret1",
+                "01712345678",
+                "CSE",
+                "alice@iut-dhaka.edu",
+                null
+        );
+
+        assertEquals("Invalid role choice!", result);
+    }
+
+    @Test
+    public void createAccountController_createAccount_existingUserReturnsMessage() {
+        TestAccountManager manager = new TestAccountManager();
+        manager.addExistingUser("230042139", "STUDENT");
+
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("STUDENT"),
+                "230042139",
+                "Alice",
+                "secret1",
+                "01712345678",
+                "CSE",
+                "alice@iut-dhaka.edu",
+                null
+        );
+
+        assertEquals("Error: User ID already exists!", result);
+    }
+
+    @Test
+    public void createAccountController_createAccount_invalidStudentEmailReturnsMessage() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("STUDENT"),
+                "230042139",
+                "Alice",
+                "secret1",
+                "01712345678",
+                "CSE",
+                "alice@gmail.com",
+                null
+        );
+
+        assertEquals("Error: Invalid email format!", result);
+    }
+
+    @Test
+    public void createAccountController_createAccount_invalidPhoneReturnsMessage() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("STUDENT"),
+                "230042139",
+                "Alice",
+                "secret1",
+                "12345",
+                "CSE",
+                "alice@iut-dhaka.edu",
+                null
+        );
+
+        assertEquals("Error: Invalid phone number format!", result);
+    }
+
+    @Test
+    public void createAccountController_createAccount_invalidPasswordReturnsMessage() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("STUDENT"),
+                "230042139",
+                "Alice",
+                "abc",
+                "01712345678",
+                "CSE",
+                "alice@iut-dhaka.edu",
+                null
+        );
+
+        assertEquals("Error: Password must be at least 6 characters long and contain at least one number!", result);
+    }
+
+    @Test
+    public void createAccountController_createAccount_invalidDepartmentReturnsMessage() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("STUDENT"),
+                "230042139",
+                "Alice",
+                "secret1",
+                "01712345678",
+                "MATH",
+                "alice@iut-dhaka.edu",
+                null
+        );
+
+        assertTrue(result.contains("Error: Invalid department!"));
+    }
+
+    @Test
+    public void createAccountController_createStudentSuccessBuildsStudent() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("STUDENT"),
+                "230042139",
+                "Alice",
+                "secret1",
+                "01712345678",
+                "CSE",
+                "alice@iut-dhaka.edu",
+                null
+        );
+
+        assertEquals("Account created successfully!", result);
+        assertNotNull(manager.getLastRegisteredUser());
+        assertTrue(manager.getLastRegisteredUser() instanceof Student);
+
+        Student s = (Student) manager.getLastRegisteredUser();
+        assertEquals("230042139", s.getId());
+        assertEquals("Alice", s.getName());
+        assertEquals("CSE", s.getDepartment());
+        assertEquals("alice@iut-dhaka.edu", s.getEmail());
+        assertEquals("STUDENT", manager.getLastRegisteredRole().getValue());
+    }
+
+    @Test
+    public void createAccountController_createMaintenanceWorkerChoice2MapsToPlumber() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("MAINTENANCE_WORKER"),
+                "W001",
+                "Bob",
+                "secret1",
+                "01712345678",
+                null,
+                null,
+                2
+        );
+
+        assertEquals("Account created successfully!", result);
+        assertTrue(manager.getLastRegisteredUser() instanceof MaintenanceWorker);
+
+        MaintenanceWorker w = (MaintenanceWorker) manager.getLastRegisteredUser();
+        assertEquals(WorkerField.PLUMBER, w.getField());
+    }
+
+    @Test
+    public void createAccountController_createMaintenanceWorkerNullChoiceDefaultsElectrician() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("MAINTENANCE_WORKER"),
+                "W002",
+                "Karim",
+                "secret1",
+                "01712345678",
+                null,
+                null,
+                null
+        );
+
+        assertEquals("Account created successfully!", result);
+        assertTrue(manager.getLastRegisteredUser() instanceof MaintenanceWorker);
+
+        MaintenanceWorker w = (MaintenanceWorker) manager.getLastRegisteredUser();
+        assertEquals(WorkerField.ELECTRICIAN, w.getField());
+    }
+
+    @Test
+    public void createAccountController_registerFailureReturnsSystemError() {
+        TestAccountManager manager = new TestAccountManager();
+        manager.setRegisterResult(false);
+
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("ADMIN"),
+                "ADM01",
+                "Root",
+                "secret1",
+                "01712345678",
+                null,
+                "root@iut-dhaka.edu",
+                null
+        );
+
+        assertEquals("System Error: Could not save file.", result);
+    }
+
+    @Test
+    public void createAccountController_createHallAttendantSuccess() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("HALL_ATTENDANT"),
+                "HA01",
+                "Karim",
+                "secret1",
+                "01712345678",
+                null,
+                "karim@iut-dhaka.com",
+                null
+        );
+
+        assertEquals("Account created successfully!", result);
+        assertTrue(manager.getLastRegisteredUser() instanceof HallAttendant);
+
+        HallAttendant user = (HallAttendant) manager.getLastRegisteredUser();
+        assertEquals("HA01", user.getId());
+        assertEquals("karim@iut-dhaka.com", user.getEmail());
+    }
+
+    @Test
+    public void createAccountController_createHallOfficerSuccess() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("HALL_OFFICER"),
+                "HO01",
+                "Officer",
+                "secret1",
+                "01712345678",
+                null,
+                "officer@iut-dhaka.com",
+                null
+        );
+
+        assertEquals("Account created successfully!", result);
+        assertTrue(manager.getLastRegisteredUser() instanceof HallOfficer);
+
+        HallOfficer user = (HallOfficer) manager.getLastRegisteredUser();
+        assertEquals("HO01", user.getId());
+        assertEquals("officer@iut-dhaka.com", user.getEmail());
+    }
+
+    @Test
+    public void createAccountController_createStoreInChargeSuccess() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("STORE_IN_CHARGE"),
+                "SIC01",
+                "Keeper",
+                "secret1",
+                "01712345678",
+                null,
+                null,
+                null
+        );
+
+        assertEquals("Account created successfully!", result);
+        assertTrue(manager.getLastRegisteredUser() instanceof StoreInCharge);
+        assertEquals("SIC01", manager.getLastRegisteredUser().getId());
+    }
+
+    @Test
+    public void createAccountController_createCafeteriaManagerSuccess() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("CAFETERIA_MANAGER"),
+                "CM01",
+                "Chef",
+                "secret1",
+                "01712345678",
+                null,
+                null,
+                null
+        );
+
+        assertEquals("Account created successfully!", result);
+        assertTrue(manager.getLastRegisteredUser() instanceof CafeteriaManager);
+        assertEquals("CM01", manager.getLastRegisteredUser().getId());
+    }
+
+    @Test
+    public void createAccountController_createAdminSuccess() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("ADMIN"),
+                "admin2",
+                "Root Two",
+                "secret1",
+                "01712345678",
+                null,
+                "admin2@iut-dhaka.edu",
+                null
+        );
+
+        assertEquals("Account created successfully!", result);
+        assertTrue(manager.getLastRegisteredUser() instanceof SystemAdmin);
+        assertEquals("admin2", manager.getLastRegisteredUser().getId());
+    }
+
+    @Test
+    public void createAccountController_studentNullEmailReturnsRequiredMessage() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("STUDENT"),
+                "230042139",
+                "Alice",
+                "secret1",
+                "01712345678",
+                "CSE",
+                null,
+                null
+        );
+
+        assertEquals("Error: Email is required for this role!", result);
+    }
+
+    @Test
+    public void createAccountController_adminNullEmailReturnsRequiredMessage() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("ADMIN"),
+                "admin2",
+                "Root Two",
+                "secret1",
+                "01712345678",
+                null,
+                null,
+                null
+        );
+
+        assertEquals("Error: Email is required for this role!", result);
+    }
+
+    @Test
+    public void createAccountController_hallAttendantWrongDomainReturnsInvalidEmail() {
+        TestAccountManager manager = new TestAccountManager();
+        CreateAccountController controller = new CreateAccountController(manager);
+
+        String result = controller.createAccount(
+                new MyString("HALL_ATTENDANT"),
+                "HA01",
+                "Karim",
+                "secret1",
+                "01712345678",
+                null,
+                "karim@iut-dhaka.edu",
+                null
+        );
+
+        assertEquals("Error: Invalid email format!", result);
+    }
+
+    // ─── DeleteAccountController Tests ────────────────────────
+
+    @Test
+    public void deleteAccountController_invalidRoleChoiceReturnsMessage() {
+        AccountManager manager = new AccountManager();
+        DeleteAccountController controller = new DeleteAccountController(manager);
+
+        String result = controller.deleteUserWithAdminConfirmation(
+                99,
+                "230042139",
+                "admin",
+                "secret1"
+        );
+
+        assertEquals("Invalid role choice!", result);
+    }
+
+    @Test
+    public void deleteAccountController_wrongAdminPasswordFailsAuthentication() throws Exception {
+        AccountManager manager = new AccountManager();
+        DeleteAccountController controller = new DeleteAccountController(manager);
+
+        String adminPath = manager.getFilename(new MyString("ADMIN")).getValue();
+        FileSnapshot adminSnap = snapshot(adminPath);
+
+        try {
+            String adminHash = HashFunction.hashPassword(new MyString("correct123")).getValue();
+
+            writeFile(adminPath,
+                    "admin|System Admin|ADMIN|N/A|" + adminHash + "|01712345678" + System.lineSeparator());
+
+            String result = controller.deleteUserWithAdminConfirmation(
+                    1,                  // STUDENT
+                    "230042139",
+                    "admin",
+                    "wrongpass"
+            );
+
+            assertEquals("Authentication Failed! Deletion Cancelled.", result);
+        } finally {
+            restore(adminSnap);
+        }
+    }
+
+    @Test
+    public void deleteAccountController_validAdminAndExistingUserDeletesSuccessfully() throws Exception {
+        AccountManager manager = new AccountManager();
+        DeleteAccountController controller = new DeleteAccountController(manager);
+
+        String adminPath = "data/users/admin.txt"; // AuthController uses this
+        String studentPath = manager.getFilename(new MyString("STUDENT")).getValue();
+
+        FileSnapshot adminSnap = snapshot(adminPath);
+        FileSnapshot studentSnap = snapshot(studentPath);
+
+        try {
+            String adminHash = HashFunction.hashPassword(new MyString("admin123")).getValue();
+
+            writeFile(adminPath,
+                    "admin|System Admin|ADMIN|N/A|" + adminHash + "|01712345678" + System.lineSeparator());
+
+            Student s1 = new Student("230042139", "Alice", "STUDENT", "hash1", "01711111111", "alice@iut-dhaka.edu");
+            s1.setDepartment("CSE");
+            Student s2 = new Student("230042140", "Bob", "STUDENT", "hash2", "01722222222", "bob@iut-dhaka.edu");
+            s2.setDepartment("EEE");
+
+            writeFile(studentPath,
+                    s1.toFileString() + System.lineSeparator() +
+                            s2.toFileString() + System.lineSeparator());
+
+            String result = controller.deleteUserWithAdminConfirmation(
+                    1,
+                    "230042139",
+                    "admin",
+                    "admin123"
+            );
+
+            assertEquals("Account deleted successfully.", result);
+
+            String content = readFile(studentPath);
+            assertFalse(content.contains("230042139"));
+            assertTrue(content.contains("230042140"));
+        } finally {
+            restore(adminSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void deleteAccountController_validAdminButMissingUserReturnsNotFound() throws Exception {
+        AccountManager manager = new AccountManager();
+        DeleteAccountController controller = new DeleteAccountController(manager);
+
+        String adminPath = "data/users/admin.txt"; // AuthController uses this
+        String studentPath = manager.getFilename(new MyString("STUDENT")).getValue();
+
+        FileSnapshot adminSnap = snapshot(adminPath);
+        FileSnapshot studentSnap = snapshot(studentPath);
+
+        try {
+            String adminHash = HashFunction.hashPassword(new MyString("admin123")).getValue();
+
+            writeFile(adminPath,
+                    "admin|System Admin|ADMIN|N/A|" + adminHash + "|01712345678" + System.lineSeparator());
+            writeFile(studentPath, "");
+
+            String result = controller.deleteUserWithAdminConfirmation(
+                    1,
+                    "NO_SUCH_USER",
+                    "admin",
+                    "admin123"
+            );
+
+            assertEquals("Error: User ID not found in that role.", result);
+        } finally {
+            restore(adminSnap);
+            restore(studentSnap);
+        }
+    }
+
+    @Test
+    public void deleteAccountController_validAdminCanDeleteMaintenanceWorker() throws Exception {
+        AccountManager manager = new AccountManager();
+        DeleteAccountController controller = new DeleteAccountController(manager);
+
+        String adminPath = "data/users/admin.txt"; // AuthController uses this
+        String workerPath = manager.getFilename(new MyString("MAINTENANCE_WORKER")).getValue();
+
+        FileSnapshot adminSnap = snapshot(adminPath);
+        FileSnapshot workerSnap = snapshot(workerPath);
+
+        try {
+            String adminHash = HashFunction.hashPassword(new MyString("admin123")).getValue();
+
+            writeFile(adminPath,
+                    "admin|System Admin|ADMIN|N/A|" + adminHash + "|01712345678" + System.lineSeparator());
+
+            MaintenanceWorker worker = new MaintenanceWorker(
+                    "W001", "Bob", "MAINTENANCE_WORKER", "hash", "01733333333", WorkerField.PLUMBER
+            );
+
+            writeFile(workerPath, worker.toFileString() + System.lineSeparator());
+
+            String result = controller.deleteUserWithAdminConfirmation(
+                    3,
+                    "W001",
+                    "admin",
+                    "admin123"
+            );
+
+            assertEquals("Account deleted successfully.", result);
+            assertFalse(readFile(workerPath).contains("W001"));
+        } finally {
+            restore(adminSnap);
+            restore(workerSnap);
+        }
+    }
+
+
+    // ─── SearchUserController Tests ───────────────────────────
+
+    @Test
+    public void searchUserController_blankInputReturnsNull() {
+        TestAccountManager manager = new TestAccountManager();
+        SearchUserController controller = new SearchUserController(manager);
+
+        assertNull(controller.searchById(null));
+        assertNull(controller.searchById(""));
+        assertNull(controller.searchById("   "));
+    }
+
+    @Test
+    public void searchUserController_findsStudentRecordById() throws Exception {
+        String studentLine = "230042139|Alice|STUDENT|CSE|hash|01712345678|alice@iut-dhaka.edu|R101";
+        String studentFile = createTempAccountFile("students", studentLine + System.lineSeparator());
+
+        TestAccountManager manager = new TestAccountManager();
+        manager.setFile("STUDENT", studentFile);
+        manager.setFile("HALL_ATTENDANT", createTempAccountFile("ha", ""));
+        manager.setFile("MAINTENANCE_WORKER", createTempAccountFile("mw", ""));
+        manager.setFile("STORE_IN_CHARGE", createTempAccountFile("sic", ""));
+        manager.setFile("HALL_OFFICER", createTempAccountFile("ho", ""));
+        manager.setFile("ADMIN", createTempAccountFile("admin", ""));
+        manager.setFile("CAFETERIA_MANAGER", createTempAccountFile("cm", ""));
+
+        SearchUserController controller = new SearchUserController(manager);
+
+        String found = controller.searchById("230042139");
+        assertEquals(studentLine, found);
+    }
+
+    @Test
+    public void searchUserController_trimsInputBeforeSearching() throws Exception {
+        String adminLine = "ADM01|Root|ADMIN|N/A|hash|01799999999";
+        String adminFile = createTempAccountFile("admin", adminLine + System.lineSeparator());
+
+        TestAccountManager manager = new TestAccountManager();
+        manager.setFile("STUDENT", createTempAccountFile("students", ""));
+        manager.setFile("HALL_ATTENDANT", createTempAccountFile("ha", ""));
+        manager.setFile("MAINTENANCE_WORKER", createTempAccountFile("mw", ""));
+        manager.setFile("STORE_IN_CHARGE", createTempAccountFile("sic", ""));
+        manager.setFile("HALL_OFFICER", createTempAccountFile("ho", ""));
+        manager.setFile("ADMIN", adminFile);
+        manager.setFile("CAFETERIA_MANAGER", createTempAccountFile("cm", ""));
+
+        SearchUserController controller = new SearchUserController(manager);
+
+        String found = controller.searchById("  ADM01   ");
+        assertEquals(adminLine, found);
+    }
+
+    @Test
+    public void searchUserController_returnsNullWhenIdNotFound() throws Exception {
+        TestAccountManager manager = new TestAccountManager();
+        manager.setFile("STUDENT", createTempAccountFile("students", ""));
+        manager.setFile("HALL_ATTENDANT", createTempAccountFile("ha", ""));
+        manager.setFile("MAINTENANCE_WORKER", createTempAccountFile("mw", ""));
+        manager.setFile("STORE_IN_CHARGE", createTempAccountFile("sic", ""));
+        manager.setFile("HALL_OFFICER", createTempAccountFile("ho", ""));
+        manager.setFile("ADMIN", createTempAccountFile("admin", ""));
+        manager.setFile("CAFETERIA_MANAGER", createTempAccountFile("cm", ""));
+
+        SearchUserController controller = new SearchUserController(manager);
+
+        assertNull(controller.searchById("DOES_NOT_EXIST"));
+    }
+
+    @Test
+    public void searchUserController_searchesAcrossAllRoleFiles() throws Exception {
+        String workerLine = "W001|Bob|MAINTENANCE_WORKER|N/A|hash|01712345678|PLUMBER";
+
+        TestAccountManager manager = new TestAccountManager();
+        manager.setFile("STUDENT", createTempAccountFile("students", ""));
+        manager.setFile("HALL_ATTENDANT", createTempAccountFile("ha", ""));
+        manager.setFile("MAINTENANCE_WORKER", createTempAccountFile("mw", workerLine + System.lineSeparator()));
+        manager.setFile("STORE_IN_CHARGE", createTempAccountFile("sic", ""));
+        manager.setFile("HALL_OFFICER", createTempAccountFile("ho", ""));
+        manager.setFile("ADMIN", createTempAccountFile("admin", ""));
+        manager.setFile("CAFETERIA_MANAGER", createTempAccountFile("cm", ""));
+
+        SearchUserController controller = new SearchUserController(manager);
+
+        assertEquals(workerLine, controller.searchById("W001"));
+    }
+
+    // ─── ViewAccountController Tests ──────────────────────────
+
+    @Test
+    public void viewAccountController_invalidChoiceReturnsEmptyList() {
+        TestAccountManager manager = new TestAccountManager();
+        ViewAccountController controller = new ViewAccountController(manager);
+
+        List<ViewAccountController.AccountSummary> list = controller.getAccountsByChoice(99);
+        assertNotNull(list);
+        assertTrue(list.isEmpty());
+    }
+
+    @Test
+    public void viewAccountController_getAccountsByChoiceReadsSingleRoleFile() throws Exception {
+        String studentFile = createTempAccountFile(
+                "students",
+                "230042139|Alice|STUDENT|CSE|hash|01712345678|alice@iut-dhaka.edu|R101" + System.lineSeparator() +
+                        "bad-line-without-pipes" + System.lineSeparator()
+        );
+
+        TestAccountManager manager = new TestAccountManager();
+        manager.setFile("STUDENT", studentFile);
+
+        ViewAccountController controller = new ViewAccountController(manager);
+        List<ViewAccountController.AccountSummary> list = controller.getAccountsByChoice(1);
+
+        assertEquals(1, list.size());
+        assertEquals("230042139", list.get(0).getId());
+        assertEquals("Alice", list.get(0).getName());
+        assertEquals("STUDENT", list.get(0).getRole());
+    }
+
+    @Test
+    public void viewAccountController_getAccountsByChoiceEightReturnsAllAccounts() throws Exception {
+        TestAccountManager manager = new TestAccountManager();
+        manager.setFile("STUDENT",
+                createTempAccountFile("students",
+                        "230042139|Alice|STUDENT|CSE|hash|01712345678|alice@iut-dhaka.edu|R101" + System.lineSeparator()));
+        manager.setFile("HALL_ATTENDANT",
+                createTempAccountFile("ha",
+                        "HA01|Karim|HALL_ATTENDANT|N/A|hash|01711111111|karim@iut-dhaka.com" + System.lineSeparator()));
+        manager.setFile("MAINTENANCE_WORKER",
+                createTempAccountFile("mw",
+                        "W001|Bob|MAINTENANCE_WORKER|N/A|hash|01712345678|PLUMBER" + System.lineSeparator()));
+        manager.setFile("STORE_IN_CHARGE", createTempAccountFile("sic", ""));
+        manager.setFile("HALL_OFFICER", createTempAccountFile("ho", ""));
+        manager.setFile("ADMIN", createTempAccountFile("admin", ""));
+        manager.setFile("CAFETERIA_MANAGER", createTempAccountFile("cm", ""));
+
+        ViewAccountController controller = new ViewAccountController(manager);
+        List<ViewAccountController.AccountSummary> list = controller.getAccountsByChoice(8);
+
+        assertEquals(3, list.size());
+    }
+
+    @Test
+    public void viewAccountController_formatAccountDetailsUsesParser() {
+        TestAccountManager manager = new TestAccountManager();
+        ViewAccountController controller = new ViewAccountController(manager);
+
+        String raw = "230042139|Alice|STUDENT|CSE|hash|01712345678|alice@iut-dhaka.edu|R101";
+        String formatted = controller.formatAccountDetails(raw);
+
+        assertNotNull(formatted);
+        assertTrue(formatted.contains("ID         : 230042139"));
+        assertTrue(formatted.contains("Name       : Alice"));
+        assertTrue(formatted.contains("Role       : STUDENT"));
+        assertTrue(formatted.contains("Department : CSE"));
+        assertTrue(formatted.contains("Room       : R101"));
+    }
+
+    @Test
+    public void viewAccountController_missingRoleFileReturnsEmptyList() {
+        TestAccountManager manager = new TestAccountManager();
+        manager.setFile("ADMIN", "this-file-does-not-exist-xyz.txt");
+
+        ViewAccountController controller = new ViewAccountController(manager);
+        List<ViewAccountController.AccountSummary> list = controller.getAccountsByChoice(6);
+
+        assertNotNull(list);
+        assertTrue(list.isEmpty());
+    }
+
+    // ─── AccountManager Tests ─────────────────────────────────
+
+    @Test
+    public void accountManager_getFilename_studentRole() {
+        AccountManager manager = new AccountManager();
+        assertEquals("data/users/students.txt", manager.getFilename(new MyString("STUDENT")).getValue());
+    }
+
+    @Test
+    public void accountManager_getFilename_adminRole() {
+        AccountManager manager = new AccountManager();
+        assertEquals("data/users/admin.txt", manager.getFilename(new MyString("ADMIN")).getValue());
+    }
+
+    @Test
+    public void accountManager_userExists_falseWhenFileMissing() throws Exception {
+        AccountManager manager = new AccountManager();
+        String path = manager.getFilename(new MyString("STUDENT")).getValue();
+
+        FileSnapshot snap = snapshot(path);
+        try {
+            restore(new FileSnapshot(path, false, ""));
+            assertFalse(manager.userExists(new MyString("230042139"), new MyString("STUDENT")));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void accountManager_registerUser_appendsStudentToFile() throws Exception {
+        AccountManager manager = new AccountManager();
+        String path = manager.getFilename(new MyString("STUDENT")).getValue();
+
+        FileSnapshot snap = snapshot(path);
+        try {
+            writeFile(path, "");
+
+            Student s = new Student("230042139", "Alice", "STUDENT", "hash", "01712345678", "alice@iut-dhaka.edu");
+            s.setDepartment("CSE");
+            s.setRoomNumber("R101");
+
+            assertTrue(manager.registerUser(s, new MyString("STUDENT")));
+
+            String content = readFile(path);
+            assertTrue(content.contains("230042139"));
+            assertTrue(content.contains("Alice"));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void accountManager_userExists_trueAfterRegister() throws Exception {
+        AccountManager manager = new AccountManager();
+        String path = manager.getFilename(new MyString("STUDENT")).getValue();
+
+        FileSnapshot snap = snapshot(path);
+        try {
+            writeFile(path, "");
+
+            Student s = new Student("230042139", "Alice", "STUDENT", "hash", "01712345678", "alice@iut-dhaka.edu");
+            assertTrue(manager.registerUser(s, new MyString("STUDENT")));
+
+            assertTrue(manager.userExists(new MyString("230042139"), new MyString("STUDENT")));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void accountManager_deleteUser_removesMatchingUser() throws Exception {
+        AccountManager manager = new AccountManager();
+        String path = manager.getFilename(new MyString("STUDENT")).getValue();
+
+        FileSnapshot snap = snapshot(path);
+        try {
+            Student s1 = new Student("230042139", "Alice", "STUDENT", "hash1", "01711111111", "alice@iut-dhaka.edu");
+            Student s2 = new Student("230042140", "Bob", "STUDENT", "hash2", "01722222222", "bob@iut-dhaka.edu");
+
+            writeFile(path,
+                    s1.toFileString() + System.lineSeparator() +
+                            s2.toFileString() + System.lineSeparator());
+
+            assertTrue(manager.deleteUser(new MyString("230042139"), new MyString("STUDENT")));
+
+            String content = readFile(path);
+            assertFalse(content.contains("230042139"));
+            assertTrue(content.contains("230042140"));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void accountManager_deleteUser_returnsFalseWhenMissing() throws Exception {
+        AccountManager manager = new AccountManager();
+        String path = manager.getFilename(new MyString("STUDENT")).getValue();
+
+        FileSnapshot snap = snapshot(path);
+        try {
+            writeFile(path, "");
+            assertFalse(manager.deleteUser(new MyString("NO_SUCH_USER"), new MyString("STUDENT")));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void accountManager_findUserDetails_findsStudentAcrossFiles() throws Exception {
+        AccountManager manager = new AccountManager();
+
+        String studentPath = manager.getFilename(new MyString("STUDENT")).getValue();
+        String adminPath = manager.getFilename(new MyString("ADMIN")).getValue();
+
+        FileSnapshot studentSnap = snapshot(studentPath);
+        FileSnapshot adminSnap = snapshot(adminPath);
+
+        try {
+            writeFile(studentPath,
+                    "230042139|Alice|STUDENT|CSE|hash|01712345678|alice@iut-dhaka.edu|R101" + System.lineSeparator());
+            writeFile(adminPath, "");
+
+            String found = manager.findUserDetails(new MyString("230042139"));
+            assertEquals("Found: Alice (STUDENT)", found);
+        } finally {
+            restore(studentSnap);
+            restore(adminSnap);
+        }
+    }
+
+    @Test
+    public void accountManager_findUserDetails_returnsNullWhenNotFound() throws Exception {
+        AccountManager manager = new AccountManager();
+
+        String studentPath = manager.getFilename(new MyString("STUDENT")).getValue();
+        FileSnapshot snap = snapshot(studentPath);
+
+        try {
+            writeFile(studentPath, "");
+            assertNull(manager.findUserDetails(new MyString("UNKNOWN_USER")));
+        } finally {
+            restore(snap);
+        }
+    }
+
+    // ─── ConfigLoader Tests ───────────────────────────────────
+
+    @Test
+    public void configLoader_readsAllAdminKeys() throws Exception {
+        String configPath = "config" + java.io.File.separator + "admin.config";
+        FileSnapshot snap = snapshot(configPath);
+
+        try {
+            writeFile(configPath,
+                    "ADMIN_USERNAME=adminuser" + System.lineSeparator() +
+                            "ADMIN_PASSWORD=secret123" + System.lineSeparator() +
+                            "ADMIN_NAME=System Admin" + System.lineSeparator() +
+                            "ADMIN_PHONE=01712345678" + System.lineSeparator() +
+                            "ADMIN_EMAIL=admin@iut-dhaka.edu" + System.lineSeparator());
+
+            assertEquals("adminuser", ConfigLoader.getAdminUsername().getValue());
+            assertEquals("secret123", ConfigLoader.getAdminPassword().getValue());
+            assertEquals("System Admin", ConfigLoader.getAdminName().getValue());
+            assertEquals("01712345678", ConfigLoader.getAdminPhone().getValue());
+            assertEquals("admin@iut-dhaka.edu", ConfigLoader.getAdminEmail().getValue());
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void configLoader_missingKeyReturnsNull() throws Exception {
+        String configPath = "config" + java.io.File.separator + "admin.config";
+        FileSnapshot snap = snapshot(configPath);
+
+        try {
+            writeFile(configPath,
+                    "ADMIN_USERNAME=adminuser" + System.lineSeparator() +
+                            "ADMIN_PASSWORD=secret123" + System.lineSeparator());
+
+            assertNull(ConfigLoader.getAdminName());
+            assertNull(ConfigLoader.getAdminPhone());
+            assertNull(ConfigLoader.getAdminEmail());
+        } finally {
+            restore(snap);
+        }
+    }
+
+    @Test
+    public void configLoader_missingFileReturnsNull() throws Exception {
+        String configPath = "config" + java.io.File.separator + "admin.config";
+        FileSnapshot snap = snapshot(configPath);
+
+        try {
+            restore(new FileSnapshot(configPath, false, ""));
+            assertNull(ConfigLoader.getAdminUsername());
+            assertNull(ConfigLoader.getAdminPassword());
+            assertNull(ConfigLoader.getAdminName());
+            assertNull(ConfigLoader.getAdminPhone());
+            assertNull(ConfigLoader.getAdminEmail());
+        } finally {
+            restore(snap);
         }
     }
 }

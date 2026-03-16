@@ -217,9 +217,9 @@ public class EditProfileCLI {
                 box + "║" + panelBg + " ".repeat(iw) + box + "║" + r,
                 box + "║ " + inputLabel + "New Phone    : "
                         + inputBg + getActiveTextColor() + " ".repeat(fieldW) + " "
-                        + box + "║" + r,
+                        + box + " ║" + r,
                 box + "║" + panelBg + " ".repeat(iw) + box + "║" + r,
-                box + "║ " + text + info + " ".repeat(infoPad) + box + "║" + r,
+                box + "║ " + text + info + " ".repeat(infoPad) + box + " ║" + r,
                 box + "╚" + "═".repeat(iw) + "╝" + r,
         };
 

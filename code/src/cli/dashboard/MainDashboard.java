@@ -106,7 +106,7 @@ public class MainDashboard {
                         new TerminalUI.MenuItem(1, "Student"),
                         new TerminalUI.MenuItem(2, "Attendant"),
                         new TerminalUI.MenuItem(3, "Maintenance Worker"),
-                        new TerminalUI.MenuItem(4, "Store-in-Charge"),
+                        new TerminalUI.MenuItem(4, "Store In Charge"),
                         new TerminalUI.MenuItem(5, "Hall Office"),
                         new TerminalUI.MenuItem(6, "Admin"),
                         new TerminalUI.MenuItem(7, "Cafeteria Manager"),
