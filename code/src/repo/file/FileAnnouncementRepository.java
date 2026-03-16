@@ -57,6 +57,36 @@ public class FileAnnouncementRepository {
         return out;
     }
 
+    public boolean update(Announcement updated) {
+        MyArrayList<Announcement> all = findAll();
+        boolean found = false;
+
+        for (int i = 0; i < all.size(); i++) {
+            if (all.get(i).getAnnouncementId().equals(updated.getAnnouncementId())) {
+                all.set(i, updated);
+                found = true;
+                break;
+            }
+        }
+        if (!found) return false;
+
+        try (FileWriter fw = new FileWriter(FeaturePaths.ANNOUNCEMENTS, false);
+             BufferedWriter bw = new BufferedWriter(fw)) {
+            for (int i = 0; i < all.size(); i++) {
+                Announcement a = all.get(i);
+                bw.write(TextFile.join(
+                        a.getAnnouncementId(), a.getAuthorName(),
+                        a.getTitle(), a.getBody(),
+                        a.getCreatedAt(), a.getExpiresAt()
+                ));
+                bw.newLine();
+            }
+            return true;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private MyArrayList<String> readAllLines(String path) {
         MyArrayList<String> lines = new MyArrayList<>();
 

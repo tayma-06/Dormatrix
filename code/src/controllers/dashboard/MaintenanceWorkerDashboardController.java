@@ -45,19 +45,39 @@ public class MaintenanceWorkerDashboardController {
     // Returns false is user chooses to logout
     public void handleInput(int choice, String username)
     {
+        utils.ConsoleUtil.clearScreen();
+        utils.BackgroundFiller.applyMaintenanceTheme();
+        utils.TerminalUI.fillBackground(utils.TerminalUI.getActiveBgColor());
+        utils.TerminalUI.at(2, 1);
 
         String wid = resolveWorkerId(username);
+
         switch (choice)
         {
 
-//            case 1:
-//                System.out.println("Viewing work field...");
-//                viewWorkField(username);
-//                break;
-//            case 2:
-//                System.out.println("Viewing task queue...");
-//                taskQueueMenu(username);
-//                break;
+            case 1:
+                // Show worker field info
+                String wfield = getWorkerField(username);
+                utils.ConsoleUtil.clearScreen();
+                utils.BackgroundFiller.applyMaintenanceTheme();
+                utils.TerminalUI.fillBackground(utils.TerminalUI.getActiveBgColor());
+                utils.TerminalUI.at(2, 1);
+
+                utils.TerminalUI.tBoxTop();
+                utils.TerminalUI.tBoxTitle("YOUR WORK FIELD");
+                utils.TerminalUI.tBoxSep();
+                utils.TerminalUI.tBoxLine("Worker ID   : " + wid);
+                utils.TerminalUI.tBoxLine("Worker Name : " + username);
+                utils.TerminalUI.tBoxLine("Work Field  : " + wfield);
+                utils.TerminalUI.tBoxSep();
+                utils.TerminalUI.tBoxLine(getFieldDescription(wfield));
+                utils.TerminalUI.tBoxBottom();
+                utils.TerminalUI.tPause();
+                break;
+            case 2:
+                // View assigned tasks
+                new cli.complaint.WorkerComplaintCLI().start(username);
+                break;
 //            case 3:
 //                viewComplaintUpdates(username);
 //                break;
@@ -95,6 +115,16 @@ public class MaintenanceWorkerDashboardController {
             return null;
         }
         return null;
+    }
+
+    private String getFieldDescription(String field) {
+        switch (field) {
+            case "ELECTRICIAN":    return "Handles electrical faults, wiring and power issues.";
+            case "PLUMBER":        return "Handles plumbing, water leaks and pipe issues.";
+            case "INTERNET_TECH":  return "Handles internet connectivity and network issues.";
+            case "CLEANING":       return "Handles cleaning and sanitation of dorm facilities.";
+            default:               return "General maintenance duties.";
+        }
     }
 
 

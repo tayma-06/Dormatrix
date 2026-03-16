@@ -38,7 +38,7 @@ public class AnnouncementController {
             Announcement a = all.get(i);
             if (a.isExpired()) continue;
             any = true;
-            renderAnnouncementBox(a, false);
+            renderAnnouncementBox(a, true);
         }
 
         if (!any) {
@@ -70,6 +70,33 @@ public class AnnouncementController {
 
         utils.TerminalUI.tBoxBottom();
         return "";
+    }
+
+    public boolean updateAnnouncement(String id, String title, String body, String expiresAt) {
+        MyArrayList<Announcement> all = repo.findAll();
+        for (int i = 0; i < all.size(); i++) {
+            Announcement a = all.get(i);
+            if (a.getAnnouncementId().equals(id)) {
+                Announcement updated = new Announcement(
+                        a.getAnnouncementId(),
+                        a.getAuthorName(),
+                        title == null || title.trim().isEmpty() ? a.getTitle() : title.trim(),
+                        body == null || body.trim().isEmpty() ? a.getBody() : body.trim(),
+                        a.getCreatedAt(),
+                        expiresAt == null ? a.getExpiresAt() : expiresAt.trim()
+                );
+                return repo.update(updated);
+            }
+        }
+        return false;
+    }
+
+    public MyArrayList<Announcement> getAllNewestFirst() {
+        MyArrayList<Announcement> all = repo.findAll();
+        // reverse — newest first
+        MyArrayList<Announcement> out = new MyArrayList<>();
+        for (int i = all.size() - 1; i >= 0; i--) out.add(all.get(i));
+        return out;
     }
 
 
@@ -104,12 +131,13 @@ public class AnnouncementController {
         utils.TerminalUI.tBoxLine("Created : " + a.getCreatedAt());
 
         if (showExpiry) {
-            String exp = a.getExpiresAt().isEmpty() ? "Never" : a.getExpiresAt();
+            String exp = a.getExpiresAt().isEmpty() ? "No expiry date" : a.getExpiresAt();
             String expired = a.isExpired() ? " [EXPIRED]" : "";
             utils.TerminalUI.tBoxLine("Expires : " + exp + expired,
                     a.isExpired()
                             ? utils.ConsoleColors.Accent.ERROR
-                            : utils.TerminalUI.getActiveTextColor());
+//                            : utils.TerminalUI.getActiveTextColor());
+                            :utils.ConsoleColors.Accent.MUTED);
         }
 
         String[] wrapped = wrap(a.getBody(), 55);
