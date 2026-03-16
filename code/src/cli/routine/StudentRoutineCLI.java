@@ -1,8 +1,6 @@
 package cli.routine;
 
 import controllers.routine.RoutineController;
-import libraries.collections.MyOptional;
-import models.users.StudentPublicInfo;
 import utils.*;
 
 import java.io.BufferedReader;
@@ -10,6 +8,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import static utils.TerminalUI.*;
+import static utils.TerminalUIExtras.*;
 
 public class StudentRoutineCLI {
 
@@ -17,66 +16,61 @@ public class StudentRoutineCLI {
     private static final String STUDENT_FILE = "data/users/students.txt";
 
     private static final MenuItem[] MENU = {
-        new MenuItem(1, "Edit Slot"),
-        new MenuItem(2, "Clear Slot"),
-        new MenuItem(3, "View Exact Slot Text"),
-        new MenuItem(0, "Back"),};
-
-    // Day and slot option arrays for tSubDashboard
-    private static final String[] DAY_OPTIONS = {
-        "[1] Monday", "[2] Tuesday", "[3] Wednesday", "[4] Thursday",
-        "[5] Friday", "[6] Saturday", "[7] Sunday", "[0] Cancel"
+            new MenuItem(1, "Edit Slot"),
+            new MenuItem(2, "Clear Slot"),
+            new MenuItem(3, "View Exact Slot Text"),
+            new MenuItem(0, "Back"),
     };
+
+    private static final String[] DAY_OPTIONS = {
+            "Monday", "Tuesday", "Wednesday", "Thursday",
+            "Friday", "Saturday", "Sunday"
+    };
+
     private static final String[] SLOT_OPTIONS = {
-        "[1] 00:00 - 02:00", "[2] 02:00 - 04:00", "[3] 04:00 - 06:00",
-        "[4] 06:00 - 08:00", "[5] 08:00 - 10:00", "[6] 10:00 - 12:00",
-            "[7] 12:00 - 14:00", "[8] 14:00 - 16:00", "[9] 16:00 - 18:00",
-            "[10] 18:00 - 20:00", "[11] 20:00 - 22:00", "[12] 22:00 - 24:00", "[0] Cancel"
+            "00:00 - 02:00", "02:00 - 04:00", "04:00 - 06:00",
+            "06:00 - 08:00", "08:00 - 10:00", "10:00 - 12:00",
+            "12:00 - 14:00", "14:00 - 16:00", "16:00 - 18:00",
+            "18:00 - 20:00", "20:00 - 22:00", "22:00 - 24:00"
     };
 
     public void show(String username) {
-
         String studentId = resolveStudentId(username);
 
         while (true) {
             try {
-                ConsoleUtil.clearScreen();
-                BackgroundFiller.applyStudentTheme();
+                // ── Screen 1: show the routine table ─────────────────
+                clearAndRefresh();
                 System.out.print(HIDE_CUR);
-
-                // Show weekly routine table below banner
                 TerminalUI.at(3, 1);
                 controller.printStudentRoutine(studentId);
+                System.out.print(SHOW_CUR);
+                tEmpty();
+                tPrompt("Press Enter to open menu...");
+                FastInput.readLine();
 
-                int menuStartRow = 17;
-                int promptRow = drawDashboard(
+                // ── Screen 2: show the action menu ────────────────────
+                clearAndRefresh();
+
+                drawDashboard(
                         "WEEKLY ROUTINE",
                         "Student: " + studentId,
                         MENU,
                         TerminalUI.getActiveTextColor(),
                         TerminalUI.getActiveBoxColor(),
                         null,
-                        menuStartRow
+                        3
                 );
 
-                System.out.print(SHOW_CUR);
-                int choice = FastInput.readInt();
+                int choice = readChoiceArrow();
 
-                if (choice == 0) {
-                    return;
-                }
+                if (choice == 0) return;
 
                 switch (choice) {
-                    case 1 ->
-                        handleEdit(studentId);
-                    case 2 ->
-                        handleClear(studentId);
-                    case 3 ->
-                        handleViewOne(studentId);
-                    default -> {
-                        tError("Invalid choice.");
-                        tPause();
-                    }
+                    case 1 -> handleEdit(studentId);
+                    case 2 -> handleClear(studentId);
+                    case 3 -> handleViewOne(studentId);
+                    default -> { tError("Invalid choice."); tPause(); }
                 }
 
             } catch (Exception e) {
@@ -86,64 +80,59 @@ public class StudentRoutineCLI {
         }
     }
 
-    // ── shared helpers ────────────────────────────────────────────
-    /**
-     * Show day picker, return 1-7 or 0 for cancel.
-     */
-    private int pickDay(String title) {
+    // ── helpers ───────────────────────────────────────────────────
+
+    private int pickDay(String title) throws InterruptedException {
         clearAndRefresh();
-        tSubDashboard(title, DAY_OPTIONS);
-        int d = FastInput.readInt();
-        return (d >= 0 && d <= 7) ? d : -1;
+        int idx = tArrowSelect(title, DAY_OPTIONS);
+        return idx < 0 ? 0 : idx + 1;  // 1-7 or 0 for cancel
     }
 
-    /**
-     * Show slot picker, return 1-6 or 0 for cancel.
-     */
-    private int pickSlot(String title) {
-        tEmpty();
-        tSubDashboard(title, SLOT_OPTIONS);
-        int s = FastInput.readInt();
-        return (s >= 0 && s <= 12) ? s : -1;
+    private int pickSlot(String title) throws InterruptedException {
+        clearAndRefresh();
+        int idx = tArrowSelect(title, SLOT_OPTIONS);
+        return idx < 0 ? 0 : idx + 1;  // 1-12 or 0 for cancel
     }
 
-    /**
-     * Clear + re-apply theme to get a fresh canvas.
-     */
     private void clearAndRefresh() {
         ConsoleUtil.clearScreen();
         BackgroundFiller.applyStudentTheme();
+        TerminalUI.setActiveTheme(
+                ConsoleColors.fgRGB(60, 140, 255),
+                ConsoleColors.ThemeText.STUDENT_TEXT,
+                ConsoleColors.bgRGB(0, 6, 45)
+        );
         TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
         TerminalUI.at(2, 1);
     }
 
     // ── action handlers ──────────────────────────────────────────
+
     private void handleEdit(String studentId) {
         try {
             int day = pickDay("SELECT DAY TO EDIT");
-            if (day == 0) {
-                return;
-            }
+            if (day == 0) return;
 
             int slot = pickSlot("SELECT TIME SLOT");
-            if (slot == 0) {
-                return;
-            }
+            if (slot == 0) return;
 
-            // Input box for routine text
-            tEmpty();
+            clearAndRefresh();
             tBoxTop();
             tBoxTitle("ENTER ROUTINE TEXT");
             tBoxSep();
             tBoxLine("Day  : " + dayName(day));
             tBoxLine("Slot : " + slotLabel(slot));
-            tBoxBottom();
-            tPrompt("Content: ");
-            String content = FastInput.readNonEmptyLine();
+            tBoxSep();
+            tBoxLine("  [ESC] Cancel and go back", ConsoleColors.fgRGB(160, 150, 60));
+            tBoxSep();
+            tCustomInputRow("Content : ");
+            String content = readLineOrEsc();
+            if (content == null || content.trim().isEmpty()) return;
 
-            controller.setSlot(studentId, day, slot, content);
-            tEmpty();
-            tSuccess("Routine updated successfully.");
+            controller.setSlot(studentId, day, slot, content.trim());
+            tBoxTop();
+            tBoxLine("Routine updated successfully.");
+            tBoxBottom();
             tPause();
         } catch (Exception e) {
             tError(e.getMessage());
@@ -154,32 +143,32 @@ public class StudentRoutineCLI {
     private void handleClear(String studentId) {
         try {
             int day = pickDay("SELECT DAY TO CLEAR");
-            if (day == 0) {
-                return;
-            }
+            if (day == 0) return;
 
             int slot = pickSlot("SELECT TIME SLOT TO CLEAR");
-            if (slot == 0) {
-                return;
-            }
+            if (slot == 0) return;
 
-            tEmpty();
+            clearAndRefresh();
             tBoxTop();
             tBoxTitle("CONFIRM CLEAR");
             tBoxSep();
             tBoxLine("Day  : " + dayName(day));
             tBoxLine("Slot : " + slotLabel(slot));
-            tBoxBottom();
-            tPrompt("Confirm? (y/n): ");
-            String confirm = FastInput.readLine().trim();
+            tBoxSep();
 
-            if (confirm.equalsIgnoreCase("y")) {
+            String[] confirmOptions = {"Yes, clear it", "Cancel"};
+            int cidx = tArrowSelect("CONFIRM", confirmOptions);
+
+            if (cidx == 0) {
                 controller.clearSlot(studentId, day, slot);
-                tEmpty();
-                tSuccess("Slot cleared successfully.");
+                clearAndRefresh();
+                tBoxTop();
+                tBoxLine("Slot cleared successfully.");
+                tBoxBottom();
             } else {
-                tEmpty();
-                tError("Cancelled.");
+                tBoxTop();
+                tBoxLine("Cancelled.");
+                tBoxBottom();
             }
             tPause();
         } catch (Exception e) {
@@ -191,28 +180,22 @@ public class StudentRoutineCLI {
     private void handleViewOne(String studentId) {
         try {
             int day = pickDay("SELECT DAY TO VIEW");
-            if (day == 0) {
-                return;
-            }
+            if (day == 0) return;
 
             int slot = pickSlot("SELECT TIME SLOT TO VIEW");
-            if (slot == 0) {
-                return;
-            }
+            if (slot == 0) return;
 
             String content = controller.getSlotContent(studentId, day, slot);
-            tEmpty();
+            clearAndRefresh();
             tBoxTop();
             tBoxTitle("SLOT CONTENT");
             tBoxSep();
             tBoxLine("Day  : " + dayName(day));
             tBoxLine("Slot : " + slotLabel(slot));
             tBoxSep();
-            if (content == null || content.trim().isEmpty()) {
-                tBoxLine("(No routine saved for this slot)");
-            } else {
-                tBoxLine("Content : " + content);
-            }
+            tBoxLine(content == null || content.trim().isEmpty()
+                    ? "(No routine saved for this slot)"
+                    : "Content : " + content);
             tBoxBottom();
             tPause();
         } catch (Exception e) {
@@ -222,13 +205,15 @@ public class StudentRoutineCLI {
     }
 
     // ── label helpers ─────────────────────────────────────────────
+
     private static final String[] DAY_NAMES = {
-        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+            "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
     };
     private static final String[] SLOT_NAMES = {
             "00:00 - 02:00", "02:00 - 04:00", "04:00 - 06:00", "06:00 - 08:00",
-        "08:00 - 10:00", "10:00 - 12:00", "12:00 - 14:00",
-        "14:00 - 16:00", "16:00 - 18:00", "18:00 - 20:00", "20:00 - 22:00", "22:00 - 00:00"
+            "08:00 - 10:00", "10:00 - 12:00", "12:00 - 14:00",
+            "14:00 - 16:00", "16:00 - 18:00", "18:00 - 20:00",
+            "20:00 - 22:00", "22:00 - 00:00"
     };
 
     private String dayName(int d) {
@@ -239,26 +224,15 @@ public class StudentRoutineCLI {
         return s >= 1 && s <= 12 ? SLOT_NAMES[s - 1] : "?";
     }
 
-
-
     private String resolveStudentId(String target) {
         try (BufferedReader br = new BufferedReader(new FileReader(STUDENT_FILE))) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split("\\|", -1);
-                if (parts.length < 2) {
-                    continue;
-                }
-
-                String id = parts[0].trim().replace("\uFEFF", "");
+                if (parts.length < 2) continue;
+                String id   = parts[0].trim().replace("\uFEFF", "");
                 String name = parts[1].trim();
-
-                boolean matchesId = id.equals(target.trim());
-                boolean matchesName = name.equalsIgnoreCase(target.trim());
-
-                if (matchesId || matchesName) {
-                    return id;
-                }
+                if (id.equals(target.trim()) || name.equalsIgnoreCase(target.trim())) return id;
             }
         } catch (IOException e) {
             return null;
@@ -266,6 +240,3 @@ public class StudentRoutineCLI {
         return null;
     }
 }
-
-
-

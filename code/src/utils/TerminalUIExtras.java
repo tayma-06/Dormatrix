@@ -302,7 +302,7 @@ public final class TerminalUIExtras {
     //  Returns a best-guess if the terminal doesn't respond.
     // ─────────────────────────────────────────────────────────────
 
-    private static int getCursorRow() {
+    public static int getCursorRow() {
         try {
             System.out.print("\u001B[6n");
             System.out.flush();

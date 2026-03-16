@@ -24,7 +24,8 @@ public class WorkerComplaintCLI {
     private final FileComplaintRepository repo = new FileComplaintRepository();
 
     private static final MenuItem[] MENU = {
-            new MenuItem(1, "Update Progress"),
+            new MenuItem(1, "View Assigned Tasks"),
+            new MenuItem(2, "Update Progress"),
             new MenuItem(0, "Back"),
     };
 
@@ -61,7 +62,13 @@ public class WorkerComplaintCLI {
                 TerminalUI.at(2, 1);
 
                 if (ch == 1) {
+                    // ── View assigned tasks only ──────────────────────────
                     MyArrayList<Complaint> list = repo.findUnresolvedByAssignedWorker(wid);
+
+                    ConsoleUtil.clearScreen();
+                    BackgroundFiller.applyMaintenanceTheme();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
 
                     if (list == null || list.size() == 0) {
                         tBoxTop();
@@ -69,12 +76,22 @@ public class WorkerComplaintCLI {
                         tBoxSep();
                         tBoxLine("No unresolved tasks assigned to you.");
                         tBoxBottom();
+                    } else {
+                        view.workerList(list);
+                    }
+                    tPause();
+
+                } else if (ch == 2) {
+                    // ── Update progress ───────────────────────────────────
+                    MyArrayList<Complaint> list = repo.findUnresolvedByAssignedWorker(wid);
+
+                    if (list == null || list.size() == 0) {
+                        tBoxTop();
+                        tBoxLine("No unresolved tasks to update.");
+                        tBoxBottom();
                         tPause();
                         continue;
                     }
-
-                    // Show task list then picker
-                    view.workerList(list);
 
                     String[] taskLabels = new String[list.size()];
                     for (int i = 0; i < list.size(); i++) {
