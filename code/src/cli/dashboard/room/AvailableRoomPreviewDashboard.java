@@ -21,7 +21,7 @@ public class AvailableRoomPreviewDashboard {
     }
 
     private enum NavKey {
-        UP, DOWN, ENTER, ZERO, NONE
+        UP, DOWN, ENTER, ZERO, ESC, NONE
     }
 
     public void show() {
@@ -48,7 +48,7 @@ public class AvailableRoomPreviewDashboard {
                 selected = (selected - 1 + rooms.size()) % rooms.size();
             } else if (key == NavKey.DOWN) {
                 selected = (selected + 1) % rooms.size();
-            } else if (key == NavKey.ENTER || key == NavKey.ZERO) {
+            } else if (key == NavKey.ENTER || key == NavKey.ZERO || key == NavKey.ESC) {
                 TerminalUI.cleanup();
                 return;
             }
@@ -60,61 +60,135 @@ public class AvailableRoomPreviewDashboard {
         TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
         System.out.print(TerminalUI.HIDE_CUR);
 
-        int termW = TerminalUI.termW();
-        int leftCol = Math.max(3, termW / 14);
-        int topRow = 5;
-        int leftW = Math.min(42, Math.max(34, termW / 3));
+        int screenW = Math.max(100, TerminalUI.termW() - 4);
+        int leftW = Math.min(42, Math.max(36, screenW / 2 - 2));
+        int rightW = Math.max(50, screenW - leftW - 3);
+
+        int totalW = leftW + rightW + 3;
+        int leftCol = TerminalUI.centerCol(totalW);
         int rightCol = leftCol + leftW + 3;
-        int rightW = Math.max(42, termW - rightCol - leftCol);
+        int topRow = 3;
 
-        drawPanel(topRow, leftCol, leftW, 16, "AVAILABLE ROOMS");
-        drawPanel(topRow, rightCol, rightW, 16, "ROOM PREVIEW");
-
-        put(topRow + 2, leftCol + 2,
-                ConsoleColors.ThemeText.SOFT_WHITE
-                        + "Available count: " + rooms.size()
-                        + TerminalUI.RESET);
-
-        int start = Math.max(0, selected - 4);
-        int end = Math.min(rooms.size(), start + 10);
-        if (end - start < 10) {
-            start = Math.max(0, end - 10);
-        }
-
-        int row = topRow + 4;
-        for (int i = start; i < end; i++) {
-            Room r = rooms.get(i);
-            boolean isSelected = i == selected;
-
-            String line = String.format("%-12s  %s/%s",
-                    r.getRoomId(),
-                    r.getCurrentOccupancy(),
-                    r.getCapacity());
-
-            String fg = isSelected ? ConsoleColors.FG_BLACK : ConsoleColors.ThemeText.SOFT_WHITE;
-            String bg = isSelected ? ConsoleColors.bgRGB(210, 195, 245) : TerminalUI.getActivePanelBgColor();
-
-            put(row++, leftCol + 2, bg + fg + pad(line, leftW - 4) + TerminalUI.RESET);
-        }
-
-        Room room = rooms.get(selected);
-        put(topRow + 2, rightCol + 2, kv("Room ID", room.getRoomId()));
-        put(topRow + 3, rightCol + 2, kv("Capacity", String.valueOf(room.getCapacity())));
-        put(topRow + 4, rightCol + 2, kv("Occupancy", room.getCurrentOccupancy() + "/" + room.getCapacity()));
-        put(topRow + 5, rightCol + 2, kv("Free Seats", String.valueOf(room.getCapacity() - room.getCurrentOccupancy())));
-        put(topRow + 6, rightCol + 2, kv("Status", room.isAvailable() ? "AVAILABLE" : "FULL"));
-
-        String meter = buildMeter(room.getCurrentOccupancy(), room.getCapacity(), Math.max(12, rightW - 8));
-        put(topRow + 8, rightCol + 2,
-                ConsoleColors.ThemeText.SOFT_WHITE + "Occupancy Preview" + TerminalUI.RESET);
-        put(topRow + 10, rightCol + 2, meter);
-
-        put(topRow + 14, leftCol,
-                ConsoleColors.Accent.MUTED
-                        + "Up/Down browse   Enter/0 return"
-                        + TerminalUI.RESET);
+        drawLeftPane(topRow, leftCol, leftW, rooms, selected);
+        drawRightPane(topRow, rightCol, rightW, rooms.get(selected));
 
         System.out.flush();
+    }
+
+    private void drawLeftPane(int topRow, int col, int width, List<Room> rooms, int selected) {
+        int inner = width - 2;
+        String box = TerminalUI.getActiveBoxColor();
+        String panel = TerminalUI.getActivePanelBgColor();
+
+        int row = topRow;
+        int resultRows = 10;
+
+        printRow(row++, col, box + panel + "╔" + "═".repeat(inner) + "╗" + TerminalUI.RESET);
+        printRow(row++, col,
+                box + panel + "║"
+                        + TerminalUI.BOLD + TerminalUI.ACCENT + panel
+                        + TerminalUI.padC("AVAILABLE ROOMS", inner)
+                        + box + panel + "║" + TerminalUI.RESET);
+        printRow(row++, col, box + panel + "╠" + "═".repeat(inner) + "╣" + TerminalUI.RESET);
+
+        printTextRow(row++, col, inner,
+                ConsoleColors.ThemeText.SOFT_WHITE + "Available count: " + rooms.size(),
+                box, panel);
+
+        printRow(row++, col, box + panel + "╠" + "═".repeat(inner) + "╣" + TerminalUI.RESET);
+
+        int start = Math.max(0, selected - resultRows / 2);
+        if (start + resultRows > rooms.size()) {
+            start = Math.max(0, rooms.size() - resultRows);
+        }
+        int end = Math.min(rooms.size(), start + resultRows);
+
+        for (int i = start; i < end; i++) {
+            Room room = rooms.get(i);
+            boolean isSelected = i == selected;
+
+            String line = room.getRoomId()
+                    + "  |  "
+                    + room.getCurrentOccupancy() + "/" + room.getCapacity();
+
+            printSuggestionRow(row++, col, inner, line, isSelected, box, panel);
+        }
+
+        while (row < topRow + 17) {
+            printSuggestionRow(row++, col, inner, "", false, box, panel);
+        }
+
+        printRow(row++, col, box + panel + "╠" + "═".repeat(inner) + "╣" + TerminalUI.RESET);
+        printTextRow(row++, col, inner,
+                ConsoleColors.Accent.MUTED
+                        + "Use Up/Down to browse. Enter or 0 returns.",
+                box, panel);
+        printRow(row, col, box + panel + "╚" + "═".repeat(inner) + "╝" + TerminalUI.RESET);
+    }
+
+    private void drawRightPane(int topRow, int col, int width, Room room) {
+        int inner = width - 2;
+        String box = TerminalUI.getActiveBoxColor();
+        String panel = TerminalUI.getActivePanelBgColor();
+
+        int row = topRow;
+        List<String> students = roomService.getStudentsAllocatedToRoom(room.getRoomId());
+        int freeSeats = Math.max(0, room.getCapacity() - room.getCurrentOccupancy());
+
+        printRow(row++, col, box + panel + "╔" + "═".repeat(inner) + "╗" + TerminalUI.RESET);
+        printRow(row++, col,
+                box + panel + "║"
+                        + TerminalUI.BOLD + TerminalUI.ACCENT + panel
+                        + TerminalUI.padC("ROOM PREVIEW", inner)
+                        + box + panel + "║" + TerminalUI.RESET);
+        printRow(row++, col, box + panel + "╠" + "═".repeat(inner) + "╣" + TerminalUI.RESET);
+
+        printTextRow(row++, col, inner, kv("Room ID", room.getRoomId()), box, panel);
+        printTextRow(row++, col, inner, kv("Capacity", String.valueOf(room.getCapacity())), box, panel);
+        printTextRow(row++, col, inner, kv("Occupancy", room.getCurrentOccupancy() + "/" + room.getCapacity()), box, panel);
+        printTextRow(row++, col, inner, kv("Free Seats", String.valueOf(freeSeats)), box, panel);
+        printTextRow(row++, col, inner, kv("Status", colorRoomStatus(room)), box, panel);
+
+        printTextRow(row++, col, inner, "", box, panel);
+        printTextRow(row++, col, inner,
+                ConsoleColors.ThemeText.SOFT_WHITE + "LIVE PREVIEW",
+                box, panel);
+        printTextRow(row++, col, inner,
+                buildMeterLine(room.getCurrentOccupancy(), room.getCapacity(), Math.max(16, inner - 18)),
+                box, panel);
+
+        printTextRow(row++, col, inner, "", box, panel);
+        printTextRow(row++, col, inner,
+                ConsoleColors.ThemeText.SOFT_WHITE + "ALLOCATED STUDENTS",
+                box, panel);
+
+        if (students.isEmpty()) {
+            printTextRow(row++, col, inner,
+                    ConsoleColors.Accent.MUTED + "(no student allocated yet)",
+                    box, panel);
+            printTextRow(row++, col, inner, "", box, panel);
+            printTextRow(row++, col, inner, "", box, panel);
+        } else {
+            int visible = 4;
+            for (int i = 0; i < visible; i++) {
+                String line = i < students.size() ? students.get(i) : "";
+                String color = i < students.size()
+                        ? ConsoleColors.FG_BRIGHT_WHITE
+                        : "";
+                printTextRow(row++, col, inner, color + line, box, panel);
+            }
+        }
+
+        printTextRow(row++, col, inner, "", box, panel);
+        printTextRow(row++, col, inner,
+                ConsoleColors.Accent.MUTED + buildSeatSummary(room),
+                box, panel);
+
+        while (row < topRow + 17) {
+            printTextRow(row++, col, inner, "", box, panel);
+        }
+
+        printRow(row, col, box + panel + "╚" + "═".repeat(inner) + "╝" + TerminalUI.RESET);
     }
 
     private NavKey readNavKey() {
@@ -136,13 +210,14 @@ public class AvailableRoomPreviewDashboard {
                             if (n2 == 'A') return NavKey.UP;
                             if (n2 == 'B') return NavKey.DOWN;
                         }
-                        continue;
+                        return NavKey.ESC;
                     }
 
                     if (ch == 13 || ch == 10) return NavKey.ENTER;
                     if (ch == '0') return NavKey.ZERO;
                 }
             } catch (Exception ignored) {
+                return NavKey.NONE;
             } finally {
                 terminal.setAttributes(saved);
             }
@@ -155,22 +230,6 @@ public class AvailableRoomPreviewDashboard {
         return NavKey.ENTER;
     }
 
-    private String buildMeter(int used, int total, int width) {
-        if (total <= 0) {
-            total = 1;
-        }
-
-        int inner = Math.max(10, width - 2);
-        int fill = (int) Math.round((used * 1.0 / total) * inner);
-        if (fill < 0) fill = 0;
-        if (fill > inner) fill = inner;
-
-        String left = ConsoleColors.bgRGB(110, 220, 160) + " ".repeat(fill);
-        String right = ConsoleColors.bgRGB(55, 45, 85) + " ".repeat(inner - fill);
-
-        return "│" + left + right + TerminalUI.RESET + "│";
-    }
-
     private String kv(String key, String value) {
         return ConsoleColors.ThemeText.SOFT_WHITE
                 + String.format("%-10s : ", key)
@@ -179,35 +238,100 @@ public class AvailableRoomPreviewDashboard {
                 + TerminalUI.RESET;
     }
 
-    private void drawPanel(int row, int col, int width, int height, String title) {
-        String box = TerminalUI.getActiveBoxColor();
-        String panel = TerminalUI.getActivePanelBgColor();
+    private String colorRoomStatus(Room room) {
+        if (room == null) return "N/A";
 
-        put(row, col, box + panel + "╔" + "═".repeat(width) + "╗" + TerminalUI.RESET);
-        put(row + 1, col, box + panel + "║" + padCenter(title, width) + box + panel + "║" + TerminalUI.RESET);
-        put(row + 2, col, box + panel + "╠" + "═".repeat(width) + "╣" + TerminalUI.RESET);
+        int capacity = Math.max(1, room.getCapacity());
+        int occ = Math.max(0, room.getCurrentOccupancy());
+        double ratio = occ / (double) capacity;
 
-        for (int i = 3; i < height - 1; i++) {
-            put(row + i, col, box + panel + "║" + " ".repeat(width) + "║" + TerminalUI.RESET);
+        if (ratio >= 1.0) {
+            return ConsoleColors.Accent.ERROR + "FULL" + TerminalUI.RESET;
+        } else if (ratio >= 0.75) {
+            return ConsoleColors.Accent.WARNING + "LIMITED" + TerminalUI.RESET;
         }
-
-        put(row + height - 1, col, box + panel + "╚" + "═".repeat(width) + "╝" + TerminalUI.RESET);
+        return ConsoleColors.Accent.SUCCESS + "AVAILABLE" + TerminalUI.RESET;
     }
 
-    private void put(int row, int col, String text) {
+    private String buildSeatSummary(Room room) {
+        int free = Math.max(0, room.getCapacity() - room.getCurrentOccupancy());
+        if (free == 0) return "No free seat remains in this room.";
+        if (free == 1) return "Only 1 seat is available in this room.";
+        return free + " seats are currently available.";
+    }
+
+    private String buildMeterLine(int used, int total, int barWidth) {
+        if (total <= 0) total = 1;
+
+        int safeUsed = Math.max(0, Math.min(used, total));
+        int fill = (int) Math.round((safeUsed * 1.0 / total) * barWidth);
+        fill = Math.max(0, Math.min(fill, barWidth));
+
+        String color;
+        double ratio = safeUsed / (double) total;
+        if (ratio >= 1.0) {
+            color = ConsoleColors.Accent.ERROR;
+        } else if (ratio >= 0.75) {
+            color = ConsoleColors.Accent.WARNING;
+        } else {
+            color = ConsoleColors.Accent.SUCCESS;
+        }
+
+        String filled = "=".repeat(fill);
+        String empty = "-".repeat(barWidth - fill);
+
+        return ConsoleColors.ThemeText.SOFT_WHITE + "Seats : "
+                + color + "[" + filled + ConsoleColors.Accent.MUTED + empty + color + "]"
+                + TerminalUI.RESET + " "
+                + ConsoleColors.FG_BRIGHT_WHITE + safeUsed + "/" + total
+                + TerminalUI.RESET;
+    }
+
+    private void printSuggestionRow(int row, int col, int inner, String text, boolean selected, String box, String panel) {
+        String display = fitVisible(text, inner - 2);
+
+        if (selected) {
+            String bg = ConsoleColors.bgRGB(210, 195, 245);
+            String fg = ConsoleColors.fgRGB(35, 20, 70);
+
+            printRow(row, col,
+                    box + panel + "║ "
+                            + bg + fg + display
+                            + bg + fg + spaces(inner - 2 - TerminalUI.stripAnsi(display).length())
+                            + box + panel + " ║" + TerminalUI.RESET);
+        } else {
+            printRow(row, col,
+                    box + panel + "║ "
+                            + panel + TerminalUI.getActiveTextColor() + display
+                            + panel + TerminalUI.getActiveTextColor() + spaces(inner - 2 - TerminalUI.stripAnsi(display).length())
+                            + box + panel + " ║" + TerminalUI.RESET);
+        }
+    }
+
+    private void printTextRow(int row, int col, int inner, String text, String box, String panel) {
+        String display = fitVisible(text, inner - 2);
+
+        printRow(row, col,
+                box + panel + "║ "
+                        + panel + TerminalUI.getActiveTextColor() + display
+                        + panel + TerminalUI.getActiveTextColor() + spaces(inner - 2 - TerminalUI.stripAnsi(display).length())
+                        + box + panel + " ║" + TerminalUI.RESET);
+    }
+
+    private void printRow(int row, int col, String text) {
         TerminalUI.at(row, col);
         System.out.print(text);
     }
 
-    private String pad(String s, int w) {
-        if (s.length() >= w) return s.substring(0, w);
-        return s + " ".repeat(w - s.length());
+    private String fitVisible(String s, int max) {
+        if (s == null) return "";
+        String plain = TerminalUI.stripAnsi(s);
+        if (plain.length() <= max) return s;
+        if (max <= 1) return plain.substring(0, max);
+        return plain.substring(0, max - 1) + "…";
     }
 
-    private String padCenter(String s, int w) {
-        if (s.length() >= w) return s.substring(0, w);
-        int left = (w - s.length()) / 2;
-        int right = w - s.length() - left;
-        return " ".repeat(left) + s + " ".repeat(right);
+    private String spaces(int n) {
+        return " ".repeat(Math.max(0, n));
     }
 }

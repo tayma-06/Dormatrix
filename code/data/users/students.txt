@@ -16,7 +16,7 @@
 230042118|Tanjina Islam|STUDENT|IPE|62afa2d2|01700000018|tanjina@iut-dhaka.edu|318
 230042119|Umme Habiba|STUDENT|BTM|62afa2d2|01700000019|habiba@iut-dhaka.edu|319
 230042120|Fariha Tasin|STUDENT|CSE|62afa2d2|01700000020|fariha@iut-dhaka.edu|320
-230042135|Khadiza Sultana|STUDENT|SWE|4e17fe04|01763016648|khadizasultana@iut-dhaka.edu|301
+230042135|Khadiza Sultana|STUDENT|SWE|4e17fe04|01763016648|khadizasultana@iut-dhaka.edu|302
 230042141|Ayman Binta Altaf Nondiny|STUDENT|CSE|4e179aec|01645544768|aimin@iut-dhaka.edu|301
 230042139|Sayma Tasnim|STUDENT|SWE|4e17f28c|01700000000|saymatasnim@iut-dhaka.edu|301
 230042101|Ayesha Siddiqua|STUDENT|CSE|62afa2d2|01700000001|ayesha@iut-dhaka.edu|306

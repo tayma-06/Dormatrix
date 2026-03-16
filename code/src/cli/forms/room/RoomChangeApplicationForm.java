@@ -129,13 +129,6 @@ public class RoomChangeApplicationForm {
         drawLeftPane(topRow, leftCol, leftW, rooms, selected, requestedRoom);
         drawRightPane(topRow, rightCol, rightW, rooms.get(selected), currentRoom, requestedRoom, reason);
 
-        at(topRow + 21, totalCol);
-        System.out.print(
-                ConsoleColors.Accent.MUTED
-                        + "Use Up/Down to browse, Enter to pick, R to edit reason, S to submit, C to clear, 0 to return."
-                        + RESET
-        );
-
         System.out.flush();
     }
 
@@ -227,7 +220,7 @@ public class RoomChangeApplicationForm {
                 box, panel);
 
         printTextRow(row++, col, inner,
-                buildMeterLine(highlighted.getCurrentOccupancy(), highlighted.getCapacity(), Math.max(16, inner - 16)),
+                buildMeterLine(highlighted.getCurrentOccupancy(), highlighted.getCapacity(), Math.max(16, inner - 18)),
                 box, panel);
 
         printTextRow(row++, col, inner,
@@ -350,7 +343,7 @@ public class RoomChangeApplicationForm {
                     String.valueOf(Math.max(0, targetRoom.getCapacity() - targetRoom.getCurrentOccupancy()))), box, panel);
             printTextRow(row++, col, inner, kv("Status", colorRoomStatus(targetRoom)), box, panel);
             printTextRow(row++, col, inner, "", box, panel);
-            printTextRow(row++, col, inner, buildMeterLine(targetRoom.getCurrentOccupancy(), targetRoom.getCapacity(), Math.max(16, inner - 16)), box, panel);
+            printTextRow(row++, col, inner, buildMeterLine(targetRoom.getCurrentOccupancy(), targetRoom.getCapacity(), Math.max(16, inner - 18)), box, panel);
         } else {
             printTextRow(row++, col, inner, "", box, panel);
         }
@@ -645,9 +638,9 @@ public class RoomChangeApplicationForm {
 
         return ConsoleColors.ThemeText.SOFT_WHITE + "Seats : "
                 + color + "[" + filled + ConsoleColors.Accent.MUTED + empty + color + "]"
-                + RESET
-                + " "
-                + ConsoleColors.FG_BRIGHT_WHITE + safeUsed + "/" + total + RESET;
+                + RESET + " "
+                + ConsoleColors.FG_BRIGHT_WHITE + safeUsed + "/" + total
+                + RESET;
     }
 
     private String[] wrapLines(String text, int max) {
@@ -681,21 +674,25 @@ public class RoomChangeApplicationForm {
 
             printRow(row, col,
                     box + panel + "║ "
-                            + bg + fg + padVisible(display, inner - 2)
+                            + bg + fg + display
+                            + bg + fg + spaces(inner - 2 - TerminalUI.stripAnsi(display).length())
                             + box + panel + " ║" + RESET);
         } else {
             printRow(row, col,
                     box + panel + "║ "
-                            + getActiveTextColor() + panel + padVisible(display, inner - 2)
+                            + panel + getActiveTextColor() + display
+                            + panel + getActiveTextColor() + spaces(inner - 2 - TerminalUI.stripAnsi(display).length())
                             + box + panel + " ║" + RESET);
         }
     }
 
     private void printTextRow(int row, int col, int inner, String text, String box, String panel) {
         String display = fitVisible(text, inner - 2);
+
         printRow(row, col,
                 box + panel + "║ "
-                        + panel + display + spaces(inner - 2 - TerminalUI.stripAnsi(display).length())
+                        + panel + getActiveTextColor() + display
+                        + panel + getActiveTextColor() + spaces(inner - 2 - TerminalUI.stripAnsi(display).length())
                         + box + panel + " ║" + RESET);
     }
 
@@ -710,12 +707,6 @@ public class RoomChangeApplicationForm {
         if (plain.length() <= max) return s;
         if (max <= 1) return plain.substring(0, max);
         return plain.substring(0, max - 1) + "…";
-    }
-
-    private String padVisible(String s, int w) {
-        int len = TerminalUI.stripAnsi(s).length();
-        if (len >= w) return fitVisible(s, w);
-        return s + spaces(w - len);
     }
 
     private String padPlain(String s, int w) {

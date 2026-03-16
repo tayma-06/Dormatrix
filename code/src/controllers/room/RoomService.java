@@ -186,6 +186,41 @@ public class RoomService {
         return null;
     }
 
+    public List<String> getStudentsAllocatedToRoom(String roomId) {
+        List<String> students = new ArrayList<>();
+
+        if (roomId == null || roomId.trim().isEmpty()) {
+            return students;
+        }
+
+        File file = new File(STUDENT_FILE);
+        if (!file.exists()) {
+            return students;
+        }
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split("\\|", -1);
+
+                if (parts.length > 7) {
+                    String studentId = parts[0].trim().replace("\uFEFF", "");
+                    String studentName = parts[1].trim();
+                    String assignedRoom = parts[7].trim();
+
+                    if (!assignedRoom.isEmpty() && assignedRoom.equalsIgnoreCase(roomId.trim())) {
+                        String namePart = studentName.isEmpty() ? "(no name)" : studentName;
+                        students.add(studentId + "  |  " + namePart);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return students;
+    }
+
     public boolean changeStudentRoom(String studentId, String newRoom) {
         if (studentId == null || studentId.trim().isEmpty()
                 || newRoom == null || newRoom.trim().isEmpty()) {
