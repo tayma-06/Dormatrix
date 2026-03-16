@@ -7,6 +7,8 @@ import models.complaints.Complaint;
 import models.room.Room;
 import models.room.RoomChangeApplication;
 
+import java.util.List;
+
 public class StudentRoomDashboardController {
 
     private final RoomService roomService;
@@ -26,6 +28,10 @@ public class StudentRoomDashboardController {
             return null;
         }
         return roomService.getRoomDetailsWithRealOccupancy(roomNumber);
+    }
+
+    public List<Room> getAvailableRooms() {
+        return roomService.getAvailableRooms();
     }
 
     public MyArrayList<Complaint> getComplaints(String roomNumber) {

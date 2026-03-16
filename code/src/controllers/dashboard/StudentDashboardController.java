@@ -1,24 +1,28 @@
 package controllers.dashboard;
 
+import cli.announcement.AnnouncementBoardCLI;
 import cli.complaint.StudentComplaintCLI;
+import cli.contacts.StudentEmergencyContactsCLI;
+import cli.dashboard.FacilityDashboard;
 import cli.dashboard.MainDashboard;
+import cli.dashboard.room.StudentRoomDashboard;
 import cli.forms.food.MealTokenPurchase;
 import cli.profile.EditProfileCLI;
 import cli.routine.StudentRoutineCLI;
-import cli.announcement.AnnouncementBoardCLI;
-import cli.contacts.StudentEmergencyContactsCLI;
-import cli.views.store.*;
-import controllers.room.RoomController;
-import cli.dashboard.FacilityDashboard;
-import controllers.facilities.*;
 import cli.views.LostFoundView;
+import cli.views.store.ShoppingCartView;
+import cli.views.store.StoreLedgerView;
+import controllers.dashboard.room.StudentRoomDashboardController;
+import controllers.facilities.FridgeController;
+import controllers.facilities.LaundryController;
+import controllers.facilities.StudyRoomController;
+import controllers.room.RoomService;
 
 public class StudentDashboardController {
 
     private final MainDashboard mainDashboard;
     private final MealTokenPurchase mealTokenPurchase;
     private final StoreLedgerView storeLedgerView;
-    private final RoomController roomController;
     private final StudyRoomController studyRoomController;
     private final FridgeController fridgeController;
     private final LaundryController laundryController;
@@ -30,7 +34,6 @@ public class StudentDashboardController {
         this.mealTokenPurchase = new MealTokenPurchase();
         this.mainDashboard = new MainDashboard();
         this.storeLedgerView = new StoreLedgerView();
-        this.roomController = new RoomController();
         this.studyRoomController = new StudyRoomController();
         this.fridgeController = new FridgeController();
         this.laundryController = new LaundryController();
@@ -39,19 +42,11 @@ public class StudentDashboardController {
     }
 
     public void handleInput(int choice, String username) {
-        utils.ConsoleUtil.clearScreen();
-        utils.BackgroundFiller.applyStudentTheme();
-        utils.TerminalUI.setActiveTheme(
-                utils.ConsoleColors.fgRGB(60, 140, 255),
-                utils.ConsoleColors.ThemeText.STUDENT_TEXT,
-                utils.ConsoleColors.bgRGB(0, 6, 45)
-        );
-        utils.TerminalUI.fillBackground(utils.TerminalUI.getActiveBgColor());
-        utils.TerminalUI.at(2, 1);
-
         switch (choice) {
             case 1:
-                roomController.showStudentRoomDetails(username);
+                new StudentRoomDashboard(
+                        new StudentRoomDashboardController(new RoomService())
+                ).show(username);
                 break;
 
             case 2:
@@ -64,7 +59,6 @@ public class StudentDashboardController {
                 storeLedgerView.show(username);
                 break;
             case 5:
-                // Call the Lost & Found board, passing 'false' to restrict "Add Found Item"
                 new LostFoundView().showMainBoard(username, false);
                 break;
             case 6:

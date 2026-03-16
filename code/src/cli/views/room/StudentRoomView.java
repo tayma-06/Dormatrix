@@ -17,12 +17,16 @@ public class StudentRoomView {
 
     public int show(String roomNumber, Room room) {
         try {
-            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+            fillBackground(TerminalUI.getActiveBgColor());
             System.out.print(HIDE_CUR);
 
-            String subtitle = roomNumber.equals("UNASSIGNED") || roomNumber.equals("N/A")
-                    ? "No room is currently assigned"
-                    : "Your current dorm room overview";
+            boolean noRoom = roomNumber == null
+                    || roomNumber.equals("UNASSIGNED")
+                    || roomNumber.equals("N/A");
+
+            String subtitle = noRoom
+                    ? "No room is currently assigned to your profile"
+                    : "Review your room details and choose a room-service action";
 
             String[] extra = buildRoomSummary(roomNumber, room);
 
@@ -44,11 +48,16 @@ public class StudentRoomView {
     }
 
     private String[] buildRoomSummary(String roomNumber, Room room) {
-        if (roomNumber.equals("UNASSIGNED") || roomNumber.equals("N/A")) {
+        boolean noRoom = roomNumber == null
+                || roomNumber.equals("UNASSIGNED")
+                || roomNumber.equals("N/A");
+
+        if (noRoom) {
             return new String[]{
                     "Room Number : (not assigned)",
                     "Status      : " + ConsoleColors.Accent.WARNING + "PENDING ASSIGNMENT" + RESET,
-                    "Room Change : " + ConsoleColors.Accent.MUTED + "Unavailable until a room is assigned" + RESET,
+                    "Room Change : Unavailable until a room is assigned",
+                    "Complaints  : Available after room allocation",
                     "Next Step   : Contact the Hall Office for room allocation."
             };
         }
@@ -62,15 +71,42 @@ public class StudentRoomView {
             };
         }
 
-        String statusColor = room.isAvailable()
-                ? ConsoleColors.Accent.SUCCESS
-                : ConsoleColors.Accent.ERROR;
+        int capacity = Math.max(1, room.getCapacity());
+        int occupancy = Math.max(0, room.getCurrentOccupancy());
+        int freeSeats = Math.max(0, capacity - occupancy);
+        double ratio = occupancy / (double) capacity;
+
+        String statusColor;
+        String statusText;
+        if (ratio >= 1.0) {
+            statusColor = ConsoleColors.Accent.ERROR;
+            statusText = "FULL";
+        } else if (ratio >= 0.75) {
+            statusColor = ConsoleColors.Accent.WARNING;
+            statusText = "NEAR CAPACITY";
+        } else {
+            statusColor = ConsoleColors.Accent.SUCCESS;
+            statusText = "AVAILABLE";
+        }
+
+        String comfort;
+        if (occupancy == 0) {
+            comfort = "Very quiet room";
+        } else if (ratio >= 1.0) {
+            comfort = "No free space remaining";
+        } else if (ratio >= 0.75) {
+            comfort = "Crowded right now";
+        } else {
+            comfort = "Still has breathing room";
+        }
 
         return new String[]{
                 "Room Number : " + roomNumber,
-                "Occupancy   : " + room.getCurrentOccupancy() + "/" + room.getCapacity(),
-                "Status      : " + statusColor + (room.isAvailable() ? "AVAILABLE" : "FULL") + RESET,
-                "Space Meter : " + buildOccupancyBar(room.getCurrentOccupancy(), room.getCapacity(), 18),
+                "Occupancy   : " + occupancy + "/" + capacity,
+                "Free Seats  : " + freeSeats,
+                "Status      : " + statusColor + statusText + RESET,
+                "Space Meter : " + buildOccupancyBar(occupancy, capacity, 18),
+                "Room Feel   : " + comfort,
                 "Room Change : Submit an application if you want to move rooms.",
                 "Note        : Complaints and room-change requests are available below."
         };

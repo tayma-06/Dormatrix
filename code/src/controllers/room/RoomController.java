@@ -47,34 +47,9 @@ public class RoomController {
     }
 
     public void showStudentRoomDetails(String studentIdentifier) {
-        this.rooms = loadRooms();
-
-        String roomNumber = getStudentRoomNumber(studentIdentifier);
-
-        Room roomDetails = null;
-        if (!roomNumber.equals("UNASSIGNED") && !roomNumber.equals("N/A")) {
-            roomDetails = getRoomWithRealOccupancy(roomNumber);
-        }
-
-        boolean stayInMenu = true;
-        while (stayInMenu) {
-            ConsoleUtil.clearScreen();
-            int choice = studentRoomView.show(roomNumber, roomDetails);
-
-            if (choice == 1) {
-                if (roomNumber.equals("UNASSIGNED") || roomNumber.equals("N/A")) {
-                    TerminalUI.tError("You do not have a room assigned yet.");
-                    ConsoleUtil.pause();
-                } else {
-                    new StudentRoomDashboard(
-                            new StudentRoomDashboardController(new RoomService())
-                    ).showComplaints(roomNumber);
-                }
-            } else {
-                ConsoleUtil.clearScreen();
-                stayInMenu = false;
-            }
-        }
+        new StudentRoomDashboard(
+                new StudentRoomDashboardController(new RoomService())
+        ).show(studentIdentifier);
     }
 
     public boolean addRoom(String roomId, int capacity) {
