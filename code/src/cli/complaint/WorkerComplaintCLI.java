@@ -1,133 +1,193 @@
-
 package cli.complaint;
 
-import cli.Input;
-import cli.forms.complaint.ComplaintForm;
 import cli.views.complaint.ComplaintView;
-
-import libraries.collections.MyOptional;
 import libraries.collections.MyArrayList;
-
+import libraries.collections.MyOptional;
 import models.complaints.Complaint;
-
 import models.enums.ComplaintStatus;
 import repo.file.FileComplaintRepository;
-import utils.ConsoleUtil;
+import utils.*;
+import utils.TerminalUI.MenuItem;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+
+import static utils.TerminalUI.*;
+import static utils.TerminalUIExtras.*;
 
 public class WorkerComplaintCLI {
 
     private static final String WORKER_FILE = "data/users/maintenance_workers.txt";
 
     private final ComplaintView view = new ComplaintView();
-    private final ComplaintForm form = new ComplaintForm(Input.SC);
     private final FileComplaintRepository repo = new FileComplaintRepository();
+
+    private static final MenuItem[] MENU = {
+            new MenuItem(1, "View Assigned Tasks"),
+            new MenuItem(2, "Update Progress"),
+            new MenuItem(0, "Back"),
+    };
 
     public void start(String workerIdentifier) {
         while (true) {
-            ConsoleUtil.clearScreen();
+            try {
+                String wid = resolveWorkerId(workerIdentifier);
+                if (wid == null) {
+                    tError("Could not identify worker.");
+                    tPause();
+                    return;
+                }
 
-            String wid = resolveWorkerId(workerIdentifier);
-            if (wid == null) {
-                view.error("Could not identify worker (name/id mismatch).");
-                ConsoleUtil.pause();
-                continue;
-            }
-//            if (list == null || list.size() == 0) {
-//                System.out.println("\n(No complaints found)\n");
-//                return;
-//            }
-            MyArrayList<Complaint> list = repo.findUnresolvedByAssignedWorker(wid);
-            view.workerList(list);
-            if (list == null || list.size() == 0) {
-                ConsoleUtil.pause();
-
-                return;
-            }
-
-            view.workerMenu();
-            int ch = form.readInt();
-            if (ch == 0) {
+                // ── Draw menu first ───────────────────────────────────
                 ConsoleUtil.clearScreen();
-                return;
-            }
+                BackgroundFiller.applyMaintenanceTheme();
+                TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
 
+                drawDashboard(
+                        "TASK OPTIONS", "Select an action below",
+                        MENU,
+                        TerminalUI.getActiveTextColor(),
+                        TerminalUI.getActiveBoxColor(),
+                        null, 3
+                );
 
-            if (ch == 1) {
-                String cid = form.readNonEmpty("Complaint ID: ");
-                MyOptional<Complaint> cOpt = repo.findById(cid);
-                if (cOpt.isEmpty()) {
-                    view.error("Invalid complaint ID.");
-                    ConsoleUtil.pause();
-                    continue;
+                int ch = readChoiceArrow();
+                if (ch == 0) return;
+
+                // ── Clear before sub-screen ───────────────────────────
+                ConsoleUtil.clearScreen();
+                BackgroundFiller.applyMaintenanceTheme();
+                TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                TerminalUI.at(2, 1);
+
+                if (ch == 1) {
+                    // ── View assigned tasks only ──────────────────────────
+                    MyArrayList<Complaint> list = repo.findUnresolvedByAssignedWorker(wid);
+
+                    ConsoleUtil.clearScreen();
+                    BackgroundFiller.applyMaintenanceTheme();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+
+                    if (list == null || list.size() == 0) {
+                        tBoxTop();
+                        tBoxTitle("ASSIGNED TASKS");
+                        tBoxSep();
+                        tBoxLine("No unresolved tasks assigned to you.");
+                        tBoxBottom();
+                    } else {
+                        view.workerList(list);
+                    }
+                    tPause();
+
+                } else if (ch == 2) {
+                    // ── Update progress ───────────────────────────────────
+                    MyArrayList<Complaint> list = repo.findUnresolvedByAssignedWorker(wid);
+
+                    if (list == null || list.size() == 0) {
+                        tBoxTop();
+                        tBoxLine("No unresolved tasks to update.");
+                        tBoxBottom();
+                        tPause();
+                        continue;
+                    }
+
+                    String[] taskLabels = new String[list.size()];
+                    for (int i = 0; i < list.size(); i++) {
+                        Complaint c = list.get(i);
+                        taskLabels[i] = String.format("%-5s%-10s | %-15s | Room %s",
+                                "[" + (i + 1) + "]",
+                                c.getComplaintId(),
+                                c.getCategory().name(),
+                                c.getStudentRoomNo());
+                    }
+
+                    int idx;
+                    try { idx = tArrowSelect("SELECT COMPLAINT TO UPDATE", taskLabels); }
+                    catch (InterruptedException e) { continue; }
+                    if (idx < 0) continue;
+
+                    Complaint selected = list.get(idx);
+
+                    if (selected.getStatus().equals(ComplaintStatus.RESOLVED)) {
+                        tError("Cannot update a RESOLVED complaint.");
+                        tPause();
+                        continue;
+                    }
+
+                    ConsoleUtil.clearScreen();
+                    BackgroundFiller.applyMaintenanceTheme();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+
+                    tBoxTop();
+                    tBoxTitle("UPDATE PROGRESS");
+                    tBoxSep();
+                    tBoxLine("Complaint : " + selected.getComplaintId());
+                    tBoxLine("Category  : " + selected.getCategory().name());
+                    tBoxLine("Room      : " + selected.getStudentRoomNo());
+                    tBoxSep();
+                    tBoxLine("  [ESC] Cancel and go back", ConsoleColors.fgRGB(160, 150, 60));
+                    tBoxSep();
+                    tCustomInputRow("Progress Note : ");
+                    String note = readLineOrEsc();
+                    if (note == null) continue;
+
+                    if (note.isEmpty()) {
+                        tError("Note cannot be empty.");
+                        tPause();
+                        continue;
+                    }
+
+                    update(wid, selected.getComplaintId(), note);
+                    tPause();
                 }
-                Complaint c = cOpt.get();
-                if (c.getStatus().equals(ComplaintStatus.RESOLVED)) {
-                    view.error("You can not write update on a RESOLVED complaint.");
-                    ConsoleUtil.pause();
-                    continue;
-                }
 
-                String note = form.readLine("Progress note: ");
-                update(wid, cid, note);
-                ConsoleUtil.pause();
-                //            } else if (ch == 3){
-//                String cid = form.readNonEmpty("Complaint ID: ");
-//                String note = form.readLine("Completion note: ");
-//                update(wid, cid, note, true);
-            } else {
-                view.error("Invalid choice.");
-                ConsoleUtil.pause();
+            } catch (Exception e) {
+                TerminalUI.cleanup();
+                System.err.println("[WorkerComplaintCLI] " + e.getMessage());
             }
         }
     }
 
     private void update(String workerId, String complaintId, String note) {
         MyOptional<Complaint> cOpt = repo.findById(complaintId);
-//        if (cOpt.isEmpty()) { view.error("Invalid complaint ID."); return; }
+        if (cOpt.isEmpty()) { tError("Invalid complaint ID."); return; }
 
         Complaint c = cOpt.get();
 
-        if (c.getAssignedWorkerId() == null || !c.getAssignedWorkerId().trim().equals(workerId.trim())) {
-            view.error("You are not assigned to this complaint.");
+        if (c.getAssignedWorkerId() == null ||
+                !c.getAssignedWorkerId().trim().equals(workerId.trim())) {
+            tError("You are not assigned to this complaint.");
             return;
         }
 
-        c.setStatus(models.enums.ComplaintStatus.IN_PROGRESS);
-        c.appendTagNote(("WORKER_PROGRESS:") + (note == null ? "" : note));
+        c.setStatus(ComplaintStatus.IN_PROGRESS);
+        c.appendTagNote("WORKER_PROGRESS:" + (note == null ? "" : note));
         boolean ok = repo.update(c);
-        if (ok) {
-            new repo.file.FileWorkerVisitRepository().markDone(complaintId);
-        }
-        view.msg(ok ? "Updated successfully." : "Failed to update file.");
+        if (ok) new repo.file.FileWorkerVisitRepository().markDone(complaintId);
+
+        if (ok) { tBoxTop(); tBoxLine("Updated successfully."); tBoxBottom(); }
+        else tError("Failed to update.");
     }
 
-    // -------------------- Helper: NAME/ID -> Worker ID --------------------
+    private int getCursorRow() {
+        // Estimate based on task list size — tBoxTop/Sep/Bottom take rows
+        return 25;
+    }
+
     private String resolveWorkerId(String target) {
         try (BufferedReader br = new BufferedReader(new FileReader(WORKER_FILE))) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split("\\|", -1);
-                if (parts.length < 2) {
-                    continue;
-                }
-
-                String id = parts[0].trim().replace("\uFEFF", "");
+                if (parts.length < 2) continue;
+                String id   = parts[0].trim().replace("\uFEFF", "");
                 String name = parts[1].trim();
-
-                boolean matchesId = id.equals(target.trim());
-                boolean matchesName = name.equalsIgnoreCase(target.trim());
-
-                if (matchesId || matchesName) {
-                    return id;
-                }
+                if (id.equals(target.trim()) || name.equalsIgnoreCase(target.trim())) return id;
             }
-        } catch (IOException e) {
-            return null;
-        }
+        } catch (IOException e) { return null; }
         return null;
     }
 }

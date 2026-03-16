@@ -39,6 +39,16 @@ public class StudentDashboardController {
     }
 
     public void handleInput(int choice, String username) {
+        utils.ConsoleUtil.clearScreen();
+        utils.BackgroundFiller.applyStudentTheme();
+        utils.TerminalUI.setActiveTheme(
+                utils.ConsoleColors.fgRGB(60, 140, 255),
+                utils.ConsoleColors.ThemeText.STUDENT_TEXT,
+                utils.ConsoleColors.bgRGB(0, 6, 45)
+        );
+        utils.TerminalUI.fillBackground(utils.TerminalUI.getActiveBgColor());
+        utils.TerminalUI.at(2, 1);
+
         switch (choice) {
             case 1:
                 roomController.showStudentRoomDetails(username);
