@@ -387,6 +387,7 @@ The `TimeManager` class supports three modes:
 # 1. Clone the repository
 git clone https://github.com/tayma-06/Dormatrix.git
 cd Dormatrix
+cd code
 
 # 2. First-time build and run
 setup.bat
