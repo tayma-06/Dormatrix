@@ -21,8 +21,6 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 [![Terminal](https://img.shields.io/badge/Terminal-WezTerm-4B9CD3?style=flat-square)](https://wezfurlong.org/wezterm/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
-[![Theme](https://img.shields.io/badge/Theme-Hot%20Pink-FF69B4?style=flat-square)](#)
-[![Accent](https://img.shields.io/badge/Accent-Magenta-C71585?style=flat-square)](#)
 [![Status](https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square)](#)
 
 <br><br>
@@ -72,9 +70,9 @@
 
 ### Dormitory management with a visual terminal identity
 
-**Dormatrix** is a fully-featured dormitory management system with a beautifully styled ANSI CLI. It unifies all dormitory operations — room management, cafeteria services, complaint handling, facility booking, store inventory, lost & found, routines, announcements, and emergency contacts — under a single role-aware platform.
+**Dormatrix** is a fully-featured dormitory management system. It unifies all kinds of dormitory operations such as- room management, cafeteria services, complaint handling, facility booking, store inventory, lost & found, routines, announcements, and emergency contacts - under a single robe based platform.
 
-Each of the **7 user roles** gets its own **color-themed dashboard**, designed to surface exactly the tools that role needs. The system is built on a clean **MVC + Repository** architecture with file-based persistence — no database setup required.
+Each of the **7 user roles** gets its own **color-themed dashboard**, designed to surface exactly the tools that role needs. The system is built on a clean **MVC + Repository** architecture with file-based persistence with no database setup required.
 
 <br>
 
