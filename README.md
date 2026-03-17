@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="assets/banner.png" alt="Dormatrix Banner" width="100%" />
-
 <br>
 
 <pre>
@@ -123,8 +121,6 @@ The name is a blend of **Dormitory** and **Matrix**, reflecting a structured, in
    ▀▀▀▀▀▀▀▀█████████████████████████████████████████▀▀▀▀▀▀▀▀▀▀   
    ███████████████████████████████████████████████████████████   
 </pre>
-
-<sub>Magenta-themed dorm visual identity</sub>
 
 </td>
 </tr>
