@@ -151,7 +151,7 @@ This section walks through the application exactly as a user experiences it — 
 
 ### Step 1 — Launch & Role Selection
 
-![Role Selection](assets/role-selection.png)
+![Role Selection](assets/role-selection.jpeg)
 
 When Dormatrix starts, the screen is filled with the **DORMATRIX** splash header in a purple-to-cyan gradient rendered with ANSI true-color escape codes, underneath which reads *IUT Female Dormitory · Islamic University of Technology*.
 
@@ -172,7 +172,7 @@ Below the header is the **role selection menu** — the entry point for every se
 
 ### Step 2 — Login
 
-![Login Screen](assets/login.png)
+![Login Screen](assets/login.jpeg)
 
 After selecting a role, the screen transitions to the **Login Credentials** panel with two fields:
 
@@ -187,7 +187,7 @@ Credentials are validated against the stored records for the selected role. Inco
 
 ### Step 3 — Student Dashboard
 
-![Student Dashboard](assets/student-dashboard.png)
+![Student Dashboard](assets/student-dashboard.jpeg)
 
 The **Student Dashboard** is themed in deep **navy blue**. The welcome banner shows the logged-in student's name (e.g. *Welcome, Khadiza Sultana*). Students have access to **11 features** covering every aspect of dormitory life:
 
