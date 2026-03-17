@@ -1,20 +1,66 @@
 <div align="center">
 
-![Dormatrix Banner](assets/banner.png)
+<img src="assets/banner.png" alt="Dormatrix Banner" width="100%" />
+
+<br>
+
+<pre>
+██████╗▒▒██████╗▒██████╗▒███╗▒▒▒███╗▒█████╗▒████████╗██████╗▒██╗██╗▒▒██╗
+██╔══██╗██╔═══██╗██╔══██╗████╗▒████║██╔══██╗╚══██╔══╝██╔══██╗██║╚██╗██╔╝
+██║▒▒██║██║▒▒▒██║██████╔╝██╔████╔██║███████║▒▒▒██║▒▒▒██████╔╝██║▒╚███╔╝▒
+██║▒▒██║██║▒▒▒██║██╔══██╗██║╚██╔╝██║██╔══██║▒▒▒██║▒▒▒██╔══██╗██║▒██╔██╗▒
+██████╔╝╚██████╔╝██║▒▒██║██║▒╚═╝▒██║██║▒▒██║▒▒▒██║▒▒▒██║▒▒██║██║██╔╝▒██╗
+╚═════╝▒▒╚═════╝▒╚═╝▒▒╚═╝╚═╝▒▒▒▒▒╚═╝╚═╝▒▒╚═╝▒▒▒╚═╝▒▒▒╚═╝▒▒╚═╝╚═╝╚═╝▒▒╚═╝
+</pre>
 
 # DORMATRIX
 
-**IUT Female Dormitory · Islamic University of Technology**
+<b>IUT Female Dormitory · Islamic University of Technology</b>
+
+<br>
 
 [![Java](https://img.shields.io/badge/Java-JDK%2017+-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 [![Terminal](https://img.shields.io/badge/Terminal-WezTerm-4B9CD3?style=flat-square)](https://wezfurlong.org/wezterm/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
+[![Theme](https://img.shields.io/badge/Theme-Hot%20Pink-FF69B4?style=flat-square)](#)
+[![Accent](https://img.shields.io/badge/Accent-Magenta-C71585?style=flat-square)](#)
 [![Status](https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square)](#)
 
-A feature-rich, terminal-based dormitory management system with vivid ANSI true-color UI — built for students, staff, and administrators of the IUT Female Dormitory.
+<br><br>
 
-[📋 Overview](#-overview) · [🎬 Walkthrough](#-walkthrough) · [🎭 Roles](#-user-roles) · [✨ Features](#-features) · [⚙️ Installation](#️-installation) · [🏗️ Architecture](#️-architecture) · [💾 Data Storage](#-data-storage) · [🤝 Contributing](#-contributing)
+<i>A feature-rich, terminal-based dormitory management system with vivid ANSI true-color UI — built for students, staff, and administrators of the IUT Female Dormitory.</i>
+
+<br><br>
+
+<a href="#-overview">📋 Overview</a> ·
+<a href="#-demo">🎥 Demo</a> ·
+<a href="#-walkthrough">🎬 Walkthrough</a> ·
+<a href="#-user-roles">🎭 Roles</a> ·
+<a href="#-features">✨ Features</a> ·
+<a href="#️-installation">⚙️ Installation</a> ·
+<a href="#️-architecture">🏗️ Architecture</a> ·
+<a href="#-data-storage">💾 Data Storage</a> ·
+<a href="#-contributing">🤝 Contributing</a>
+
+</div>
+
+---
+
+<div align="center">
+
+<table>
+<tr>
+<td align="center"><b>Role-Aware Dashboards</b></td>
+<td align="center"><b>ANSI True-Color UI</b></td>
+<td align="center"><b>MVC + Repository</b></td>
+</tr>
+<tr>
+<td align="center">7 unique user experiences</td>
+<td align="center">Rich terminal visuals and themes</td>
+<td align="center">Clean, maintainable project structure</td>
+</tr>
+</table>
 
 </div>
 
@@ -22,11 +68,84 @@ A feature-rich, terminal-based dormitory management system with vivid ANSI true-
 
 ## 📋 Overview
 
-**Dormatrix** is a fully-featured dormitory management system with a beautifully styled ANSI CLI. It unifies all dormitory operations — room management, cafeteria services, complaint handling, facility booking, store inventory, and more — under a single role-aware platform.
+<table>
+<tr>
+<td width="64%" valign="top">
 
-Each of the 7 user roles gets its own **color-themed dashboard**, designed to surface exactly the tools that role needs. The system is built on a clean **MVC + Repository** architecture with file-based persistence — no database setup required.
+### Dormitory management with a visual terminal identity
 
-> 💡 The name is a blend of *Dormitory* + *Matrix*, reflecting a structured, interconnected system for dorm life. On first login, each role triggers a **matrix rain animation** before the dashboard appears.
+**Dormatrix** is a fully-featured dormitory management system with a beautifully styled ANSI CLI. It unifies all dormitory operations — room management, cafeteria services, complaint handling, facility booking, store inventory, lost & found, routines, announcements, and emergency contacts — under a single role-aware platform.
+
+Each of the **7 user roles** gets its own **color-themed dashboard**, designed to surface exactly the tools that role needs. The system is built on a clean **MVC + Repository** architecture with file-based persistence — no database setup required.
+
+<br>
+
+[![Dorm Life](https://img.shields.io/badge/Dorm%20Life-Integrated-FF69B4?style=flat-square)](#)
+[![Architecture](https://img.shields.io/badge/MVC%20%2B%20Repository-Clean-C71585?style=flat-square)](#)
+[![Persistence](https://img.shields.io/badge/Persistence-Flat%20File-DB7093?style=flat-square)](#)
+
+### Highlights
+
+- **Role-specific dashboards** with distinct visual themes
+- **Custom-built data structures** instead of `java.util`
+- **Time-aware food and booking workflows**
+- **Policy-driven complaint escalation and worker routing**
+- **Structured flat-file persistence**
+- **Presentation-friendly CLI experience**
+
+The name is a blend of **Dormitory** and **Matrix**, reflecting a structured, interconnected system for dorm life. On first login, each role triggers a **matrix rain animation** before the dashboard appears, giving the application a memorable visual signature.
+
+</td>
+<td width="36%" valign="top" align="center">
+
+<pre>
+        *       *            *      *                  *         
+  *   *          ▒▒▒▒▒    *                 ██████               
+             ▒▒▒▒▒▒▒▒▒▒▒         *        ██████████             
+     *       ▒▒▒▒▒▒▒▒▒▒▒▒▒                ████  ████      *      
+             ▒▒▒▒▒▒▒▒▒▒▒▒▒   *            ████    ██             
+         *                          *     ████  ████  *      *   
+  *                           ▒▒▒▒    *   ██████████     *       
+            *      *        ▒▒▒▒▒▒▒▒        ██████               
+   *     *       *    *     ▒▒▒▒▒▒▒▒     *        *        *     
+           ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄             
+      *    █████████████████████████████████████████     *       
+           █████████████████████████████████████████             
+           █████████████████████████████████████████             
+           ████▒▒▄▄▄▒▒██████▒▒▄▄▄▒▒██████▒▒▒▒▒▒▒████             
+           ████▒█████▒██████▒████▒▒██████▒▒▓▓▓▒▒████             
+           ████▒█▒█▒█▒██████▒▒▒█▒▒▒██████▒▓▓▓▓▓▒████             
+           ████▒█▒▒▒█▒██████▒▒▀▀▀▒▒██████▒▒▓▓▓▒▒████             
+           █████████████████████████████████████████             
+           ████▒▒▒▒▒▒▒██████▒▒▀▀▀▒▒██████▒▒▒▒▒▒▒████             
+           ████▒▒▓▓▒▒▒██████▒▒▒█▒▒▒██████▒▒▒▓▓▒▒████             
+           ████▒▒▒▒▒▒▒██████▒▒▄▄▄▒▒██████▒▒▒▒▒▒▒████             
+   ▀▀▀▀▀▀▀▀█████████████████████████████████████████▀▀▀▀▀▀▀▀▀▀   
+   ███████████████████████████████████████████████████████████   
+</pre>
+
+<sub>Magenta-themed dorm visual identity</sub>
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🎥 Demo
+
+<div align="center">
+
+<a href="#">
+  <img src="assets/video-demo-cover.png" alt="Dormatrix Video Demonstration" width="85%" />
+</a>
+
+<br><br>
+
+<b>Video Demonstration</b><br>
+A guided walkthrough of Dormatrix — from role selection and login to dashboard navigation and key workflows.
+
+</div>
 
 ---
 
@@ -108,7 +227,7 @@ Report a lost item with description, category, and last known location — or br
 #### `[6]` Complaint Menu
 Submit a new complaint under one of four categories: **Electricity, Plumbing, Internet, or Cleaning**. The **ComplaintPolicy engine** automatically evaluates the description for emergency keywords (fire, smoke, flood, burst pipe, electric shock, etc.) and assigns an appropriate priority level. Complaints flow through a four-stage lifecycle:
 
-```
+```text
 SUBMITTED → ASSIGNED → IN_PROGRESS → RESOLVED
 ```
 
@@ -275,7 +394,7 @@ Update personal details or change the login password.
 
 ## 🎭 User Roles
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │           WELCOME TO IUT FEMALE DORMITORY                │
 │               Select your role to continue               │
@@ -335,7 +454,7 @@ A point of pride in this project — **no `java.util` data structures** were use
 
 The `ComplaintPolicy` class evaluates every complaint description against a list of emergency keywords before assigning priority:
 
-```
+```text
 Fire · Smoke · Burning · Sparks · Electric Shock
 Flood · Burst Pipe · Overflow · Danger · Panic
 ```
@@ -344,7 +463,7 @@ If any keyword matches, the complaint is automatically elevated to `EMERGENCY` p
 
 Worker field routing is automatic:
 
-```
+```text
 ELECTRICITY  →  ELECTRICIAN
 PLUMBING     →  PLUMBER
 INTERNET     →  INTERNET_TECH
@@ -387,6 +506,7 @@ The `TimeManager` class supports three modes:
 # 1. Clone the repository
 git clone https://github.com/tayma-06/Dormatrix.git
 cd Dormatrix
+cd code
 
 # 2. First-time build and run
 setup.bat
@@ -397,7 +517,7 @@ run.bat
 
 ### Default Admin Credentials
 
-```
+```text
 User ID  :  admin
 Password :  admin123
 ```
@@ -408,87 +528,100 @@ Password :  admin123
 
 ## 📁 Project Structure
 
-```
-dormatrix/
+<details>
+<summary><b>View full project structure</b></summary>
+
+<br>
+
+```text
+Dormatrix/code/
 ├── src/
-│   ├── Dormatrix.java                  Entry point — initializes TimeManager, launches MainDashboard
-│   ├── cli/                            View layer (all CLI screens)
-│   │   ├── announcement/               Announcement board screens
-│   │   ├── complaint/                  Complaint screens per role
-│   │   ├── contacts/                   Emergency contacts screens
-│   │   ├── dashboard/                  Role-specific dashboard menus
-│   │   │   ├── food/                   Cafeteria service screens
-│   │   │   └── room/                   Room management screens
-│   │   ├── forms/                      Data entry forms (accounts, complaints, food)
-│   │   ├── profile/                    Edit profile screen
-│   │   ├── routine/                    Routine screens
-│   │   ├── schedule/                   Worker schedule screens
-│   │   └── views/                      Read-only display screens (store, food, room, etc.)
-│   ├── controllers/                    Business logic (MVC controllers)
-│   │   ├── account/                    CRUD for user accounts
+│   ├── Dormatrix.java
+│   ├── cli/
 │   │   ├── announcement/
-│   │   ├── authentication/             AuthController, AccountManager, ConfigLoader
-│   │   ├── balance/                    Balance and dues logic
-│   │   ├── complaint/                  Per-role complaint handling
-│   │   ├── contacts/                   Emergency contact management
-│   │   ├── dashboard/                  One controller per dashboard role
-│   │   ├── facilities/                 Laundry, StudyRoom, Fridge controllers
-│   │   ├── food/                       Cafeteria, menu, token controllers
-│   │   ├── miscellaneous/              Lost & Found
-│   │   ├── profile/                    Profile update logic
-│   │   ├── room/                       Room allocation, room change logic
-│   │   ├── routine/                    Routine management
-│   │   ├── schedule/                   Worker visit scheduling
-│   │   └── store/                      Inventory, purchase, sales, dues
-│   ├── exceptions/                     Custom exception classes
-│   │   ├── account/                    InvalidEmail/Phone/Dept/Password, UserAlreadyExists
-│   │   ├── config/                     ConfigurationLoadException
-│   │   ├── food/                       InvalidTokenException
-│   │   ├── InsufficientInventoryException
-│   │   ├── InvalidChoiceException
-│   │   └── SlotUnavailableException
-│   ├── libraries/                      Custom data structures and utilities
-│   │   ├── collections/                MyArrayList, MyString, MyOptional
-│   │   ├── file/                       FilePaths, TextFile
-│   │   ├── hashing/                    HashFunction (DJB2 + XOR)
-│   │   ├── logs/                       Logger
-│   │   └── slots/                      SlotAllocator, FirstFitAllocator
-│   ├── models/                         Domain entities
-│   │   ├── announcements/              Announcement
-│   │   ├── complaints/                 Complaint, ComplaintPolicy, ComplaintIdGenerator
-│   │   ├── contacts/                   EmergencyContactEntry
-│   │   ├── enums/                      ComplaintCategory, ComplaintStatus, PriorityLevel,
-│   │   │                               RoomChangeApplicationStatus, WorkerField
-│   │   ├── facilities/                 LaundrySlot, StudyRoomSeat, FridgeSlot
-│   │   ├── food/                       DailyMenu, MealToken, MealType, TokenStatus
-│   │   ├── miscellaneous/              LostItem, FoundItem
-│   │   ├── room/                       Room, RoomChangeApplication
-│   │   ├── routine/                    RoutineEntry, StudentRoutineEntry
-│   │   ├── schedule/                   WorkerVisitEntry
-│   │   ├── store/                      Item, CartItem, ShoppingCart, DueRecord,
-│   │   │                               SaleRecord, StudentBalance
-│   │   └── users/                      User (abstract), Student, HallAttendant,
-│   │                                   MaintenanceWorker, StoreInCharge, HallOfficer,
-│   │                                   CafeteriaManager, SystemAdmin, StudentPublicInfo
-│   ├── module/complaint/               ComplaintModule, ComplaintService
-│   ├── repo/                           Repository interfaces
-│   │   └── file/                       File-based implementations
-│   ├── tests/                          TerminalUITest, UnitTests
-│   ├── themes.json                     Theme color definitions
-│   └── utils/                          Terminal helpers
-│       ├── BackgroundFiller.java       8 role-specific color themes
-│       ├── CafeteriaAsciiUI.java       Animated meal slot progress bar
-│       ├── ConsoleColors.java          ANSI color constants
-│       ├── ConsoleUtil.java            Screen clearing, pause
-│       ├── FastInput.java              Fast terminal input reading
-│       ├── FeaturePaths.java           Data file path constants
-│       ├── InputHelper.java            Input validation helpers
-│       ├── RoleMapper.java             Role string normalization
-│       ├── TerminalUI.java             Core UI drawing (boxes, dashboards, menus)
-│       ├── TerminalUIExtras.java       Matrix rain animation, extras
-│       └── TimeManager.java           Real/demo/Ramadan mode time management
-├── data/                               Persistent flat-file data storage
-│   ├── users/                          One .txt file per role
+│   │   ├── complaint/
+│   │   ├── contacts/
+│   │   ├── dashboard/
+│   │   │   ├── food/
+│   │   │   └── room/
+│   │   ├── forms/
+│   │   ├── profile/
+│   │   ├── routine/
+│   │   ├── schedule/
+│   │   └── views/
+│   ├── controllers/
+│   │   ├── account/
+│   │   ├── announcement/
+│   │   ├── authentication/
+│   │   ├── balance/
+│   │   ├── complaint/
+│   │   ├── contacts/
+│   │   ├── dashboard/
+│   │   ├── facilities/
+│   │   ├── food/
+│   │   ├── miscellaneous/
+│   │   ├── profile/
+│   │   ├── room/
+│   │   ├── routine/
+│   │   ├── schedule/
+│   │   └── store/
+│   ├── exceptions/
+│   │   ├── account/
+│   │   ├── config/
+│   │   ├── food/
+│   │   ├── InsufficientInventoryException.java
+│   │   ├── InvalidChoiceException.java
+│   │   └── SlotUnavailableException.java
+│   ├── libraries/
+│   │   ├── collections/
+│   │   │   ├── MyArrayList.java
+│   │   │   ├── MyOptional.java
+│   │   │   └── MyString.java
+│   │   ├── file/
+│   │   │   ├── FilePaths.java
+│   │   │   └── TextFile.java
+│   │   ├── hashing/
+│   │   │   └── HashFunction.java
+│   │   ├── logs/
+│   │   │   └── Logger.java
+│   │   └── slots/
+│   │       ├── FirstFitAllocator.java
+│   │       └── SlotAllocator.java
+│   ├── models/
+│   │   ├── announcements/
+│   │   ├── complaints/
+│   │   ├── contacts/
+│   │   ├── enums/
+│   │   ├── facilities/
+│   │   ├── food/
+│   │   ├── miscellaneous/
+│   │   ├── room/
+│   │   ├── routine/
+│   │   ├── schedule/
+│   │   ├── store/
+│   │   └── users/
+│   ├── module/
+│   │   └── complaint/
+│   ├── repo/
+│   │   └── file/
+│   ├── tests/
+│   │   ├── TerminalUITest.java
+│   │   └── UnitTests.java
+│   ├── themes.json
+│   └── utils/
+│       ├── BackgroundFiller.java
+│       ├── CafeteriaAsciiUI.java
+│       ├── ConsoleColors.java
+│       ├── ConsoleUtil.java
+│       ├── FastInput.java
+│       ├── FeaturePaths.java
+│       ├── InputHelper.java
+│       ├── RoleMapper.java
+│       ├── TerminalUI.java
+│       ├── TerminalUIExtras.java
+│       └── TimeManager.java
+├── data/
+│   ├── users/
 │   ├── complaints/
 │   ├── routines/
 │   ├── schedules/
@@ -496,20 +629,20 @@ dormatrix/
 │   ├── contacts/
 │   ├── facility/
 │   └── foods/
-├── config/                             System configuration (admin credentials)
-├── lib/                                External JAR dependencies (JLine)
-├── assets/                             Screenshots and media for README
-├── setup.bat                           Build + run (first time)
-└── run.bat                             Run only
+├── config/
+├── lib/
+├── assets/
+├── setup.bat
+└── run.bat
 ```
 
----
+</details>
 
 ## 🏗️ Architecture
 
 Dormatrix uses a clean **MVC + Repository** layered architecture:
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │                     CLI Layer (View)                     │
 │   Dashboards · Forms · Views · Complaint/Routine Screens │
@@ -626,6 +759,6 @@ Made with ❤️ at IUT · CSE Department
 
 ⭐ Star this repo if Dormatrix helped you!
 
-**[GitHub Repository](https://github.com/tayma-06/Dormatrix)**
+<b><a href="https://github.com/tayma-06/Dormatrix">GitHub Repository</a></b>
 
 </div>
