@@ -410,7 +410,7 @@ Password :  admin123
 ## 📁 Project Structure
 
 ```
-dormatrix/
+Dormatrix/code/
 ├── src/
 │   ├── Dormatrix.java                  Entry point — initializes TimeManager, launches MainDashboard
 │   ├── cli/                            View layer (all CLI screens)
