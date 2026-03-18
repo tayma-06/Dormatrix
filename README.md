@@ -22,6 +22,8 @@
 [![Terminal](https://img.shields.io/badge/Terminal-WezTerm-4B9CD3?style=flat-square)](https://wezfurlong.org/wezterm/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
 [![Status](https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square)](#)
+[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=flat-square)](#-contributing)
+[![JLine3](https://img.shields.io/badge/Dependency-JLine3-blueviolet?style=flat-square)](https://github.com/jline/jline3)
 
 <br><br>
 
@@ -70,9 +72,9 @@
 
 ### Dormitory management with a visual terminal identity
 
-**Dormatrix** is a fully-featured dormitory management system. It unifies all kinds of dormitory operations such as- room management, cafeteria services, complaint handling, facility booking, store inventory, lost & found, routines, announcements, and emergency contacts - under a single robe based platform.
+**Dormatrix** is a fully-featured dormitory management system. It unifies all dormitory operations — room management, cafeteria services, complaint handling, facility booking, store inventory, lost & found, routines, announcements, and emergency contacts — under a single role-based platform.
 
-Each of the **7 user roles** gets its own **color-themed dashboard**, designed to surface exactly the tools that role needs. The system is built on a clean **MVC + Repository** architecture with file-based persistence with no database setup required.
+Each of the **7 user roles** gets its own **color-themed dashboard**, designed to surface exactly the tools that role needs. The system is built on a clean **MVC + Repository** architecture with file-based persistence — no database setup required.
 
 <br>
 
@@ -82,7 +84,7 @@ Each of the **7 user roles** gets its own **color-themed dashboard**, designed t
 
 ### Highlights
 
-- **Role-specific dashboards** 
+- **Role-specific dashboards**
 - **Custom-built data structures**
 - **Time-aware food and booking workflows**
 - **Policy-driven complaint escalation and worker routing**
@@ -129,13 +131,13 @@ Each of the **7 user roles** gets its own **color-themed dashboard**, designed t
 <div align="center">
 
 <a href="#">
-  <img src="assets/video-demo-cover.png" alt="Dormatrix Video Demonstration" width="85%" />
+  <img src="assets/video-demo-cover.jpeg" alt="Dormatrix Video Demonstration" width="85%" />
 </a>
 
 <br><br>
 
 <b>Video Demonstration</b><br>
-A guided walkthrough of Dormatrix - from role selection and login to dashboard navigation and key workflows.
+A guided walkthrough of Dormatrix — from role selection and login to dashboard navigation and key workflows.
 
 </div>
 
@@ -143,15 +145,15 @@ A guided walkthrough of Dormatrix - from role selection and login to dashboard n
 
 ## 🎬 Walkthrough
 
-This section walks through the application exactly as a user experiences it — from launch to every role's dashboard.
+This section walks through the application as a user experiences it — from launch and login through every role's dashboard and its features.
 
 ---
 
-### Step 1 — Launch & Role Selection
+### Launch & Role Selection
 
 ![Role Selection](assets/role-selection.jpeg)
 
-When Dormatrix starts, the screen is filled with the **DORMATRIX** splash header rendered with ANSI true-color escape codes.
+When Dormatrix starts, the screen is filled with the **DORMATRIX** splash header rendered with ANSI true-color escape codes, followed by a matrix rain animation that plays on first entry.
 
 Below the header is the **role selection menu** — the entry point for every session. The currently highlighted option is shown, and navigation works both by typing a number and pressing Enter, as well as arrow keys.
 
@@ -168,38 +170,38 @@ Below the header is the **role selection menu** — the entry point for every se
 
 ---
 
-### Step 2 — Login
+### Login
 
 ![Login Screen](assets/login.jpeg)
 
 After selecting a role, the screen transitions to the **Login Credentials** panel with two fields:
 
-- **User ID** - your unique identifier registered in the system
-- **Password** - entered with masked input (each character echoed as `•`) using JLine, so nothing is visible on screen
+- **User ID** — your unique identifier registered in the system
+- **Password** — entered with masked input (each character echoed as `•`) using JLine, so nothing is visible on screen
 
 Credentials are validated against the stored records for the selected role. Incorrect input shows an error and re-prompts. Successful login loads the role-specific dashboard.
 
-> 🔐 Passwords are stored as hashes computed by a custom **DJB2 + XOR combined hash function** (`libraries/hashing/HashFunction.java`) - plain-text passwords are never written directly to the text files.
+> 🔐 Passwords are stored as hashes computed by a custom **DJB2 + XOR combined hash function** (`libraries/hashing/HashFunction.java`) — plain-text passwords are never written directly to the text files.
 
 ---
 
-### Step 3 — Student Dashboard
+### Student Dashboard
 
 ![Student Dashboard](assets/student-dashboard.jpeg)
 
-The **Student Dashboard** contains **11 features** covering every aspect of dormitory life:
+The **Student Dashboard** is themed in **navy blue** and contains **11 features** covering every aspect of dormitory life:
 
 #### `[1]` View Room Info
-Displays the student's current room assignment - room number and allocation status. New students are initially marked `UNASSIGNED` until the Hall Office allocates a room. And students can submit application for room change.
+Displays the student's current room assignment — room number and allocation status. New students are initially marked `UNASSIGNED` until the Hall Office allocates a room. Students can also submit an application for a room change.
 
 #### `[2]` Facility Booking
 Reserve three types of shared facilities:
-- **Laundry** - 6 machines displayed as a grid. Each student can hold only one booking at a time. After booking, a timer starts and the machine auto-releases when the wash cycle completes. Bookings persist across sessions via `data/facility/laundrySlots.txt`.
-- **Study Room** - seat-based booking for the communal study space for an amount of time. Students needs to verify and claim the seat within a time frame, otherwise it would be released.
-- **Fridge** - personal fridge slot allocation using a **First-Fit algorithm** (`libraries/slots/FirstFitAllocator.java`) to automatically assign the next available slot.
+- **Laundry** — 6 machines displayed as a grid. Each student can hold only one booking at a time. After booking, a timer starts and the machine auto-releases when the wash cycle completes. Bookings persist across sessions via `data/facility/laundrySlots.txt`.
+- **Study Room** — seat-based booking for the communal study space for a set amount of time. Students must verify and claim their seat within a time frame, otherwise it is released automatically.
+- **Fridge** — personal fridge slot allocation using a **First-Fit algorithm** (`libraries/slots/FirstFitAllocator.java`) to automatically assign the next available slot.
 
 #### `[3]` Meal Token Purchase
-Purchase meal tokens for the cafeteria. The system is time-aware and enforces purchase windows - you cannot buy a token for a meal after its service window has already closed. Tokens carry a status: `ACTIVE`, `USED`, or `EXPIRED`. The system automatically switches to **Ramadan mode** meal times when enabled by the Cafeteria Manager.
+Purchase meal tokens for the cafeteria. The system is time-aware and enforces purchase windows — you cannot buy a token for a meal after its service window has already closed. Tokens carry a status: `ACTIVE`, `USED`, or `EXPIRED`. The system automatically switches to **Ramadan mode** meal times when enabled by the Cafeteria Manager.
 
 | Mode | Meal | Window |
 |------|------|--------|
@@ -242,9 +244,9 @@ Update contact details (phone number) or change the login password. Password cha
 
 ---
 
-### Step 4 — Attendant Dashboard
+### Attendant Dashboard
 
-![Attendant Dashboard](assets/attendant-dashboard.png)
+![Attendant Dashboard](assets/attendant-dashboard.jpeg)
 
 The **Attendant Dashboard** is themed in deep **teal/green**. Attendants are the operational backbone of the dormitory and have 7 management options:
 
@@ -271,27 +273,9 @@ Update personal information or change the login password.
 
 ---
 
-### Step 5 — Store-in-Charge Dashboard
+### Maintenance Worker Dashboard
 
-![Store Dashboard](assets/store-dashboard.png)
-
-The **Store-in-Charge Dashboard** is themed in **warm brown / amber**. The store manager has 4 focused options:
-
-#### `[1]` Inventory Management
-View the full catalog of store items with current stock levels. Add new products, restock existing items, update prices, or flag items as out of stock. Items are stored with an `itemId`, `name`, `quantity`, and `price`.
-
-#### `[2]` Process Purchase
-Review and fulfill pending student purchase orders. Confirm orders, deduct quantities from inventory, and bill the student's store account. Orders can be rejected with a reason if stock is unavailable.
-
-#### `[3]` Sales Summary & Reports
-View aggregated store activity — daily and weekly totals, most purchased items, revenue summaries, and low-stock alerts for restocking decisions.
-
-#### `[4]` Edit Profile
-Update personal details or change the login password.
-
----
-
-### Step 6 — Maintenance Worker Dashboard
+![Maintenance Worker Dashboard](assets/maintenance-dashboard.jpeg)
 
 The **Maintenance Worker Dashboard** is themed in **steel blue/gray**, reflecting the technical nature of the role. Workers have 4 options:
 
@@ -313,7 +297,29 @@ Update personal details or change the login password.
 
 ---
 
-### Step 7 — Hall Office Dashboard
+### Store-in-Charge Dashboard
+
+![Store Dashboard](assets/store-dashboard.jpeg)
+
+The **Store-in-Charge Dashboard** is themed in **warm brown / amber**. The store manager has 4 focused options:
+
+#### `[1]` Inventory Management
+View the full catalog of store items with current stock levels. Add new products, restock existing items, update prices, or flag items as out of stock. Items are stored with an `itemId`, `name`, `quantity`, and `price`.
+
+#### `[2]` Process Purchase
+Review and fulfill pending student purchase orders. Confirm orders, deduct quantities from inventory, and bill the student's store account. Orders can be rejected with a reason if stock is unavailable.
+
+#### `[3]` Sales Summary & Reports
+View aggregated store activity — daily and weekly totals, most purchased items, revenue summaries, and low-stock alerts for restocking decisions.
+
+#### `[4]` Edit Profile
+Update personal details or change the login password.
+
+---
+
+### Hall Office Dashboard
+
+![Hall Office Dashboard](assets/hall-office-dashboard.jpeg)
 
 The **Hall Office Dashboard** is themed in **hot pink / magenta**. The Hall Officer oversees room management and overall dormitory administration:
 
@@ -337,7 +343,9 @@ Update personal details or change the login password.
 
 ---
 
-### Step 8 — Admin Dashboard
+### Admin Dashboard
+
+![Admin Dashboard](assets/admin-dashboard.jpeg)
 
 The **Admin Dashboard** is themed in **deep red**, signaling elevated access. The Admin has 5 options for full system control:
 
@@ -363,7 +371,9 @@ Update admin personal details or change the login password.
 
 ---
 
-### Step 9 — Cafeteria Manager Dashboard
+### Cafeteria Manager Dashboard
+
+![Cafeteria Manager Dashboard](assets/cafeteria-dashboard.jpeg)
 
 The **Cafeteria Manager Dashboard** is themed in **golden yellow** and includes a live, animated **meal slot progress bar** that updates in real time to show the current meal window and remaining time. A header line shows the current simulated date, time, active meal slot, and Ramadan mode status.
 
@@ -429,7 +439,7 @@ Update personal details or change the login password.
 
 ### Custom-Built Libraries
 
-A point of pride in this project — **no `java.util` data structures** were used. All collection and utility needs are served by custom-built libraries:
+Collection and utility needs are served by custom-built libraries:
 
 | Library | Class | What It Does |
 |---------|-------|--------------|
@@ -507,6 +517,8 @@ setup.bat
 run.bat
 ```
 
+> `setup.bat` compiles all source files and launches the application. `run.bat` skips compilation and launches the already-built output directly — use this for all subsequent sessions.
+
 ### Default Admin Credentials
 
 ```text
@@ -515,6 +527,18 @@ Password :  admin123
 ```
 
 > ⚠️ Change the admin password after first login in any real deployment. Credentials are loaded from `config/admin.config` and hashed on first write to disk.
+
+---
+
+### Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| Colors not rendering | Ensure WezTerm or Windows Terminal with VT processing is enabled |
+| `jline` not found on startup | Confirm `lib/jline3.jar` is present and re-run `setup.bat` |
+| `java: command not found` | Check that `JAVA_HOME` is set and JDK 17+ is on your PATH |
+| Blank or broken screen on launch | Terminal window too small — resize to at least 120×40 characters |
+| Meal slots not transitioning | Make sure Demo Mode is active (default); check `TimeManager` settings |
 
 ---
 
@@ -622,10 +646,10 @@ Dormatrix/code/
 │   ├── facility/
 │   └── foods/
 ├── config/
-├── lib/
+├── lib/                        ← contains jline3.jar
 ├── assets/
-├── setup.bat
-└── run.bat
+├── setup.bat                   ← compile + run (first time)
+└── run.bat                     ← run only (subsequent sessions)
 ```
 
 </details>
@@ -687,6 +711,7 @@ All data is stored as structured plain-text flat files. No external database is 
 | `data/contacts/emergency_contacts.txt` | Emergency contact entries |
 | `data/facility/laundrySlots.txt` | Current laundry booking state (`slotIndex,studentId`) |
 | `data/foods/config.txt` | Ramadan mode toggle (`RAMADAN=true/false`) |
+| `config/admin.config` | Admin credentials (hashed on first write) |
 
 ---
 
@@ -696,7 +721,7 @@ All data is stored as structured plain-text flat files. No external database is 
 |-------|------------|
 | Language | Java 17+ |
 | UI Rendering | Custom ANSI True-Color escape code renderer |
-| Password Input | JLine3 (masked input with `*` echo) |
+| Password Input | JLine3 (masked input with `•` echo) |
 | Data Persistence | Structured plain-text flat files |
 | Data Structures | Custom (`MyArrayList`, `MyString`, `MyOptional`) |
 | Architecture | MVC + Repository Pattern |
