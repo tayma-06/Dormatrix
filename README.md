@@ -82,14 +82,12 @@ Each of the **7 user roles** gets its own **color-themed dashboard**, designed t
 
 ### Highlights
 
-- **Role-specific dashboards** with distinct visual themes
-- **Custom-built data structures** instead of `java.util`
+- **Role-specific dashboards** 
+- **Custom-built data structures**
 - **Time-aware food and booking workflows**
 - **Policy-driven complaint escalation and worker routing**
 - **Structured flat-file persistence**
 - **Presentation-friendly CLI experience**
-
-The name is a blend of **Dormitory** and **Matrix**, reflecting a structured, interconnected system for dorm life. On first login, each role triggers a **matrix rain animation** before the dashboard appears, giving the application a memorable visual signature.
 
 </td>
 <td width="36%" valign="top" align="center">
@@ -137,7 +135,7 @@ The name is a blend of **Dormitory** and **Matrix**, reflecting a structured, in
 <br><br>
 
 <b>Video Demonstration</b><br>
-A guided walkthrough of Dormatrix — from role selection and login to dashboard navigation and key workflows.
+A guided walkthrough of Dormatrix - from role selection and login to dashboard navigation and key workflows.
 
 </div>
 
@@ -153,9 +151,9 @@ This section walks through the application exactly as a user experiences it — 
 
 ![Role Selection](assets/role-selection.jpeg)
 
-When Dormatrix starts, the screen is filled with the **DORMATRIX** splash header in a purple-to-cyan gradient rendered with ANSI true-color escape codes, underneath which reads *IUT Female Dormitory · Islamic University of Technology*.
+When Dormatrix starts, the screen is filled with the **DORMATRIX** splash header rendered with ANSI true-color escape codes.
 
-Below the header is the **role selection menu** — the entry point for every session. The currently highlighted option is shown in a **lilac highlight bar**, and navigation works both by typing a number and pressing Enter, as well as arrow keys.
+Below the header is the **role selection menu** — the entry point for every session. The currently highlighted option is shown, and navigation works both by typing a number and pressing Enter, as well as arrow keys.
 
 | Input | Role | Dashboard Theme |
 |-------|------|----------------|
@@ -176,12 +174,12 @@ Below the header is the **role selection menu** — the entry point for every se
 
 After selecting a role, the screen transitions to the **Login Credentials** panel with two fields:
 
-- **User ID** — your unique identifier registered in the system
-- **Password** — entered with masked input (each character echoed as `*`) using JLine, so nothing is visible on screen
+- **User ID** - your unique identifier registered in the system
+- **Password** - entered with masked input (each character echoed as `•`) using JLine, so nothing is visible on screen
 
-Credentials are validated against the stored records for the selected role. Incorrect input shows an error and re-prompts. Successful login triggers a **matrix rain animation** (on first login per session), then loads the role-specific dashboard.
+Credentials are validated against the stored records for the selected role. Incorrect input shows an error and re-prompts. Successful login loads the role-specific dashboard.
 
-> 🔐 Passwords are stored as hashes computed by a custom **DJB2 + XOR combined hash function** (`libraries/hashing/HashFunction.java`) — plain-text passwords are never written to disk.
+> 🔐 Passwords are stored as hashes computed by a custom **DJB2 + XOR combined hash function** (`libraries/hashing/HashFunction.java`) - plain-text passwords are never written directly to the text files.
 
 ---
 
@@ -189,19 +187,19 @@ Credentials are validated against the stored records for the selected role. Inco
 
 ![Student Dashboard](assets/student-dashboard.jpeg)
 
-The **Student Dashboard** is themed in deep **navy blue**. The welcome banner shows the logged-in student's name (e.g. *Welcome, Khadiza Sultana*). Students have access to **11 features** covering every aspect of dormitory life:
+The **Student Dashboard** contains **11 features** covering every aspect of dormitory life:
 
 #### `[1]` View Room Info
-Displays the student's current room assignment — room number, block, and allocation status. New students are initially marked `UNASSIGNED` until the Hall Office allocates a room.
+Displays the student's current room assignment - room number and allocation status. New students are initially marked `UNASSIGNED` until the Hall Office allocates a room. And students can submit application for room change.
 
 #### `[2]` Facility Booking
 Reserve three types of shared facilities:
-- **Laundry** — 6 machines displayed as a grid. Each student can hold only one booking at a time. After booking, a timer starts and the machine auto-releases when the wash cycle completes. Bookings persist across sessions via `data/facility/laundrySlots.txt`.
-- **Study Room** — seat-based booking for the communal study space.
-- **Fridge** — personal fridge slot allocation using a **First-Fit algorithm** (`libraries/slots/FirstFitAllocator.java`) to automatically assign the next available slot.
+- **Laundry** - 6 machines displayed as a grid. Each student can hold only one booking at a time. After booking, a timer starts and the machine auto-releases when the wash cycle completes. Bookings persist across sessions via `data/facility/laundrySlots.txt`.
+- **Study Room** - seat-based booking for the communal study space for an amount of time. Students needs to verify and claim the seat within a time frame, otherwise it would be released.
+- **Fridge** - personal fridge slot allocation using a **First-Fit algorithm** (`libraries/slots/FirstFitAllocator.java`) to automatically assign the next available slot.
 
 #### `[3]` Meal Token Purchase
-Purchase meal tokens for the cafeteria. The system is time-aware and enforces purchase windows — you cannot buy a token for a meal after its service window has already closed. Tokens carry a status: `ACTIVE`, `USED`, or `EXPIRED`. The system automatically switches to **Ramadan mode** meal times when enabled by the Cafeteria Manager.
+Purchase meal tokens for the cafeteria. The system is time-aware and enforces purchase windows - you cannot buy a token for a meal after its service window has already closed. Tokens carry a status: `ACTIVE`, `USED`, or `EXPIRED`. The system automatically switches to **Ramadan mode** meal times when enabled by the Cafeteria Manager.
 
 | Mode | Meal | Window |
 |------|------|--------|
