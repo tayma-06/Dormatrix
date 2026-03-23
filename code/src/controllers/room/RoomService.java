@@ -1,10 +1,10 @@
 package controllers.room;
 
-import models.room.Room;
-import repo.file.FileComplaintRepository;
 import libraries.collections.MyArrayList;
 import libraries.collections.MyString;
 import models.complaints.Complaint;
+import models.room.Room;
+import repo.file.FileComplaintRepository;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -59,6 +59,39 @@ public class RoomService {
             }
         }
         return available;
+    }
+
+    public List<Room> getSuggestedRooms(String currentRoom, String requestedRoom, int maxCount) {
+        List<Room> suggestions = new ArrayList<>();
+        List<Room> availableRooms = getAvailableRooms();
+
+        String current = safe(currentRoom);
+        String requested = safe(requestedRoom);
+        int limit = maxCount <= 0 ? Integer.MAX_VALUE : maxCount;
+
+        for (Room room : availableRooms) {
+            if (room == null) {
+                continue;
+            }
+
+            String roomId = safe(room.getRoomId());
+            if (roomId.isEmpty()) {
+                continue;
+            }
+            if (roomId.equalsIgnoreCase(current)) {
+                continue;
+            }
+            if (!requested.isEmpty() && roomId.equalsIgnoreCase(requested)) {
+                continue;
+            }
+
+            suggestions.add(room);
+            if (suggestions.size() >= limit) {
+                break;
+            }
+        }
+
+        return suggestions;
     }
 
     public Room getRoomDetailsWithRealOccupancy(String roomId) {
@@ -122,6 +155,14 @@ public class RoomService {
         }
 
         return "UNASSIGNED";
+    }
+
+    public boolean isStudentUnassigned(String studentIdentifier) {
+        String room = getStudentRoomNumber(studentIdentifier);
+        return room == null
+                || room.trim().isEmpty()
+                || room.equalsIgnoreCase("UNASSIGNED")
+                || room.equalsIgnoreCase("N/A");
     }
 
     public String resolveStudentId(String studentIdentifier) {
@@ -339,8 +380,8 @@ public class RoomService {
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split("\\|", -1);
                 if (parts.length > 7) {
-                    String r = parts[7].trim();
-                    if (!r.isEmpty() && r.equalsIgnoreCase(roomId.trim())) {
+                    String assignedRoom = parts[7].trim();
+                    if (!assignedRoom.isEmpty() && assignedRoom.equalsIgnoreCase(roomId.trim())) {
                         count++;
                     }
                 }
@@ -384,22 +425,24 @@ public class RoomService {
         return list;
     }
 
-    private String[] ensureLength(String[] parts, int len) {
-        String[] out = new String[len];
-        for (int i = 0; i < len; i++) {
-            out[i] = i < parts.length ? parts[i] : "";
+    private String[] ensureLength(String[] parts, int length) {
+        String[] arr = new String[length];
+        for (int i = 0; i < length; i++) {
+            arr[i] = i < parts.length ? parts[i].trim() : "";
         }
-        return out;
+        return arr;
     }
 
-    private String joinWithPipe(String[] parts) {
+    private String joinWithPipe(String[] arr) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < parts.length; i++) {
-            sb.append(parts[i] == null ? "" : parts[i]);
-            if (i < parts.length - 1) {
-                sb.append("|");
-            }
+        for (int i = 0; i < arr.length; i++) {
+            if (i > 0) sb.append('|');
+            sb.append(arr[i] == null ? "" : arr[i]);
         }
         return sb.toString();
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value.trim();
     }
 }

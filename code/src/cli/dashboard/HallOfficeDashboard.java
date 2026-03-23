@@ -13,11 +13,12 @@ public class HallOfficeDashboard implements Dashboard {
     private static final BackgroundFiller.Theme THEME = BackgroundFiller.HALL;
 
     private static final MenuItem[] MENU = {
-            new MenuItem(1, "Update Student Hall Room Info"),
-            new MenuItem(2, "View Student Complaints"),
-            new MenuItem(3, "View Worker Schedule"),
-            new MenuItem(4, "Handle Attendant Task"),
-            new MenuItem(5, "Edit Profile"),
+            new MenuItem(1, "Add New Room"),
+            new MenuItem(2, "View Available Rooms"),
+            new MenuItem(3, "Browse All Rooms"),
+            new MenuItem(4, "Assign Room To Unassigned Student"),
+            new MenuItem(5, "Review Room Change Applications"),
+            new MenuItem(6, "Edit Profile"),
             new MenuItem(0, "Logout"),
     };
 

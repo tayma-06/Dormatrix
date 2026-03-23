@@ -95,34 +95,48 @@ public class RoomChangeApplicationController {
         if (opt.isEmpty()) {
             return "Application not found.";
         }
+        return approveAndMoveToRoom(applicationId, opt.get().getRequestedRoom(), officerName, note);
+    }
+
+    public String approveAndMoveToRoom(String applicationId, String approvedRoom, String officerName, String note) {
+        MyOptional<RoomChangeApplication> opt = repo.findById(applicationId);
+        if (opt.isEmpty()) {
+            return "Application not found.";
+        }
 
         RoomChangeApplication app = opt.get();
         if (app.getStatus() != RoomChangeApplicationStatus.PENDING) {
             return "Only pending applications can be processed.";
         }
 
-        if (!roomService.roomExists(app.getRequestedRoom())) {
-            return "Requested room no longer exists.";
+        if (approvedRoom == null || approvedRoom.trim().isEmpty()) {
+            return "Approved room is required.";
         }
 
-        if (!roomService.isRoomAvailable(app.getRequestedRoom())) {
-            return "Requested room is currently full. Move cannot be completed.";
+        String targetRoom = approvedRoom.trim();
+
+        if (!roomService.roomExists(targetRoom)) {
+            return "Selected room no longer exists.";
         }
 
-        boolean moved = roomService.changeStudentRoom(app.getStudentId(), app.getRequestedRoom());
+        if (!roomService.isRoomAvailable(targetRoom)) {
+            return "Selected room is currently full. Move cannot be completed.";
+        }
+
+        boolean moved = roomService.changeStudentRoom(app.getStudentId(), targetRoom);
         if (!moved) {
             return "Could not complete room move.";
         }
 
         app.setStatus(RoomChangeApplicationStatus.COMPLETED);
         app.setReviewedBy(officerName);
-        app.setReviewNote(note == null || note.trim().isEmpty()
-                ? "Approved and moved by Hall Officer."
-                : note.trim());
+        app.setReviewNote(buildApprovalNote(app.getRequestedRoom(), targetRoom, note));
         app.setReviewedAt(nowStamp());
 
         repo.upsert(app);
-        return "Room change approved and completed successfully.";
+        return targetRoom.equalsIgnoreCase(app.getRequestedRoom())
+                ? "Room change approved and completed successfully."
+                : "Requested room was unavailable, so the student was moved to suggested room " + targetRoom + ".";
     }
 
     public String reject(String applicationId, String officerName, String note) {
@@ -145,6 +159,18 @@ public class RoomChangeApplicationController {
 
         repo.upsert(app);
         return "Room change application rejected.";
+    }
+
+    private String buildApprovalNote(String requestedRoom, String approvedRoom, String note) {
+        if (note != null && !note.trim().isEmpty()) {
+            return note.trim();
+        }
+
+        if (requestedRoom != null && requestedRoom.trim().equalsIgnoreCase(approvedRoom == null ? "" : approvedRoom.trim())) {
+            return "Approved and moved by Hall Officer.";
+        }
+
+        return "Approved by Hall Officer and moved to suggested room " + approvedRoom + ".";
     }
 
     private String nowStamp() {

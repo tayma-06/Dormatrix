@@ -1,6 +1,5 @@
 package utils;
 
-import java.io.IOException;
 
 public final class ConsoleUtil {
 

@@ -2,6 +2,7 @@ package cli.dashboard.room;
 
 import controllers.dashboard.room.RoomChangeRequestDashboardController;
 import libraries.collections.MyArrayList;
+import models.room.Room;
 import models.room.RoomChangeApplication;
 import org.jline.terminal.Attributes;
 import org.jline.terminal.Terminal;
@@ -10,6 +11,9 @@ import utils.ConsoleColors;
 import utils.ConsoleUtil;
 import utils.FastInput;
 import utils.TerminalUI;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RoomChangeRequestDashboard {
 
@@ -20,7 +24,7 @@ public class RoomChangeRequestDashboard {
     }
 
     private enum NavKey {
-        UP, DOWN, ENTER, ZERO, ESC, APPROVE, REJECT, NONE
+        UP, DOWN, ENTER, ZERO, ESC, APPROVE, REJECT, SUGGESTED, NONE
     }
 
     public void show(String officerName) {
@@ -40,59 +44,77 @@ public class RoomChangeRequestDashboard {
             if (selected >= list.size()) selected = list.size() - 1;
             if (selected < 0) selected = 0;
 
-            render(list, selected, officerName);
+            RoomChangeApplication app = list.get(selected);
+            render(list, selected, app);
             NavKey key = readNavKey();
 
             if (key == NavKey.UP) {
                 selected = (selected - 1 + list.size()) % list.size();
             } else if (key == NavKey.DOWN) {
                 selected = (selected + 1) % list.size();
-            } else if (key == NavKey.ZERO || key == NavKey.ENTER || key == NavKey.ESC) {
+            } else if (key == NavKey.APPROVE) {
+                if (controller.isRequestedRoomAvailable(app)) {
+                    String result = controller.approveAndMove(app.getApplicationId(), officerName, "");
+                    showResult(result);
+                } else {
+                    showResult("Requested room is full right now. Use S to approve with a suggested room, or R to reject.");
+                }
+            } else if (key == NavKey.SUGGESTED) {
+                if (controller.isRequestedRoomAvailable(app)) {
+                    showResult("Requested room is already available. Press A to move the student directly.");
+                    continue;
+                }
+
+                List<Room> suggestions = controller.getSuggestedRooms(app, 8);
+                if (suggestions.isEmpty()) {
+                    showResult("No suggested rooms are currently available. You can reject for now and review later.");
+                    continue;
+                }
+
+                String selectedSuggestedRoom = pickSuggestedRoom(app, suggestions);
+                if (selectedSuggestedRoom != null && !selectedSuggestedRoom.trim().isEmpty()) {
+                    String result = controller.approveAndMoveToSuggestedRoom(
+                            app.getApplicationId(),
+                            selectedSuggestedRoom,
+                            officerName,
+                            "Approved by Hall Officer using suggested room " + selectedSuggestedRoom + "."
+                    );
+                    showResult(result);
+                }
+            } else if (key == NavKey.REJECT) {
+                String result = controller.reject(app.getApplicationId(), officerName, "");
+                showResult(result);
+            } else if (key == NavKey.ENTER || key == NavKey.ZERO || key == NavKey.ESC) {
                 TerminalUI.cleanup();
                 return;
-            } else if (key == NavKey.APPROVE) {
-                String result = controller.approveAndMove(
-                        list.get(selected).getApplicationId(),
-                        officerName,
-                        "Approved and moved by Hall Officer."
-                );
-                showResult(result);
-            } else if (key == NavKey.REJECT) {
-                String result = controller.reject(
-                        list.get(selected).getApplicationId(),
-                        officerName,
-                        "Rejected by Hall Officer."
-                );
-                showResult(result);
             }
         }
     }
 
-    private void render(MyArrayList<RoomChangeApplication> list, int selected, String officerName) {
+    private void render(MyArrayList<RoomChangeApplication> list, int selected, RoomChangeApplication app) {
         ConsoleUtil.clearScreen();
         TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
         System.out.print(TerminalUI.HIDE_CUR);
 
         int screenW = Math.max(100, TerminalUI.termW() - 4);
         int leftW = Math.min(44, Math.max(38, screenW / 2 - 2));
-        int rightW = Math.max(50, screenW - leftW - 3);
+        int rightW = Math.max(52, screenW - leftW - 3);
 
         int totalW = leftW + rightW + 3;
         int leftCol = TerminalUI.centerCol(totalW);
         int rightCol = leftCol + leftW + 3;
         int topRow = 3;
 
-        drawLeftPane(topRow, leftCol, leftW, list, selected, officerName);
-        drawRightPane(topRow, rightCol, rightW, list.get(selected));
+        drawLeftPane(topRow, leftCol, leftW, list, selected);
+        drawRightPane(topRow, rightCol, rightW, app);
 
         System.out.flush();
     }
 
-    private void drawLeftPane(int topRow, int col, int width, MyArrayList<RoomChangeApplication> list, int selected, String officerName) {
+    private void drawLeftPane(int topRow, int col, int width, MyArrayList<RoomChangeApplication> list, int selected) {
         int inner = width - 2;
         String box = TerminalUI.getActiveBoxColor();
         String panel = TerminalUI.getActivePanelBgColor();
-
         int row = topRow;
         int resultRows = 10;
 
@@ -100,14 +122,12 @@ public class RoomChangeRequestDashboard {
         printRow(row++, col,
                 box + panel + "║"
                         + TerminalUI.BOLD + TerminalUI.ACCENT + panel
-                        + TerminalUI.padC("PENDING ROOM CHANGE REQUESTS", inner)
+                        + TerminalUI.padC("ROOM CHANGE REQUESTS", inner)
                         + box + panel + "║" + TerminalUI.RESET);
         printRow(row++, col, box + panel + "╠" + "═".repeat(inner) + "╣" + TerminalUI.RESET);
 
         printTextRow(row++, col, inner,
-                ConsoleColors.ThemeText.SOFT_WHITE
-                        + "Pending: " + list.size()
-                        + "   |   Officer: " + officerName,
+                ConsoleColors.ThemeText.SOFT_WHITE + "Pending requests: " + list.size(),
                 box, panel);
 
         printRow(row++, col, box + panel + "╠" + "═".repeat(inner) + "╣" + TerminalUI.RESET);
@@ -133,7 +153,7 @@ public class RoomChangeRequestDashboard {
         printRow(row++, col, box + panel + "╠" + "═".repeat(inner) + "╣" + TerminalUI.RESET);
         printTextRow(row++, col, inner,
                 ConsoleColors.Accent.MUTED
-                        + "Use Up/Down to browse. A approves, R rejects, Enter/0 returns.",
+                        + "Use Up/Down to browse. A approve, S suggested room, R reject, Enter/0 returns.",
                 box, panel);
         printRow(row, col, box + panel + "╚" + "═".repeat(inner) + "╝" + TerminalUI.RESET);
     }
@@ -144,6 +164,8 @@ public class RoomChangeRequestDashboard {
         String panel = TerminalUI.getActivePanelBgColor();
 
         int row = topRow;
+        boolean requestedAvailable = controller.isRequestedRoomAvailable(app);
+        List<Room> suggestions = controller.getSuggestedRooms(app, 3);
 
         printRow(row++, col, box + panel + "╔" + "═".repeat(inner) + "╗" + TerminalUI.RESET);
         printRow(row++, col,
@@ -158,7 +180,7 @@ public class RoomChangeRequestDashboard {
         printTextRow(row++, col, inner, kv("Student Name", app.getStudentName()), box, panel);
         printTextRow(row++, col, inner, kv("Current Room", app.getCurrentRoom()), box, panel);
         printTextRow(row++, col, inner, kv("Requested Room", app.getRequestedRoom()), box, panel);
-        printTextRow(row++, col, inner, kv("Status", colorStatus(app.getStatus().name())), box, panel);
+        printTextRow(row++, col, inner, kv("Request Status", requestedAvailable ? colorStatus("AVAILABLE") : colorStatus("FULL")), box, panel);
         printTextRow(row++, col, inner, kv("Submitted At", app.getSubmittedAt()), box, panel);
 
         printTextRow(row++, col, inner, "", box, panel);
@@ -167,9 +189,29 @@ public class RoomChangeRequestDashboard {
                 box, panel);
 
         String[] reason = wrap(app.getReason(), Math.max(20, inner - 2));
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 3; i++) {
             String line = i < reason.length ? reason[i] : "";
             printTextRow(row++, col, inner, ConsoleColors.FG_BRIGHT_WHITE + line, box, panel);
+        }
+
+        printTextRow(row++, col, inner, "", box, panel);
+        printTextRow(row++, col, inner,
+                ConsoleColors.ThemeText.SOFT_WHITE + "SUGGESTED ROOMS",
+                box, panel);
+
+        if (suggestions.isEmpty()) {
+            printTextRow(row++, col, inner,
+                    ConsoleColors.Accent.MUTED + "No alternative room is open right now.",
+                    box, panel);
+        } else {
+            for (int i = 0; i < 3; i++) {
+                String line = "";
+                if (i < suggestions.size()) {
+                    Room room = suggestions.get(i);
+                    line = room.getRoomId() + "  |  " + room.getCurrentOccupancy() + "/" + room.getCapacity();
+                }
+                printTextRow(row++, col, inner, ConsoleColors.FG_BRIGHT_WHITE + line, box, panel);
+            }
         }
 
         printTextRow(row++, col, inner, "", box, panel);
@@ -177,7 +219,10 @@ public class RoomChangeRequestDashboard {
                 ConsoleColors.ThemeText.SOFT_WHITE + "REVIEW ACTIONS",
                 box, panel);
         printTextRow(row++, col, inner,
-                ConsoleColors.Accent.SUCCESS + "[A] Approve and move student",
+                ConsoleColors.Accent.SUCCESS + "[A] Approve requested room when it is available",
+                box, panel);
+        printTextRow(row++, col, inner,
+                ConsoleColors.Accent.WARNING + "[S] Approve with one of the suggested rooms",
                 box, panel);
         printTextRow(row++, col, inner,
                 ConsoleColors.Accent.ERROR + "[R] Reject application",
@@ -186,11 +231,105 @@ public class RoomChangeRequestDashboard {
                 ConsoleColors.Accent.MUTED + "[Enter/0] Return to previous menu",
                 box, panel);
 
-        while (row < topRow + 19) {
+        while (row < topRow + 22) {
             printTextRow(row++, col, inner, "", box, panel);
         }
 
         printRow(row, col, box + panel + "╚" + "═".repeat(inner) + "╝" + TerminalUI.RESET);
+    }
+
+    private String pickSuggestedRoom(RoomChangeApplication app, List<Room> suggestions) {
+        if (suggestions == null || suggestions.isEmpty()) {
+            return null;
+        }
+
+        int selected = 0;
+
+        while (true) {
+            renderSuggestionPicker(app, suggestions, selected);
+            NavKey key = readNavKey();
+
+            if (key == NavKey.UP) {
+                selected = (selected - 1 + suggestions.size()) % suggestions.size();
+            } else if (key == NavKey.DOWN) {
+                selected = (selected + 1) % suggestions.size();
+            } else if (key == NavKey.APPROVE || key == NavKey.ENTER) {
+                return suggestions.get(selected).getRoomId();
+            } else if (key == NavKey.ZERO || key == NavKey.ESC) {
+                return null;
+            }
+        }
+    }
+
+    private void renderSuggestionPicker(RoomChangeApplication app, List<Room> suggestions, int selected) {
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        System.out.print(TerminalUI.HIDE_CUR);
+
+        int screenW = Math.max(100, TerminalUI.termW() - 4);
+        int leftW = Math.min(44, Math.max(38, screenW / 2 - 2));
+        int rightW = Math.max(52, screenW - leftW - 3);
+
+        int totalW = leftW + rightW + 3;
+        int leftCol = TerminalUI.centerCol(totalW);
+        int rightCol = leftCol + leftW + 3;
+        int topRow = 4;
+
+        int innerLeft = leftW - 2;
+        int innerRight = rightW - 2;
+        String box = TerminalUI.getActiveBoxColor();
+        String panel = TerminalUI.getActivePanelBgColor();
+
+        int row = topRow;
+        printRow(row++, leftCol, box + panel + "╔" + "═".repeat(innerLeft) + "╗" + TerminalUI.RESET);
+        printRow(row++, leftCol,
+                box + panel + "║"
+                        + TerminalUI.BOLD + TerminalUI.ACCENT + panel
+                        + TerminalUI.padC("SUGGESTED ROOM PICKER", innerLeft)
+                        + box + panel + "║" + TerminalUI.RESET);
+        printRow(row++, leftCol, box + panel + "╠" + "═".repeat(innerLeft) + "╣" + TerminalUI.RESET);
+        printTextRow(row++, leftCol, innerLeft,
+                ConsoleColors.ThemeText.SOFT_WHITE + "Student: " + app.getStudentId() + "  |  Current: " + app.getCurrentRoom(),
+                box, panel);
+        printRow(row++, leftCol, box + panel + "╠" + "═".repeat(innerLeft) + "╣" + TerminalUI.RESET);
+
+        for (int i = 0; i < suggestions.size(); i++) {
+            Room room = suggestions.get(i);
+            String line = room.getRoomId() + "  |  " + room.getCurrentOccupancy() + "/" + room.getCapacity();
+            printSuggestionRow(row++, leftCol, innerLeft, line, i == selected, box, panel);
+        }
+
+        while (row < topRow + 14) {
+            printSuggestionRow(row++, leftCol, innerLeft, "", false, box, panel);
+        }
+
+        printRow(row, leftCol, box + panel + "╚" + "═".repeat(innerLeft) + "╝" + TerminalUI.RESET);
+
+        row = topRow;
+        printRow(row++, rightCol, box + panel + "╔" + "═".repeat(innerRight) + "╗" + TerminalUI.RESET);
+        printRow(row++, rightCol,
+                box + panel + "║"
+                        + TerminalUI.BOLD + TerminalUI.ACCENT + panel
+                        + TerminalUI.padC("ROOM PREVIEW", innerRight)
+                        + box + panel + "║" + TerminalUI.RESET);
+        printRow(row++, rightCol, box + panel + "╠" + "═".repeat(innerRight) + "╣" + TerminalUI.RESET);
+
+        Room chosen = suggestions.get(selected);
+        printTextRow(row++, rightCol, innerRight, kv("Room ID", chosen.getRoomId()), box, panel);
+        printTextRow(row++, rightCol, innerRight, kv("Occupancy", chosen.getCurrentOccupancy() + "/" + chosen.getCapacity()), box, panel);
+        printTextRow(row++, rightCol, innerRight, kv("Free Seats", String.valueOf(Math.max(0, chosen.getCapacity() - chosen.getCurrentOccupancy()))), box, panel);
+        printTextRow(row++, rightCol, innerRight, kv("Status", colorStatus(chosen.isAvailable() ? "AVAILABLE" : "FULL")), box, panel);
+        printTextRow(row++, rightCol, innerRight, "", box, panel);
+        printTextRow(row++, rightCol, innerRight, ConsoleColors.ThemeText.SOFT_WHITE + "ACTION", box, panel);
+        printTextRow(row++, rightCol, innerRight, ConsoleColors.Accent.SUCCESS + "[A / Enter] Move to this suggested room", box, panel);
+        printTextRow(row++, rightCol, innerRight, ConsoleColors.Accent.MUTED + "[0 / Esc] Cancel", box, panel);
+
+        while (row < topRow + 14) {
+            printTextRow(row++, rightCol, innerRight, "", box, panel);
+        }
+
+        printRow(row, rightCol, box + panel + "╚" + "═".repeat(innerRight) + "╝" + TerminalUI.RESET);
+        System.out.flush();
     }
 
     private void showResult(String result) {
@@ -200,7 +339,7 @@ public class RoomChangeRequestDashboard {
         String safe = result == null ? "Operation finished." : result;
         String lower = safe.toLowerCase();
 
-        if (lower.contains("successfully") || lower.contains("completed")) {
+        if (lower.contains("successfully") || lower.contains("completed") || lower.contains("moved to suggested room")) {
             TerminalUI.tSuccess(safe);
         } else {
             TerminalUI.tError(safe);
@@ -234,6 +373,7 @@ public class RoomChangeRequestDashboard {
                     if (ch == '0') return NavKey.ZERO;
                     if (ch == 'a' || ch == 'A') return NavKey.APPROVE;
                     if (ch == 'r' || ch == 'R') return NavKey.REJECT;
+                    if (ch == 's' || ch == 'S') return NavKey.SUGGESTED;
                 }
             } catch (Exception ignored) {
                 return NavKey.NONE;
@@ -245,9 +385,10 @@ public class RoomChangeRequestDashboard {
         String line = FastInput.readLine().trim();
         if ("0".equals(line)) return NavKey.ZERO;
         if ("w".equalsIgnoreCase(line) || "k".equalsIgnoreCase(line)) return NavKey.UP;
-        if ("s".equalsIgnoreCase(line) || "j".equalsIgnoreCase(line)) return NavKey.DOWN;
+        if ("j".equalsIgnoreCase(line) || "x".equalsIgnoreCase(line)) return NavKey.DOWN;
         if ("a".equalsIgnoreCase(line)) return NavKey.APPROVE;
         if ("r".equalsIgnoreCase(line)) return NavKey.REJECT;
+        if ("s".equalsIgnoreCase(line) || "g".equalsIgnoreCase(line)) return NavKey.SUGGESTED;
         return NavKey.ENTER;
     }
 
@@ -269,8 +410,11 @@ public class RoomChangeRequestDashboard {
         if (up.contains("REJECT")) {
             return ConsoleColors.Accent.ERROR + status + TerminalUI.RESET;
         }
-        if (up.contains("APPROVED") || up.contains("COMPLETED")) {
+        if (up.contains("APPROVED") || up.contains("COMPLETED") || up.contains("AVAILABLE")) {
             return ConsoleColors.Accent.SUCCESS + status + TerminalUI.RESET;
+        }
+        if (up.contains("FULL")) {
+            return ConsoleColors.Accent.ERROR + status + TerminalUI.RESET;
         }
         return status;
     }
@@ -323,19 +467,20 @@ public class RoomChangeRequestDashboard {
         return " ".repeat(Math.max(0, n));
     }
 
-    private String[] wrap(String text, int max) {
-        if (text == null || text.trim().isEmpty()) {
-            return new String[]{"(none)"};
+    private String[] wrap(String text, int width) {
+        String safe = text == null ? "" : text.trim();
+        if (safe.isEmpty()) {
+            return new String[]{"(no reason provided)"};
         }
 
-        java.util.ArrayList<String> lines = new java.util.ArrayList<>();
-        String remaining = text.trim();
+        List<String> lines = new ArrayList<>();
+        String remaining = safe;
 
-        while (remaining.length() > max) {
-            int cut = remaining.lastIndexOf(' ', max);
-            if (cut <= 0) cut = max;
-            lines.add(remaining.substring(0, cut).trim());
-            remaining = remaining.substring(cut).trim();
+        while (remaining.length() > width) {
+            int split = remaining.lastIndexOf(' ', width);
+            if (split <= 0) split = width;
+            lines.add(remaining.substring(0, split).trim());
+            remaining = remaining.substring(split).trim();
         }
 
         if (!remaining.isEmpty()) {

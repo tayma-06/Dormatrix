@@ -1,7 +1,7 @@
 package utils;
 
 import libraries.collections.MyString;
-import java.io.Console;
+import java.io.*;
 
 public class InputHelper {
 

@@ -1,11 +1,12 @@
 package controllers.dashboard;
 
 import cli.dashboard.MainDashboard;
-import cli.dashboard.room.AvailableRoomPreviewDashboard;
 import cli.dashboard.room.RoomChangeRequestDashboard;
+import cli.dashboard.room.RoomDashboard;
 import cli.profile.EditProfileCLI;
 import cli.views.complaint.ComplaintView;
 import controllers.dashboard.room.RoomChangeRequestDashboardController;
+import controllers.dashboard.room.RoomDashboardController;
 import controllers.room.RoomController;
 import controllers.room.RoomService;
 import libraries.collections.MyArrayList;
@@ -22,22 +23,26 @@ public class HallOfficeDashboardController {
     private final ComplaintView complaintView = new ComplaintView();
     private final FileComplaintRepository complaintRepo = new FileComplaintRepository();
     private final RoomService roomService = new RoomService();
+    private final RoomDashboard roomDashboard = new RoomDashboard(new RoomDashboardController(roomService));
 
     public void handleInput(int choice, String username) {
         switch (choice) {
             case 1:
-                handleRoomAllocation(username);
+                roomDashboard.showAddRoomOnly();
                 break;
             case 2:
-                handleComplaintManagement();
+                roomDashboard.showAvailableRoomsOnly();
                 break;
             case 3:
-                TerminalUI.tPrint(">> Feature [Worker Schedule] is under development.");
+                roomDashboard.showAllRoomsOnly();
                 break;
             case 4:
-                TerminalUI.tPrint(">> Feature [Attendant Task] is under development.");
+                assignRoomToUnassignedStudent();
                 break;
             case 5:
+                reviewRoomChangeApplications(username);
+                break;
+            case 6:
                 new EditProfileCLI(username, "HALL_OFFICER").start();
                 break;
             case 0:
@@ -48,94 +53,54 @@ public class HallOfficeDashboardController {
         }
     }
 
-    private void handleRoomAllocation(String officerName) {
-        while (true) {
-            ConsoleUtil.clearScreen();
-            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
-            TerminalUI.at(2, 1);
-            TerminalUI.tSubDashboard("ROOM MANAGEMENT MENU", new String[]{
-                    "[1] Live Preview Available Rooms",
-                    "[2] Allocate / Change Student Room",
-                    "[3] Review Room Change Applications",
-                    "[0] Back"
-            });
-
-            int subChoice = FastInput.readInt();
-
-            if (subChoice == 1) {
-                new AvailableRoomPreviewDashboard(roomService).show();
-            } else if (subChoice == 2) {
-                updateStudentRoom();
-                TerminalUI.tPause();
-            } else if (subChoice == 3) {
-                new RoomChangeRequestDashboard(
-                        new RoomChangeRequestDashboardController()
-                ).show(officerName);
-            } else if (subChoice == 0) {
-                ConsoleUtil.clearScreen();
-                return;
-            } else {
-                TerminalUI.tPrint("Invalid sub-choice.");
-                TerminalUI.tPause();
-            }
-        }
-    }
-
-    private void updateStudentRoom() {
-        TerminalUI.tPrompt("Enter Student ID: ");
+    private void assignRoomToUnassignedStudent() {
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.tPrompt("Enter Student ID or Name (0 to cancel): ");
         String targetId = FastInput.readLine().trim();
+
+        if ("0".equals(targetId)) {
+            return;
+        }
 
         String resolvedId = roomService.resolveStudentId(targetId);
         if (resolvedId == null || resolvedId.trim().isEmpty()) {
-            System.out.println("Student ID not found.");
+            TerminalUI.tError("Student ID not found.");
+            TerminalUI.tPause();
             return;
         }
 
         String studentName = roomService.getStudentName(resolvedId);
-        String oldRoom = roomService.getStudentRoomNumber(resolvedId);
+        String currentRoom = roomService.getStudentRoomNumber(resolvedId);
 
-        System.out.println("Student found: " + (studentName == null ? resolvedId : studentName));
-        System.out.println("Current Room : " + oldRoom);
-
-        TerminalUI.tPrompt("Enter New Room Number (or 0 to cancel): ");
-        String newRoom = FastInput.readLine().trim();
-
-        if ("0".equals(newRoom)) {
+        if (!roomService.isStudentUnassigned(resolvedId)) {
+            TerminalUI.tError("This student already has room " + currentRoom + ". Use room change applications for assigned students.");
+            TerminalUI.tPause();
             return;
         }
 
-        boolean ok = roomService.changeStudentRoom(resolvedId, newRoom);
-        if (ok) {
-            System.out.println("SUCCESS: Room updated to " + newRoom);
-        } else {
-            System.out.println("ERROR: Could not update room. Check room existence / availability.");
+        String chosenRoom = roomController.pickAvailableRoomInteractive();
+        if (chosenRoom == null || chosenRoom.trim().isEmpty()) {
+            return;
         }
+
+        boolean ok = roomService.changeStudentRoom(resolvedId, chosenRoom);
+        if (ok) {
+            TerminalUI.tSuccess("Assigned room " + chosenRoom + " to " + (studentName == null ? resolvedId : studentName) + ".");
+        } else {
+            TerminalUI.tError("Could not assign the selected room. Please check room availability again.");
+        }
+        TerminalUI.tPause();
     }
 
-    private void handleComplaintManagement() {
-        while (true) {
-            ConsoleUtil.clearScreen();
-            complaintView.attendantMenu();
-            int choice = FastInput.readInt();
-
-            switch (choice) {
-                case 1:
-                    MyArrayList<Complaint> all = complaintRepo.findAll();
-                    complaintView.attendantList(all);
-                    ConsoleUtil.pause();
-                    break;
-                case 2:
-                    System.out.println(">> Filtering Pending... (To be implemented fully)");
-                    complaintView.attendantList(complaintRepo.findAll());
-                    ConsoleUtil.pause();
-                    break;
-                case 0:
-                    ConsoleUtil.clearScreen();
-                    return;
-                default:
-                    TerminalUI.tPrint("Option " + choice + " is coming soon.");
-                    ConsoleUtil.pause();
-            }
+    private void reviewRoomChangeApplications(String officerName) {
+        RoomChangeRequestDashboardController requestController = new RoomChangeRequestDashboardController();
+        if (requestController.getPendingApplications().size() == 0) {
+            TerminalUI.tError("There is no room change application to review right now.");
+            TerminalUI.tPause();
+            return;
         }
+
+        new RoomChangeRequestDashboard(requestController).show(officerName);
     }
 }

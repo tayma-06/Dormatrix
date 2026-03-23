@@ -16,8 +16,7 @@ public class AdminDashboard implements Dashboard {
             new MenuItem(1, "Create Account"),
             new MenuItem(2, "Delete Account"),
             new MenuItem(3, "View & Search Accounts"),
-            new MenuItem(4, "Manage Rooms"),
-            new MenuItem(5, "Edit Profile"),
+            new MenuItem(4, "Edit Profile"),
             new MenuItem(0, "Logout"),
     };
 

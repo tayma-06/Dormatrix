@@ -1,13 +1,11 @@
 package utils;
 
-import org.jline.terminal.Terminal;
+import org.jline.terminal.*;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
 /**
  * TerminalUI — dynamic true-color terminal engine

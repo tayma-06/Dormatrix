@@ -1,7 +1,6 @@
 package utils;
 
-import org.jline.terminal.Attributes;
-import org.jline.terminal.Terminal;
+import org.jline.terminal.*;
 import org.jline.utils.NonBlockingReader;
 
 import java.io.IOException;

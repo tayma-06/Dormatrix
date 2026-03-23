@@ -39,9 +39,9 @@ public class RoomDashboard implements Dashboard {
                 }
 
                 if (choice == 1) {
-                    showAddRoomWizard();
+                    showAddRoomOnly();
                 } else if (choice == 2) {
-                    showAvailableRoomsBrowser();
+                    showAvailableRoomsOnly();
                 }
 
             } catch (Exception e) {
@@ -51,6 +51,47 @@ public class RoomDashboard implements Dashboard {
                 TerminalUI.tError("[RoomDashboard] " + e.getMessage());
                 TerminalUI.tPause();
             }
+        }
+    }
+
+    public void showAddRoomOnly() {
+        try {
+            showAddRoomWizard();
+        } catch (Exception e) {
+            cleanup();
+            showNotice("Could not open add room view: " + e.getMessage());
+        }
+    }
+
+    public void showAvailableRoomsOnly() {
+        try {
+            showRoomBrowser(
+                    controller.getAvailableRooms(),
+                    "AVAILABLE ROOM LIST",
+                    "ROOM PREVIEW",
+                    "Available rooms",
+                    "No rooms are currently available.",
+                    true
+            );
+        } catch (Exception e) {
+            cleanup();
+            showNotice("Could not open available rooms view: " + e.getMessage());
+        }
+    }
+
+    public void showAllRoomsOnly() {
+        try {
+            showRoomBrowser(
+                    controller.getAllRooms(),
+                    "ALL ROOM LIST",
+                    "ROOM PREVIEW",
+                    "Total rooms",
+                    "No rooms have been added yet.",
+                    false
+            );
+        } catch (Exception e) {
+            cleanup();
+            showNotice("Could not open all rooms view: " + e.getMessage());
         }
     }
 
@@ -296,17 +337,21 @@ public class RoomDashboard implements Dashboard {
         }
     }
 
-    private void showAvailableRoomsBrowser() throws Exception {
-        List<Room> rooms = controller.getAvailableRooms();
-        if (rooms.isEmpty()) {
-            showNotice("No rooms are currently available.");
+    private void showRoomBrowser(List<Room> rooms,
+                                 String listTitle,
+                                 String previewTitle,
+                                 String countLabel,
+                                 String emptyMessage,
+                                 boolean showAvailabilityTip) throws Exception {
+        if (rooms == null || rooms.isEmpty()) {
+            showNotice(emptyMessage);
             return;
         }
 
         int selected = 0;
 
         while (true) {
-            drawAvailableBrowser(rooms, selected);
+            drawRoomBrowser(rooms, selected, listTitle, previewTitle, countLabel, showAvailabilityTip);
 
             int key = readNavKey();
             if (key == Key.UP) {
@@ -319,7 +364,12 @@ public class RoomDashboard implements Dashboard {
         }
     }
 
-    private void drawAvailableBrowser(List<Room> rooms, int selected) {
+    private void drawRoomBrowser(List<Room> rooms,
+                                 int selected,
+                                 String listTitle,
+                                 String previewTitle,
+                                 String countLabel,
+                                 boolean showAvailabilityTip) {
         ConsoleUtil.clearScreen();
         fillBackground(getActiveBgColor());
         System.out.print(HIDE_CUR);
@@ -338,7 +388,7 @@ public class RoomDashboard implements Dashboard {
         int end = Math.min(rooms.size(), start + visible);
 
         List<String> left = new ArrayList<>();
-        left.add("Available rooms: " + rooms.size());
+        left.add(countLabel + ": " + rooms.size());
         left.add("");
 
         for (int i = start; i < end; i++) {
@@ -354,6 +404,22 @@ public class RoomDashboard implements Dashboard {
         }
 
         Room selectedRoom = rooms.get(selected);
+        List<String> right = buildRoomPreviewLines(selectedRoom, rightW, showAvailabilityTip);
+
+        drawBox(topRow, totalCol, leftW, listTitle, left, selected - start + 2, 2);
+        drawBox(topRow, totalCol + leftW + 3, rightW, previewTitle, right, -1, -1);
+
+        int footerRow = topRow + Math.max(left.size(), right.size()) + 4;
+        at(footerRow, totalCol);
+        System.out.print(
+                ConsoleColors.Accent.MUTED
+                        + "Use ↑ ↓ to inspect rooms. Press Enter or 0 to return."
+                        + RESET
+        );
+        System.out.flush();
+    }
+
+    private List<String> buildRoomPreviewLines(Room selectedRoom, int rightW, boolean showAvailabilityTip) {
         List<String> right = new ArrayList<>();
         right.add("Room ID        : " + selectedRoom.getRoomId());
         right.add("Status         : " + (selectedRoom.isAvailable() ? "AVAILABLE" : "FULL"));
@@ -367,25 +433,17 @@ public class RoomDashboard implements Dashboard {
         right.add(selectedRoom.toString());
         right.add("");
         right.add("Tip");
-        if (selectedRoom.getCurrentOccupancy() == 0) {
+
+        if (!showAvailabilityTip && !selectedRoom.isAvailable()) {
+            right.add("This room is full right now.");
+        } else if (selectedRoom.getCurrentOccupancy() == 0) {
             right.add("This room is fully empty.");
         } else if (selectedRoom.getCurrentOccupancy() == selectedRoom.getCapacity() - 1) {
             right.add("Only one free seat remains.");
         } else {
             right.add("This room still has multiple open seats.");
         }
-
-        drawBox(topRow, totalCol, leftW, "AVAILABLE ROOM LIST", left, selected - start + 2, 2);
-        drawBox(topRow, totalCol + leftW + 3, rightW, "ROOM PREVIEW", right, -1, -1);
-
-        int footerRow = topRow + Math.max(left.size(), right.size()) + 4;
-        at(footerRow, totalCol);
-        System.out.print(
-                ConsoleColors.Accent.MUTED
-                        + "Use ↑ ↓ to inspect rooms. Press Enter or 0 to return."
-                        + RESET
-        );
-        System.out.flush();
+        return right;
     }
 
     private void drawBox(int row, int col, int width, String title, List<String> lines, int selectedLineIndex, int contentStartLine) {
