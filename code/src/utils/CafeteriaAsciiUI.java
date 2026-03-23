@@ -7,38 +7,69 @@ import java.time.format.DateTimeFormatter;
 
 public class CafeteriaAsciiUI {
 
-    // ─────────────────────────────────────────────────────────────
-    //  Live animated progress bar — Spotify-style pulsing playhead
-    // ─────────────────────────────────────────────────────────────
     private static volatile boolean barRunning = false;
     private static Thread barThread = null;
 
-    /**
-     * Starts the live pulsing bar animation on a daemon thread.
-     * Also repaints the nowLine row in real time.
-     *
-     * @param barRow     1-based terminal row where the bar line lives
-     * @param nowRow     1-based terminal row where the date/time/slot line lives
-     * @param boxLeftCol 1-based column of the box left border ║
-     * @param iw         inner width of the box (boxW - 2)
-     * @param slot       current meal slot
-     */
-    public static void startBarAnimation(int barRow, int nowRow, int boxLeftCol, int iw, MealType slot) {
+    private static volatile boolean tokenAnimRunning = false;
+    private static Thread tokenAnimThread = null;
+
+    private static final String SAVE_CUR = "\u001B7";
+    private static final String RESTORE_CUR = "\u001B8";
+
+    public static void startBarAnimation(int requestedStartRow, int itemCount, int extraHeaderCount, MealType slot) {
         stopBarAnimation();
         barRunning = true;
         barThread = new Thread(() -> {
             int tick = 0;
+            int previousNowRow = -1;
+            int previousBarRow = -1;
+
             while (barRunning) {
                 try {
+                    int dashboardTop = resolveDashboardTop(requestedStartRow, itemCount, extraHeaderCount);
+                    int nowRow = dashboardTop + 4;
+                    int barRow = dashboardTop + 5;
+                    int liveCol = TerminalUI.boxCol();
+                    int liveInnerWidth = TerminalUI.innerW();
+
                     System.out.print(SAVE_CUR);
-                    paintNowLine(nowRow, boxLeftCol, iw);
-                    paintBar(barRow, boxLeftCol, iw, slot, tick);
+
+                    if (previousNowRow > 0 && previousNowRow != nowRow) {
+                        clearAnimatedRow(previousNowRow);
+                    }
+                    if (previousBarRow > 0 && previousBarRow != barRow) {
+                        clearAnimatedRow(previousBarRow);
+                    }
+
+                    clearAnimatedRow(nowRow);
+                    clearAnimatedRow(barRow);
+                    paintNowLine(nowRow, liveCol, liveInnerWidth);
+                    paintBar(barRow, liveCol, liveInnerWidth, slot, tick);
+
                     System.out.print(RESTORE_CUR);
                     System.out.flush();
+
+                    previousNowRow = nowRow;
+                    previousBarRow = barRow;
                     tick = (tick + 1) % 40;
                     Thread.sleep(120);
                 } catch (InterruptedException e) {
                     break;
+                } catch (Exception ignored) {
+                }
+            }
+
+            if (previousNowRow > 0 || previousBarRow > 0) {
+                try {
+                    System.out.print(SAVE_CUR);
+                    if (previousNowRow > 0) {
+                        clearAnimatedRow(previousNowRow);
+                    }
+                    if (previousBarRow > 0) {
+                        clearAnimatedRow(previousBarRow);
+                    }
+                    System.out.print(RESTORE_CUR);
+                    System.out.flush();
                 } catch (Exception ignored) {
                 }
             }
@@ -58,30 +89,13 @@ public class CafeteriaAsciiUI {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Token-screen live animation (date/time, status, progress bar)
-    //  Uses save/restore cursor so typed input stays in place.
-    // ─────────────────────────────────────────────────────────────
-    private static final String SAVE_CUR    = "\u001B7";
-    private static final String RESTORE_CUR = "\u001B8";
-    private static final int DASH_W  = 71;  // mirrors TerminalUI.DASH_W
-    private static final int DASH_CW = 67;  // DASH_IW - 2
-
-    private static volatile boolean tokenAnimRunning = false;
-    private static Thread tokenAnimThread = null;
-
-    /**
-     * Starts live animation for the token-purchase screen.
-     * Repaints dateTimeLine, statusLine, and progress bar every 120 ms
-     * while the user is at the input prompt.
-     *
-     * @param dateRow 1-based terminal row of the "Date: ..." line
-     */
     public static void startTokenScreenAnimation(int dateRow) {
         stopTokenScreenAnimation();
         tokenAnimRunning = true;
         tokenAnimThread = new Thread(() -> {
             int tick = 0;
+            int fixedDateRow = dateRow;
+
             while (tokenAnimRunning) {
                 try {
                     MealType liveSlot = TimeManager.getCurrentMealSlot();
@@ -91,10 +105,16 @@ public class CafeteriaAsciiUI {
                     String statusLine = "Current Status: "
                             + (liveSlot == MealType.NONE ? "CLOSED" : "ACTIVE - " + liveSlot);
 
+                    int col = TerminalUI.boxCol();
+                    int contentWidth = Math.max(10, TerminalUI.innerW() - 2);
+
                     System.out.print(SAVE_CUR);
-                    paintTBoxTextLine(dateRow,     dateLine,   TerminalUI.getActiveTextColor());
-                    paintTBoxTextLine(dateRow + 1, statusLine, TerminalUI.getActiveTextColor());
-                    paintTBoxBarLine (dateRow + 2, liveSlot, tick);
+                    clearAnimatedRow(fixedDateRow);
+                    clearAnimatedRow(fixedDateRow + 1);
+                    clearAnimatedRow(fixedDateRow + 2);
+                    paintDynamicTBoxTextLine(fixedDateRow, dateLine, TerminalUI.getActiveTextColor(), col, contentWidth);
+                    paintDynamicTBoxTextLine(fixedDateRow + 1, statusLine, TerminalUI.getActiveTextColor(), col, contentWidth);
+                    paintDynamicTBoxBarLine(fixedDateRow + 2, liveSlot, tick, col, contentWidth);
                     System.out.print(RESTORE_CUR);
                     System.out.flush();
 
@@ -121,77 +141,90 @@ public class CafeteriaAsciiUI {
         }
     }
 
-    private static void paintTBoxTextLine(int termRow, String text, String textColor) {
+    private static int resolveDashboardTop(int requestedStartRow, int itemCount, int extraHeaderCount) {
+        int totalRows = 8 + itemCount + extraHeaderCount;
+        if (requestedStartRow <= 3) {
+            return Math.max(2, TerminalUI.centerRow(totalRows) - 1);
+        }
+        return requestedStartRow;
+    }
+
+    private static void clearAnimatedRow(int termRow) {
+        int width = Math.max(1, TerminalUI.termW());
+        System.out.print("\u001B[" + termRow + ";1H"
+                + TerminalUI.getActiveBgColor()
+                + " ".repeat(width)
+                + TerminalUI.RESET);
+    }
+
+    private static void paintDynamicTBoxTextLine(int termRow, String text, String textColor, int col, int contentWidth) {
         String boxColor = TerminalUI.getActiveBoxColor();
-        String bgColor  = TerminalUI.getActiveBgColor();
-        int col         = TerminalUI.centerCol(DASH_W);
-        String padded   = TerminalUI.padL(text, DASH_CW);
+        String panelBg = TerminalUI.getActivePanelBgColor();
+        String padded = TerminalUI.padL(text, contentWidth);
 
         StringBuilder sb = new StringBuilder(200);
-        sb.append("\u001B[").append(termRow).append(";").append(col).append("H");
-        sb.append(bgColor).append(boxColor).append("\u2551 ");
-        sb.append(textColor).append(bgColor).append(padded);
-        sb.append(boxColor).append(bgColor).append(" \u2551").append(TerminalUI.RESET);
+        sb.append("\u001B[").append(termRow).append(';').append(col).append('H');
+        sb.append(boxColor).append(panelBg).append("║ ");
+        sb.append(textColor).append(panelBg).append(padded);
+        sb.append(boxColor).append(panelBg).append(" ║").append(TerminalUI.RESET);
         System.out.print(sb);
     }
 
-    private static void paintTBoxBarLine(int termRow, MealType slot, int tick) {
+    private static void paintDynamicTBoxBarLine(int termRow, MealType slot, int tick, int col, int contentWidth) {
         String boxColor = TerminalUI.getActiveBoxColor();
-        String bgColor  = TerminalUI.getActiveBgColor();
-        int col         = TerminalUI.centerCol(DASH_W);
+        String panelBg = TerminalUI.getActivePanelBgColor();
 
-        String content = buildAnimatedBar(slot, tick, DASH_CW);
-        int visLen = stripAnsi(content).length();
-        int pad    = Math.max(0, DASH_CW - visLen);
+        String content = buildAnimatedBar(slot, tick, contentWidth);
+        int visibleLength = stripAnsi(content).length();
+        int pad = Math.max(0, contentWidth - visibleLength);
 
-        StringBuilder sb = new StringBuilder(200);
-        sb.append("\u001B[").append(termRow).append(";").append(col).append("H");
-        sb.append(bgColor).append(boxColor).append("\u2551 ").append(TerminalUI.RESET).append(bgColor);
+        StringBuilder sb = new StringBuilder(220);
+        sb.append("\u001B[").append(termRow).append(';').append(col).append('H');
+        sb.append(boxColor).append(panelBg).append("║ ");
         sb.append(content);
-        if (pad > 0) sb.append(" ".repeat(pad));
-        sb.append(bgColor).append(boxColor).append(" \u2551").append(TerminalUI.RESET);
+        if (pad > 0) {
+            sb.append(panelBg).append(" ".repeat(pad));
+        }
+        sb.append(boxColor).append(panelBg).append(" ║").append(TerminalUI.RESET);
         System.out.print(sb);
     }
-
-
 
     private static void paintBar(int termRow, int col, int iw, MealType slot, int tick) {
         String boxColor = TerminalUI.getActiveBoxColor();
-        String bgColor = TerminalUI.getActiveBgColor();
-        int contentW = iw - 1;  // visible chars after "║ "
+        String panelBg = TerminalUI.getActivePanelBgColor();
+        int contentWidth = Math.max(10, iw - 2);
 
-        String content = buildAnimatedBar(slot, tick, contentW);
-        int visLen = stripAnsi(content).length();
-        int pad = Math.max(0, contentW - visLen);
+        String content = buildAnimatedBar(slot, tick, contentWidth);
+        int visibleLength = stripAnsi(content).length();
+        int pad = Math.max(0, contentWidth - visibleLength);
 
-        StringBuilder sb = new StringBuilder(200);
-        sb.append("\u001B[").append(termRow).append(";").append(col).append("H");
-        sb.append(bgColor).append(boxColor).append("║ ").append(TerminalUI.RESET).append(bgColor);
+        StringBuilder sb = new StringBuilder(220);
+        sb.append("\u001B[").append(termRow).append(';').append(col).append('H');
+        sb.append(boxColor).append(panelBg).append("║ ");
         sb.append(content);
         if (pad > 0) {
-            sb.append(" ".repeat(pad));
+            sb.append(panelBg).append(" ".repeat(pad));
         }
-        sb.append(boxColor).append("║").append(TerminalUI.RESET);
+        sb.append(boxColor).append(panelBg).append(" ║").append(TerminalUI.RESET);
         System.out.print(sb);
         System.out.flush();
     }
 
     private static void paintNowLine(int termRow, int col, int iw) {
         String boxColor = TerminalUI.getActiveBoxColor();
-        String bgColor  = TerminalUI.getActiveBgColor();
-        String mu       = ConsoleColors.Accent.MUTED;
-        int contentW    = iw - 1;  // visible chars after "║ "
+        String panelBg = TerminalUI.getActivePanelBgColor();
+        String muted = ConsoleColors.Accent.MUTED;
+        int contentWidth = Math.max(10, iw - 2);
 
         String nowText = "Now: " + TimeManager.nowDate() + " " + TimeManager.nowTime()
-                + " | Slot: " + TimeManager.getCurrentMealSlot()
-                + " | Ramadan: " + TimeManager.isRamadanMode();
-        String padded = TerminalUI.padL(nowText, contentW);
+                + " | Slot: " + TimeManager.getCurrentMealSlot();
+        String padded = TerminalUI.padL(nowText, contentWidth);
 
-        StringBuilder sb = new StringBuilder(200);
-        sb.append("\u001B[").append(termRow).append(";").append(col).append("H");
-        sb.append(bgColor).append(boxColor).append("\u2551 ").append(TerminalUI.RESET).append(bgColor);
-        sb.append(mu).append(padded).append(TerminalUI.RESET);
-        sb.append(boxColor).append("\u2551").append(TerminalUI.RESET);
+        StringBuilder sb = new StringBuilder(220);
+        sb.append("\u001B[").append(termRow).append(';').append(col).append('H');
+        sb.append(boxColor).append(panelBg).append("║ ");
+        sb.append(muted).append(panelBg).append(padded).append(TerminalUI.RESET);
+        sb.append(boxColor).append(panelBg).append(" ║").append(TerminalUI.RESET);
         System.out.print(sb);
         System.out.flush();
     }
@@ -210,43 +243,36 @@ public class CafeteriaAsciiUI {
         long usedSec = Duration.between(w.start, now).getSeconds();
         long leftSec = Duration.between(now, w.end).getSeconds();
 
-        // Reserve 8 chars for " 42m59s", 1 space gap, rest for bar
         int timeW = 8;
         int barW = Math.max(6, maxW - timeW - 1);
         int filled = (int) Math.round((usedSec * 1.0 / totalSec) * barW);
         filled = Math.max(0, Math.min(barW, filled));
 
-        // Smooth pulse: 0 → 1 → 0 over 40 ticks
         double angle = tick * Math.PI / 20.0;
         float pulse = (float) (0.5 + 0.5 * Math.sin(angle));
 
-        // Filled body: warm amber pulsing
         int fr = 255, fg2 = (int) (150 + 70 * pulse), fb = 0;
-        // Playhead (last filled block): pulses towards near-white
         int pr = 255, pg = (int) (200 + 55 * pulse), pb = (int) (80 * pulse);
 
-        String emptyCol  = ConsoleColors.fgRGB(80, 65, 55);
+        String emptyCol = ConsoleColors.fgRGB(80, 65, 55);
         String filledCol = ConsoleColors.fgRGB(fr, fg2, fb);
-        String headCol   = ConsoleColors.fgRGB(pr, pg, pb) + TerminalUI.BOLD;
-        String bgColor   = TerminalUI.getActiveBgColor();
+        String headCol = ConsoleColors.fgRGB(pr, pg, pb) + TerminalUI.BOLD;
+        String panelBg = TerminalUI.getActivePanelBgColor();
 
         StringBuilder bar = new StringBuilder();
-        bar.append(bgColor);
-        // Draw filled blocks; last one gets the bright "playhead" color
+        bar.append(panelBg);
         if (filled > 1) {
-            bar.append(filledCol).append("\u2588".repeat(filled - 1));
+            bar.append(filledCol).append("█".repeat(filled - 1));
         }
         if (filled > 0) {
-            bar.append(headCol).append("\u2588").append("\u001B[22m").append(TerminalUI.RESET).append(bgColor);
+            bar.append(headCol).append("█").append("\u001B[22m").append(TerminalUI.RESET).append(panelBg);
         }
-        // Empty blocks
         int remaining = barW - filled;
         if (remaining > 0) {
-            bar.append(emptyCol).append("\u2591".repeat(remaining));
+            bar.append(emptyCol).append("░".repeat(remaining));
         }
-        bar.append(TerminalUI.RESET).append(bgColor);
+        bar.append(TerminalUI.RESET).append(panelBg);
 
-        // Time remaining (right side)
         long minLeft = leftSec / 60;
         long secLeft = leftSec % 60;
         String timeStr = String.format(" %3dm%02ds", minLeft, secLeft);
@@ -256,12 +282,9 @@ public class CafeteriaAsciiUI {
     }
 
     private static String stripAnsi(String s) {
-        return s.replaceAll("\u001B\\[[;\\d]*m", "");
+        return s == null ? "" : s.replaceAll("\u001B\\[[;\\d?]*[ -/]*[@-~]", "");
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Static render — used for the initial extraHeader snapshot
-    // ─────────────────────────────────────────────────────────────
     public static String renderSlotProgress(MealType slot) {
         LocalTime now = TimeManager.nowTime();
         DayOfWeek day = TimeManager.nowDay();
@@ -284,7 +307,7 @@ public class CafeteriaAsciiUI {
         int filled = (int) Math.round((usedSec * 1.0 / totalSec) * width);
         filled = Math.max(0, Math.min(width, filled));
 
-        String bar = "\u2588".repeat(filled) + "\u2591".repeat(width - filled);
+        String bar = "█".repeat(filled) + "░".repeat(width - filled);
 
         long minLeft = leftSec / 60;
         long secLeft = leftSec % 60;
@@ -293,9 +316,6 @@ public class CafeteriaAsciiUI {
                 slot, w.start, w.end, bar, minLeft, secLeft);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Time window helpers
-    // ─────────────────────────────────────────────────────────────
     private static TimeWindow getWindow(MealType slot, DayOfWeek day, boolean ramadan) {
         if (slot == MealType.NONE) {
             return null;
@@ -304,13 +324,13 @@ public class CafeteriaAsciiUI {
         if (ramadan) {
             return switch (slot) {
                 case SUHOOR ->
-                    new TimeWindow(LocalTime.parse("03:00"), LocalTime.parse("04:30"));
+                        new TimeWindow(LocalTime.parse("03:00"), LocalTime.parse("04:30"));
                 case IFTAR ->
-                    new TimeWindow(LocalTime.parse("18:00"), LocalTime.parse("19:15"));
+                        new TimeWindow(LocalTime.parse("18:00"), LocalTime.parse("19:15"));
                 case DINNER ->
-                    new TimeWindow(LocalTime.parse("19:30"), LocalTime.parse("21:30"));
+                        new TimeWindow(LocalTime.parse("19:30"), LocalTime.parse("21:30"));
                 default ->
-                    null;
+                        null;
             };
         }
 
@@ -323,11 +343,11 @@ public class CafeteriaAsciiUI {
 
         return switch (slot) {
             case LUNCH ->
-                new TimeWindow(LocalTime.parse("12:00"), LocalTime.parse("14:00"));
+                    new TimeWindow(LocalTime.parse("12:00"), LocalTime.parse("14:00"));
             case DINNER ->
-                new TimeWindow(LocalTime.parse("19:00"), LocalTime.parse("22:00"));
+                    new TimeWindow(LocalTime.parse("19:00"), LocalTime.parse("22:00"));
             default ->
-                null;
+                    null;
         };
     }
 

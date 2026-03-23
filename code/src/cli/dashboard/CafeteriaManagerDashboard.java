@@ -45,8 +45,7 @@ public class CafeteriaManagerDashboard implements Dashboard {
                 System.out.print(HIDE_CUR);
 
                 String nowLine = "Now: " + TimeManager.nowDate() + " " + TimeManager.nowTime()
-                        + " | Slot: " + TimeManager.getCurrentMealSlot()
-                        + " | Ramadan: " + TimeManager.isRamadanMode();
+                        + " | Slot: " + TimeManager.getCurrentMealSlot();
 
                 String[] extraHeader = {
                         nowLine,
@@ -64,10 +63,10 @@ public class CafeteriaManagerDashboard implements Dashboard {
                         menuStartRow
                 );
 
-                int nowRow = menuStartRow + 4;
-                int barRow = menuStartRow + 5;
                 CafeteriaAsciiUI.startBarAnimation(
-                        barRow, nowRow, boxCol(), innerW(),
+                        menuStartRow,
+                        MENU.length,
+                        extraHeader.length,
                         TimeManager.getCurrentMealSlot()
                 );
 

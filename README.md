@@ -196,9 +196,9 @@ Displays the student's current room assignment — room number and allocation st
 
 #### `[2]` Facility Booking
 Reserve three types of shared facilities:
-- **Laundry** — 6 machines displayed as a grid. Each student can hold only one booking at a time. After booking, a timer starts and the machine auto-releases when the wash cycle completes. Bookings persist across sessions via `data/facility/laundrySlots.txt`.
-- **Study Room** — seat-based booking for the communal study space for a set amount of time. Students must verify and claim their seat within a time frame, otherwise it is released automatically.
-- **Fridge** — personal fridge slot allocation using a **First-Fit algorithm** (`libraries/slots/FirstFitAllocator.java`) to automatically assign the next available slot.
+- **Laundry** — 6 machines displayed as a grid. Each student can hold only **one active booking at a time** — attempting to book a second slot while one is already held is blocked. Each slot tracks which student ID occupies it; a negative or out-of-range index (≥ 6) is rejected before any file lookup. After booking, a timer starts and the machine auto-releases when the wash cycle completes. Bookings persist across sessions via `data/facility/laundrySlots.txt`.
+- **Study Room** — a **6-slot × 10-seat** grid. Each seat within a slot can only be held by one student; a second student picking the same seat is blocked and must choose another. A student cannot hold more than one seat per slot. Seat numbers outside the range 0–9 are rejected. Students must verify and claim their seat within a time window, otherwise it is released automatically.
+- **Fridge** — **10 personal fridge slots** allocated using the **First-Fit algorithm** (`libraries/slots/FirstFitAllocator.java`). The allocator scans from index 0 and assigns the first available slot. If all 10 slots are occupied, a `SlotUnavailableException` is thrown and the booking is rejected.
 
 #### `[3]` Meal Token Purchase
 Purchase meal tokens for the cafeteria. The system is time-aware and enforces purchase windows — you cannot buy a token for a meal after its service window has already closed. Tokens carry a status: `ACTIVE`, `USED`, or `EXPIRED`. The system automatically switches to **Ramadan mode** meal times when enabled by the Cafeteria Manager.
@@ -321,24 +321,24 @@ Update personal details or change the login password.
 
 ![Hall Office Dashboard](assets/hall-office-dashboard.jpeg)
 
-The **Hall Office Dashboard** is themed in **hot pink / magenta**. The Hall Officer oversees room management and overall dormitory administration:
+The **Hall Office Dashboard** is themed in **hot pink / magenta**. The Hall Officer oversees all aspects of room management with **6 dedicated options**:
 
-#### `[1]` Update Student Hall Room Info
-A sub-menu with three options:
-- **Live Preview Available Rooms** — real-time view of all rooms with occupancy status (`AVAILABLE` / `FULL`)
-- **Allocate / Change Student Room** — look up a student by ID, see their current room, and assign a new one
-- **Review Room Change Applications** — view, approve, or reject formal room change requests submitted by students, with status transitions: `PENDING → COMPLETED / REJECTED`
+#### `[1]` Add New Room
+Register a new room into the system — set the room number and capacity. Used to expand the dormitory's available housing inventory.
 
-#### `[2]` View Student Complaints
-View and filter all open complaints submitted by students across the hall.
+#### `[2]` View Available Rooms
+Display a real-time list of all rooms with available slots, showing occupancy status (`AVAILABLE` / `FULL`) so the officer can quickly assess housing capacity.
 
-#### `[3]` View Worker Schedule
-View current maintenance worker assignments and schedules.
+#### `[3]` Browse All Rooms
+View the full catalog of every room in the dormitory — including occupied rooms — with current occupancy counts and capacity details.
 
-#### `[4]` Handle Attendant Task
-Manage attendant-level operational tasks from the officer view.
+#### `[4]` Assign Room To Unassigned Student
+Look up a student by ID or name and assign them a room from the available pool. Only works for students currently marked `UNASSIGNED` — already-assigned students must go through the room change application process.
 
-#### `[5]` Edit Profile
+#### `[5]` Review Room Change Applications
+View, approve, or reject formal room change requests submitted by students. Applications follow the status lifecycle: `PENDING → COMPLETED / REJECTED`.
+
+#### `[6]` Edit Profile
 Update personal details or change the login password.
 
 ---
@@ -347,7 +347,7 @@ Update personal details or change the login password.
 
 ![Admin Dashboard](assets/admin-dashboard.jpeg)
 
-The **Admin Dashboard** is themed in **deep red**, signaling elevated access. The Admin has 5 options for full system control:
+The **Admin Dashboard** is themed in **deep red**, signaling elevated access. The Admin has 4 options for full system control:
 
 #### `[1]` Create Account
 Create new accounts for any role — Student, Attendant, Maintenance Worker, Store-in-Charge, Hall Officer, or Cafeteria Manager. Input is validated with custom exceptions:
@@ -363,10 +363,7 @@ Remove a user account from the system by ID, with confirmation.
 #### `[3]` View & Search Accounts
 Browse all registered users across roles, or search by name or ID.
 
-#### `[4]` Manage Rooms
-Add, edit, or remove room records — set capacity and track occupancy across all rooms in the hall.
-
-#### `[5]` Edit Profile
+#### `[4]` Edit Profile
 Update admin personal details or change the login password.
 
 ---
@@ -398,7 +395,7 @@ Update personal details or change the login password.
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
-│           WELCOME TO IUT FEMALE DORMITORY                │
+│             WELCOME TO IUT FEMALE DORMITORY              │
 │               Select your role to continue               │
 ├──────────────────────────────────────────────────────────┤
 │  [1] Student              [5] Hall Office                │
@@ -414,8 +411,8 @@ Update personal details or change the login password.
 | Attendant | Deep Teal | 7 | Complaints, scheduling, announcements |
 | Maintenance Worker | Steel Blue / Gray | 4 | Repair and maintenance task resolution |
 | Store-in-Charge | Warm Brown / Amber | 4 | Inventory, orders, sales reports |
-| Hall Office | Hot Pink / Magenta | 5 | Room allocation, hall administration |
-| Admin | Deep Red | 5 | Full system control, account management |
+| Hall Office | Hot Pink / Magenta | 6 | Room management and allocation |
+| Admin | Deep Red | 4 | Full system control, account management |
 | Cafeteria Manager | Golden Yellow | 5 | Weekly menus, tokens, Ramadan mode |
 
 ---
@@ -681,7 +678,7 @@ Dormatrix uses a clean **MVC + Repository** layered architecture:
 ```
 
 **Key design decisions:**
-- **No `java.util`** — custom `MyArrayList`, `MyString`, and `MyOptional` used throughout
+- Custom `MyArrayList`, `MyString`, and `MyOptional` used throughout
 - **File-based storage** — all data lives in structured `|`-delimited flat files under `data/`
 - **Role-aware routing** — login determines which controller stack and dashboard loads
 - **Hashed credentials** — DJB2 + XOR hash, never stored in plain text
@@ -704,13 +701,20 @@ All data is stored as structured plain-text flat files. No external database is 
 | `data/users/store_in_charges.txt` | Store-in-Charge records |
 | `data/users/hall_officers.txt` | Hall Officer records |
 | `data/users/cafeteria_managers.txt` | Cafeteria Manager records |
+| `data/rooms/rooms.txt` | Room records with capacity and occupancy |
 | `data/complaints/complaints.txt` | All complaints with status, priority, tags |
+| `data/room_change_applications/` | Room change request records (`RCA-` prefixed IDs) |
 | `data/routines/student_routines.txt` | Weekly routine entries per student |
 | `data/schedules/worker_visits.txt` | Maintenance worker visit schedule |
 | `data/announcements/announcements.txt` | Hall announcement records |
 | `data/contacts/emergency_contacts.txt` | Emergency contact entries |
 | `data/facility/laundrySlots.txt` | Current laundry booking state (`slotIndex,studentId`) |
 | `data/foods/config.txt` | Ramadan mode toggle (`RAMADAN=true/false`) |
+| `data/store/dues.txt` | Student due records (`studentId,amount`) |
+| `data/store/sales.txt` | Sales log (`studentId,itemId,qty,total,date`) |
+| `data/inventories/inventory.txt` | Store item catalog (`itemId,name,qty,price`) |
+| `data/lostItems.txt` | Lost item reports with description and category |
+| `data/foundItems.txt` | Found items with claimed status and claimer ID |
 | `config/admin.config` | Admin credentials (hashed on first write) |
 
 ---
@@ -727,6 +731,79 @@ All data is stored as structured plain-text flat files. No external database is 
 | Architecture | MVC + Repository Pattern |
 | Terminal | WezTerm (recommended) |
 | Build | Windows Batch scripts (`setup.bat`, `run.bat`) |
+
+---
+
+## 🧪 Testing
+
+Dormatrix includes a comprehensive **JUnit 4** test suite covering all core modules. Tests live in `src/tests/` and use file snapshotting to isolate each test from real data — every test that touches disk saves the original file state and restores it after the test completes.
+
+### Test Files
+
+| File | Focus |
+|------|-------|
+| `src/tests/UnitTests.java` | Full unit and integration test suite (300+ tests) |
+| `src/tests/TerminalUITest.java` | Terminal rendering and UI component tests |
+
+### What Is Tested
+
+**Custom Libraries**
+- `HashFunction` — determinism, uniqueness, hex output, empty-input edge case
+- `MyArrayList` — add, get, set, remove, contains, indexOf, clear, dynamic resizing, forEach, out-of-bounds throws
+- `MyString` — all string operations: split, concat, trim, case conversion, substring, contains, containsAny, join, replace, intToHex, null constructor, edge-case substrings
+- `MyOptional` — present/empty states, `get`, `orElse`, `ofNullable`, throws on null `of` and empty `get`
+- `FirstFitAllocator` — empty slots, partial occupancy, all-full throws `SlotUnavailableException`
+
+**Authentication & Accounts**
+- Hash validation, role mapping, all 7 roles via `RoleMapper`
+- `CreateAccountController` — valid creation for all roles, invalid email/phone/password/department, duplicate ID, missing email, system error on register failure
+- `DeleteAccountController` — invalid role, wrong admin password, successful deletion, user-not-found
+- `SearchUserController` — blank input, search by ID across all role files, trim-before-search, not-found returns null
+- `ViewAccountController` — invalid choice returns empty list, reads role file, choice 8 returns all accounts, missing file returns empty list, `formatAccountDetails` output
+- `AccountManager` — filename mapping, `userExists`, `registerUser`, `deleteUser`, `findUserDetails` across files
+- `ConfigLoader` — reads all admin config keys, missing key returns null, missing file returns null
+
+**Models & Serialization**
+- `Student`, `Room`, `Item`, `DueRecord`, `StudentBalance`, `CartItem`, `ShoppingCart`, `MealToken`, `DailyMenu`, `RoutineEntry`, `MaintenanceWorker`, `HallOfficer`, `CafeteriaManager`, `StoreInCharge` — construction, getters, `toFileString` / `fromString` round-trips, invalid input returns null
+
+**Facility Slot Booking**
+- **Laundry** — slot conflict prevention, duplicate booking detection (student already holds a slot), out-of-range slot index rejection
+- **Study Room** — seat conflict (two students, same slot/seat), student-already-booked-in-slot detection, invalid seat number (≥10) rejection
+- **Fridge** — all-slots-full throws `SlotUnavailableException`, partial occupancy returns correct first-fit index
+- **Room** — full-room allocation blocked, occupancy caps at capacity, decrement floors at zero, multi-student fill and release
+
+**Store System**
+- `DueController` — missing student returns 0, `addDue` accumulates, `payDue` removes entry and leaves others intact
+- `InventoryController` — get missing returns null, add item, duplicate add returns false, update, delete, restock, case-insensitive name search, price range filter (min/max swap), low-stock threshold, item count
+- `SalesController` — invalid inputs rejected, valid sale appends CSV line, cart sale writes multiple lines
+- `PurchaseController` — invalid data rejected, missing item returns false, insufficient stock returns false, credit purchase deducts inventory and records due and sale, cart edge cases (empty/null/missing/insufficient stock), `getDues` reflects stored due
+- `PurchaseHistoryController` — filters by student, recent-days filter excludes old records, totals correct
+- `SalesSummaryController` — daily summary shows only today, custom range excludes out-of-range dates, revenue and average correct
+
+**Room Management**
+- `RoomController` — add room persists, allocate increments occupancy, free decrements, allocate full room returns false
+- `RoomService` — resolve student by ID or name, get name, room exists, is available, change room (null/blank/same/full/missing/non-existent target all return false), successful move updates student file and occupancy counts
+- Room change application lifecycle — submit (all validation cases), block second pending, `getPendingApplications`, `getById`, approve (not-found, already-rejected, room-gone, room-full, student-gone, success), reject (not-found, already-completed, success)
+
+**Complaint Engine**
+- `ComplaintPolicy` — normal priority for benign descriptions, `EMERGENCY` for fire/smoke/electric-shock/flood/burst-pipe keywords, correct worker field routing for all 4 categories
+- `Complaint` — `createNew`, `assignTo` / `clearAssignment` lifecycle, `appendTagNote`, null priority defaults to `NORMAL`, full 4-stage status transition, reassignment
+
+**Food & Tokens**
+- `MealToken` — creation, ACTIVE/USED/EXPIRED status, past-date auto-expires, serialization round-trip
+- `DailyMenu` — round-trip, invalid input returns null
+- Duplicate active token detection (same meal type + date), used token cannot be re-verified, expired token blocked
+- `TimeManager` — meal window boundary tests for all 6 windows (normal + Ramadan), `getMealEndTime`, demo mode toggle
+- Student balance — insufficient funds blocks deduction, multiple deductions track correctly
+
+**Routines & Schedules**
+- `RoutineEntry` / `StudentRoutineEntry` / `WorkerVisitEntry` — serialization, all days-of-week, all slot indices, pipe-in-content replaced with `/`, null/blank/too-few-parts return null
+- `RoutineController` — 12 full labels, 6 attendant labels, private-by-default night slots (0,1,10,11), `isStudentBusy24`, `putSlotByStudentId` / `clearSlotByStudentId` / `writeComplaintVisit` / `clearComplaintVisitIfPresent` / `isBusyForAttendantWindowExceptComplaint` — all validate slot index bounds before file access
+- `WorkerScheduleController` — 6 slot labels, `isDefaultDutyDay` for all worker fields and days, `manualPlanComplaint` rejects negative/out-of-bounds/nonexistent, `autoPlanComplaint` returns empty for nonexistent, `markVisitDone`, `renderWorkerWeek`, slot labels array validated in full
+
+**Profile Management**
+- `ProfileController.changePassword` — null/blank user, null/blank role, empty old/new/confirm password, password mismatch, too short, no digit, unknown user mapping error
+- `ProfileController.updatePhoneNumber` — null/blank user, null/blank role, empty phone, invalid format, unknown user mapping error
 
 ---
 
@@ -771,10 +848,6 @@ CSE Department, Islamic University of Technology, Gazipur, Bangladesh
 ---
 
 <div align="center">
-
-Made with ❤️ at IUT · CSE Department
-
-⭐ Star this repo if Dormatrix helped you!
 
 <b><a href="https://github.com/tayma-06/Dormatrix">GitHub Repository</a></b>
 
