@@ -20,20 +20,20 @@ public class LostFoundView {
             String[] items;
             if (canAddFoundItem) {
                 items = new String[]{
-                    "[1] View Found Items",
-                    "[2] View Lost Items",
-                    "[3] Report Lost Item",
-                    "[4] Claim an Item",
-                    "[5] Add Found Item (Hall Attendant Only)",
-                    "[0] Back to Dashboard"
+                        "[1] View Found Items",
+                        "[2] View Lost Items",
+                        "[3] Report Lost Item",
+                        "[4] Claim an Item",
+                        "[5] Add Found Item (Hall Attendant Only)",
+                        "[0] Back to Dashboard"
                 };
             } else {
                 items = new String[]{
-                    "[1] View Found Items",
-                    "[2] View Lost Items",
-                    "[3] Report Lost Item",
-                    "[4] Claim an Item",
-                    "[0] Back to Dashboard"
+                        "[1] View Found Items",
+                        "[2] View Lost Items",
+                        "[3] Report Lost Item",
+                        "[4] Claim an Item",
+                        "[0] Back to Dashboard"
                 };
             }
             TerminalUI.tSubDashboard("LOST & FOUND BOARD", items);
@@ -78,6 +78,7 @@ public class LostFoundView {
         }
     }
 
+    // --- UPDATED: Now displays the relational Lost ID ---
     private void viewFoundItems() {
         List<String> items = controller.getFoundItems();
         TerminalUI.tEmpty();
@@ -87,13 +88,14 @@ public class LostFoundView {
         if (items.isEmpty()) {
             TerminalUI.tBoxLine("No found items reported at this time.");
         } else {
-            TerminalUI.tBoxLine("ID            | Name       | Description          | Location   | Status");
+            TerminalUI.tBoxLine("Found ID      | Linked Lost ID | Status");
             TerminalUI.tBoxSep();
             for (String item : items) {
                 String[] p = item.split(",");
-                if (p.length == 6) {
-                    String status = p[4].equals("true") ? "Claimed by " + p[5] : "Available";
-                    TerminalUI.tBoxLine(String.format("%-13s | %-10s | %-20s | %-10s | %s", p[0], p[1], p[2], p[3], status));
+                // New Format: id, lostItemId, isClaimed, claimantId (4 parts)
+                if (p.length == 4) {
+                    String status = p[2].equals("true") ? "Claimed by " + p[3] : "Available";
+                    TerminalUI.tBoxLine(String.format("%-13s | %-14s | %s", p[0], p[1], status));
                 }
             }
         }
@@ -132,17 +134,14 @@ public class LostFoundView {
         TerminalUI.tSuccess("Item reported. The Hall Office will notify you if it is found.");
     }
 
+    // --- UPDATED: Now only asks for the Lost ID ---
     private void addFound() {
         TerminalUI.tEmpty();
-        TerminalUI.tPrompt("Enter Item Name: ");
-        String name = FastInput.readLine();
-        TerminalUI.tPrompt("Enter Description: ");
-        String desc = FastInput.readLine();
-        TerminalUI.tPrompt("Location Found (e.g., Study Room, Cafeteria): ");
-        String loc = FastInput.readLine();
+        TerminalUI.tPrompt("Enter the ID of the reported Lost Item (e.g., LID-A1B2C3D4): ");
+        String lostId = FastInput.readLine().trim();
 
-        controller.addFoundItem(name, desc, loc);
-        TerminalUI.tSuccess("Item added to the Found database.");
+        controller.addFoundItem(lostId);
+        TerminalUI.tSuccess("Item linked and added to the Found database.");
     }
 
     private void claimItem(String userId) {

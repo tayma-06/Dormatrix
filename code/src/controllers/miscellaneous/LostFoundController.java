@@ -22,13 +22,16 @@ public class LostFoundController {
         Logger.log("User " + userId + " reported lost item: " + name);
     }
 
-    // --- ADD A FOUND ITEM (Restricted to Hall Attendant via the View) ---
-    public void addFoundItem(String name, String desc, String location) {
-        String id = "FID-" + System.currentTimeMillis();
-        FoundItem item = new FoundItem(id, name, desc, location);
+    // --- ADD A FOUND ITEM ---
+    public void addFoundItem(String lostItemId) {
+        String uniqueHash = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String id = "FID-" + uniqueHash;
+
+        // Create the item using just the ID and the Lost Item's ID
+        FoundItem item = new FoundItem(id, lostItemId);
 
         saveToFile(FOUND_FILE, item.toString());
-        Logger.log("Staff added found item: " + name);
+        Logger.log("Staff marked lost item " + lostItemId + " as FOUND. (Found ID: " + id + ")");
     }
 
     // --- VIEW ALL FOUND ITEMS ---
