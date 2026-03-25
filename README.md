@@ -35,7 +35,6 @@
 <a href="#installation">Installation</a> ·
 <a href="#architecture">Architecture</a> ·
 <a href="#data-storage">Data Storage</a> ·
-<a href="#contributing">Contributing</a>
 
 </div>
 
