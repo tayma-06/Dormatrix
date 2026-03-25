@@ -632,10 +632,10 @@ Dormatrix/code/
 │   ├── facility/
 │   └── foods/
 ├── config/
-├── lib/                        ← contains jline3.jar
+├── lib/                       
 ├── assets/
-├── setup.bat                   ← compile + run (first time)
-└── run.bat                     ← run only (subsequent sessions)
+├── setup.bat                  
+└── run.bat                     
 ```
 
 </details>
