@@ -29,22 +29,22 @@
 
 <br>
 
-<a href="#overview">Overview</a> ·
-<a href="#demo">Demo</a> ·
-<a href="#walkthrough">Walkthrough</a> ·
-<a href="#features">Features</a> ·
-<a href="#installation">Installation</a> ·
-<a href="#architecture">Architecture</a> ·
-<a href="#data-storage">Data Storage</a> ·
-<a href="#testing">Testing</a> ·
-<a href="#team">Team</a>
+<a href="#overview">📋 Overview</a> ·
+<a href="#demo">🎥 Demo</a> ·
+<a href="#walkthrough">🎬 Walkthrough</a> ·
+<a href="#features">✨ Features</a> ·
+<a href="#installation">⚙️ Installation</a> ·
+<a href="#architecture">🏗️ Architecture</a> ·
+<a href="#data-storage">💾 Data Storage</a> ·
+<a href="#testing">🧪 Testing</a> ·
+<a href="#team">👥 Team</a>
 
 </div>
 
 ---
 
 <a name="overview"></a>
-## Overview
+## 📋 Overview
 
 <table>
 <tr>
@@ -94,20 +94,47 @@ Each of the **7 user roles** gets its own **color-themed dashboard**, designed t
 </table>
 
 ---
+## 🎭 User Roles
 
+```text
+┌──────────────────────────────────────────────────────────┐
+│             WELCOME TO IUT FEMALE DORMITORY              │
+│               Select your role to continue               │
+├──────────────────────────────────────────────────────────┤
+│  [1] Student              [5] Hall Office                │
+│  [2] Attendant            [6] Admin                      │
+│  [3] Maintenance Worker   [7] Cafeteria Manager          │
+│  [4] Store In Charge      [0] Exit                       │
+└──────────────────────────────────────────────────────────┘
+```
 
-### User Roles
+| Role | Theme | Options | Primary Focus |
+|------|-------|:-------:|---------------|
+| Student | Navy Blue | 11 | Room, meals, booking, complaints, store |
+| Attendant | Deep Teal | 7 | Complaints, scheduling, announcements |
+| Maintenance Worker | Steel Blue / Gray | 4 | Repair and maintenance task resolution |
+| Store-in-Charge | Warm Brown / Amber | 4 | Inventory, orders, sales reports |
+| Hall Office | Hot Pink / Magenta | 6 | Room management and allocation |
+| Admin | Deep Red | 4 | Full system control, account management |
+| Cafeteria Manager | Golden Yellow | 5 | Weekly menus, tokens, Ramadan mode |
 
-| Input | Role | Theme | Options | Primary responsibilities |
-|-------|------|-------|---------|--------------------------|
-| `1` | Student | Navy Blue | 11 | Room status, facility booking, token purchase, store, dues, complaints, routine, announcements, contacts, lost & found, profile |
-| `2` | Attendant | Deep Teal | 7 | Complaint monitoring and worker assignment, found-item logging, announcement posting, emergency contacts, worker schedule |
-| `3` | Maintenance Worker | Steel Blue / Gray | 4 | Work field awareness, assigned task handling, visit schedule tracking |
-| `4` | Store-in-Charge | Amber / Brown | 4 | Inventory control, purchase order processing, sales reporting |
-| `5` | Hall Office | Hot Pink / Magenta | 6 | Room inventory, availability checking, first-time room assignment, room-change review |
-| `6` | Admin | Deep Red | 4 | Account creation and deletion, account lookup, user-account maintenance |
-| `7` | Cafeteria Manager | Golden Yellow | 5 | Weekly menu updates, special events, token verification, Ramadan mode toggle |
-| `0` | Exit | — | — | — |
+---
+
+<a name="demo"></a>
+## 🎥 Demo
+
+<div align="center">
+
+<a href="#">
+  <img src="assets/video-demo-cover.jpeg" alt="Dormatrix Video Demonstration" width="85%" />
+</a>
+
+<br><br>
+
+<b>Video Demonstration</b><br>
+A guided walkthrough of Dormatrix
+
+</div>
 
 ---
 
@@ -126,37 +153,27 @@ Student actions — complaints, bookings, store purchases, meal token requests �
 
 ---
 
-<a name="demo"></a>
-## Demo
-
-<div align="center">
-
-<a href="#">
-  <img src="assets/video-demo-cover.jpeg" alt="Dormatrix Video Demonstration" width="85%" />
-</a>
-
-<br><br>
-
-<b>Video Demonstration</b><br>
-A guided walkthrough of Dormatrix
-
-</div>
-
----
-
 <a name="walkthrough"></a>
-## Walkthrough
+## 🎬 Walkthrough
 
 ### Launch & Role Selection
 
-<div align="center">
-  <img src="assets/role-selection.jpeg" alt="Role Selection" width="90%" />
-  <br><sub><b>Role Selection Screen</b></sub>
-</div>
+![Role Selection](assets/role-selection.jpeg)
 
-<br>
+When Dormatrix starts, the screen is filled with the **DORMATRIX** splash header rendered with ANSI true-color escape codes, followed by a matrix rain animation that plays on first entry.
 
-When Dormatrix starts, the screen fills with the **DORMATRIX** splash header rendered in ANSI true-color. Below the header is the **role selection menu**. Navigate by typing a number and pressing Enter, or use the arrow keys.
+Below the header is the **role selection menu** — the entry point for every session. The currently highlighted option is shown, and navigation works both by typing a number and pressing Enter, as well as arrow keys.
+
+| Input | Role | Dashboard Theme |
+|-------|------|----------------|
+| `1` | Student | Navy Blue |
+| `2` | Attendant | Deep Teal |
+| `3` | Maintenance Worker | Steel Blue / Gray |
+| `4` | Store In Charge | Warm Brown / Amber |
+| `5` | Hall Office | Hot Pink / Magenta |
+| `6` | Admin | Deep Red |
+| `7` | Cafeteria Manager | Golden Yellow |
+| `0` | Exit | — |
 
 ---
 
@@ -424,7 +441,7 @@ Switch the entire food system between normal and Ramadan meal times with one tog
 ---
 
 <a name="features"></a>
-## Features
+## ✨ Features
 
 <details>
 <summary><b>Smart Complaint Engine</b> — auto-priority, auto-routing, keyword detection</summary>
@@ -608,7 +625,7 @@ All collection and utility needs are served by internal classes built from scrat
 ---
 
 <a name="installation"></a>
-## Installation
+## ⚙️ Installation
 
 ### Prerequisites
 
@@ -661,7 +678,7 @@ Password :  admin123
 ---
 
 <a name="architecture"></a>
-## Architecture
+## 🏗️ Architecture
 
 Dormatrix uses a clean **MVC + Repository** layered architecture. The CLI screens are the view layer. Controllers handle all business logic. Repositories read from and write to text files. Models hold the domain objects used across the system. This separation means adding a feature always has a clear home — view, logic, and storage stay independent.
 
@@ -817,7 +834,7 @@ Dormatrix/code/
 ---
 
 <a name="data-storage"></a>
-## Data Storage
+## 💾 Data Storage
 
 All state is persisted in pipe-delimited (`|`) plain-text files grouped under `data/` by domain. Each repository class handles exactly one file type — adding a field to a record means modifying the model and its corresponding repository only. Every file is human-readable and can be inspected or edited directly; changes take effect on the next application read.
 
@@ -862,7 +879,7 @@ All state is persisted in pipe-delimited (`|`) plain-text files grouped under `d
 ---
 
 <a name="testing"></a>
-## Testing
+## 🧪 Testing
 
 Dormatrix includes a **JUnit test suite (300+ tests)** in `src/tests/`. Tests use file snapshotting to isolate each test from real data — every test saves the original file state before running and restores it after completion.
 
@@ -930,13 +947,15 @@ Dormatrix includes a **JUnit test suite (300+ tests)** in `src/tests/`. Tests us
 
 ---
 
-## License
+<a name="license"></a>
+## 📄 License
 
 This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for details.
 
 ---
 
-## Team
+<a name="team"></a>
+## 👥 Team
 
 **Dormatrix** — SWE4304 SPL-1 Project
 CSE Department, Islamic University of Technology, Gazipur, Bangladesh
