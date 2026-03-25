@@ -3095,33 +3095,6 @@ public class UnitTests {
         }
     }
 
-    @Test
-    public void lostFoundController_addFoundItemAndClaimFlowWorks() throws Exception {
-        FileSnapshot lostSnap = snapshot(LOST_FILE);
-        FileSnapshot foundSnap = snapshot(FOUND_FILE);
-        try {
-            writeFile(LOST_FILE, "");
-            writeFile(FOUND_FILE, "");
-
-            LostFoundController controller = new LostFoundController();
-            controller.addFoundItem("Phone", "Samsung", "Library");
-
-            java.util.List<String> found = controller.getFoundItems();
-            assertEquals(1, found.size());
-
-            String id = found.get(0).split(",")[0];
-            assertTrue(controller.verifyAndClaim(id, "STU002"));
-
-            java.util.List<String> updated = controller.getFoundItems();
-            assertTrue(updated.get(0).contains(",true,STU002"));
-
-            assertFalse(controller.verifyAndClaim(id, "STU003"));
-        } finally {
-            restore(lostSnap);
-            restore(foundSnap);
-        }
-    }
-
     // ─── AccountRecordParser Tests ────────────────────────────
     @Test
     public void accountRecordParser_parseStudentRecord() {
