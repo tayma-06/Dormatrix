@@ -632,10 +632,10 @@ Dormatrix/code/
 │   ├── facility/
 │   └── foods/
 ├── config/
-├── lib/                        ← contains jline3.jar
+├── lib/                       
 ├── assets/
-├── setup.bat                   ← compile + run (first time)
-└── run.bat                     ← run only (subsequent sessions)
+├── setup.bat                  
+└── run.bat                     
 ```
 
 </details>
@@ -768,30 +768,6 @@ Dormatrix includes a comprehensive **JUnit 4** test suite (300+ tests) in `src/t
 **Profile Management**
 - `changePassword` — empty/mismatched/too-short/no-digit password rejected
 - `updatePhoneNumber` — empty/invalid format rejected
-
-<br>
-
-</details>
-
----
-
-<a name="contributing"></a>
-## Contributing
-
-Contributions, bug reports, and suggestions are welcome.
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Commit your changes: `git commit -m "Add: description of change"`
-4. Push to your branch: `git push origin feature/my-feature`
-5. Open a Pull Request
-
-<details>
-<summary><b>Bug Report Guidelines</b></summary>
-
-<br>
-
-Please include steps to reproduce, expected vs. actual behavior, your Java version (`java -version`), terminal emulator used, and a screenshot or terminal output if applicable.
 
 <br>
 
