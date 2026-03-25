@@ -2,24 +2,20 @@ package models.miscellaneous;
 
 public class FoundItem {
     private String id;
-    private String name;
-    private String description;
-    private String locationFound;
+    private String lostItemId; // Links directly to the LostItem
     private boolean isClaimed;
     private String claimantId;
 
-    public FoundItem(String id, String name, String description, String locationFound) {
+    public FoundItem(String id, String lostItemId) {
         this.id = id;
-        this.name = name;
-        this.description = description;
-        this.locationFound = locationFound;
+        this.lostItemId = lostItemId;
         this.isClaimed = false;
-        this.claimantId = "None"; // Default value when unclaimed
+        this.claimantId = "None";
     }
 
-    // Converts the object to a comma-separated string for easy file saving
     @Override
     public String toString() {
-        return id + "," + name + "," + description + "," + locationFound + "," + isClaimed + "," + claimantId;
+        // New shorter format: id, lostItemId, isClaimed, claimantId
+        return id + "," + lostItemId + "," + isClaimed + "," + claimantId;
     }
 }
