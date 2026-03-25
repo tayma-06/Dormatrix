@@ -89,16 +89,6 @@ public class StudentRoomView {
             statusText = "AVAILABLE";
         }
 
-        String comfort;
-        if (occupancy == 0) {
-            comfort = "Very quiet room";
-        } else if (ratio >= 1.0) {
-            comfort = "No free space remaining";
-        } else if (ratio >= 0.75) {
-            comfort = "Crowded right now";
-        } else {
-            comfort = "Still has breathing room";
-        }
 
         return new String[]{
                 "Room Number : " + roomNumber,
@@ -106,7 +96,6 @@ public class StudentRoomView {
                 "Free Seats  : " + freeSeats,
                 "Status      : " + statusColor + statusText + RESET,
                 "Space Meter : " + buildOccupancyBar(occupancy, capacity, 18),
-                "Room Feel   : " + comfort,
                 "Room Change : Submit an application if you want to move rooms.",
                 "Note        : Complaints and room-change requests are available below."
         };
