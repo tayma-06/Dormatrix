@@ -13,11 +13,11 @@ public class FacilityDashboard {
     private static final String MUTED = ConsoleColors.Accent.MUTED;
 
     private static final MenuItem[] MENU = {
-        new MenuItem(1, "Book Study Room Seat"),
-        new MenuItem(2, "Check-in to Study Room"),
-        new MenuItem(3, "Book Fridge Slot"),
-        new MenuItem(4, "Book Laundry Machine"),
-        new MenuItem(0, "Back"),};
+            new MenuItem(1, "Book Study Room Seat"),
+            new MenuItem(2, "Check-in to Study Room"),
+            new MenuItem(3, "Book Fridge Slot"),
+            new MenuItem(4, "Book Laundry Machine"),
+            new MenuItem(0, "Back"),};
 
     public void showMenu(String username, StudyRoomController study, FridgeController fridge, LaundryController laundry) {
         while (true) {
@@ -26,17 +26,15 @@ public class FacilityDashboard {
                 setActiveTheme(BOX, TEXT, BG);
                 System.out.print(HIDE_CUR);
 
-                int menuStartRow = 3;
-                int promptRow = drawDashboard(
+                drawDashboard(
                         "FACILITY BOOKING SYSTEM",
                         "Welcome, " + username,
                         MENU, TEXT, BOX,
                         null,
-                        menuStartRow
+                        3
                 );
 
-                System.out.print(SHOW_CUR);
-                int choice = FastInput.readInt();
+                int choice = readChoiceArrow();
                 System.out.print(RESET);
 
                 if (choice == 0) {
@@ -59,7 +57,7 @@ public class FacilityDashboard {
             case 1:
                 int currentSlot = SlotAllocator.getCurrentSlotIndex();
 
-                System.out.println("\n--- Study Room Layout ---");
+                System.out.println(TEXT + "\n--- Study Room Layout ---" + RESET);
                 for (int i = 0; i < 10; i++) {
                     if (s.getSeatMap()[currentSlot][i] == null) {
                         System.out.print("[ Seat " + (i + 1) + " : EMPTY ]  ");
@@ -71,38 +69,41 @@ public class FacilityDashboard {
                     }
                 }
 
-                System.out.print("\n\nEnter seat number you want to book (1-10): ");
+                tPrompt("\n\nEnter seat number you want to book (1-10): ");
                 int seatToBook = FastInput.readInt() - 1;
 
                 if (s.bookSeat(user, seatToBook)) {
-                    System.out.println("Booking successful! You have 30 seconds to choose Option 2 and Check-in.");
+                    tSuccess("Booking successful! You have 30 seconds to choose Option 2 and Check-in.");
                 }
                 ConsoleUtil.pause();
                 break;
 
             case 2:
-                System.out.print("Enter your reserved seat number (1-10) to confirm arrival: ");
+                tPrompt("Enter your reserved seat number (1-10) to confirm arrival: ");
                 int seatToCheckIn = FastInput.readInt() - 1;
 
                 s.checkIn(user, seatToCheckIn);
                 ConsoleUtil.pause();
                 break;
+
             case 3:
                 f.handleFridgeBooking(user);
                 ConsoleUtil.pause();
                 break;
+
             case 4:
                 l.displayLaundryStatus();
 
-                System.out.print("\nEnter Laundry slot index (1-6) to book: ");
+                tPrompt("\nEnter Laundry slot index (1-6) to book: ");
                 int slot = FastInput.readInt() - 1;
 
                 String result = l.bookLaundry(slot, user);
                 System.out.println(result);
                 ConsoleUtil.pause();
                 break;
+
             default:
-                System.out.println("Invalid option.");
+                tError("Invalid option.");
                 ConsoleUtil.pause();
         }
     }

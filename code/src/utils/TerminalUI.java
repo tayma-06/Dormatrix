@@ -2516,4 +2516,233 @@ public final class TerminalUI {
             }
         }
     }
+    // ─────────────────────────────────────────────────────────────
+// INLINE GRID UI HELPERS
+// Generic reusable UI only — no facility logic here.
+// ─────────────────────────────────────────────────────────────
+
+    public static int tInlineGridSelect(String title,
+                                        String[] labels,
+                                        int columns,
+                                        String footerText) {
+        if (labels == null || labels.length == 0) {
+            return -1;
+        }
+
+        Terminal term = getJLineTerminal();
+        if (term == null) {
+            return tInlineGridFallback(title, labels, columns, footerText);
+        }
+
+        int selected = 0;
+        Attributes saved = term.enterRawMode();
+        org.jline.utils.NonBlockingReader reader = term.reader();
+
+        try {
+            System.out.print(HIDE_CUR);
+
+            while (true) {
+                renderInlineGridCentered(title, labels, columns, selected, footerText, true);
+
+                int c = reader.read();
+                if (c == -1) {
+                    continue;
+                }
+
+                if (c == 27) { // ESC or arrow sequence
+                    int n1 = reader.read(100);
+                    if (n1 == '[' || n1 == 'O') {
+                        int n2 = reader.read(100);
+
+                        switch (n2) {
+                            case 'A': // up
+                                if (selected - columns >= 0) {
+                                    selected -= columns;
+                                }
+                                break;
+                            case 'B': // down
+                                if (selected + columns < labels.length) {
+                                    selected += columns;
+                                }
+                                break;
+                            case 'C': // right
+                                if ((selected % columns) < columns - 1 && selected + 1 < labels.length) {
+                                    selected++;
+                                }
+                                break;
+                            case 'D': // left
+                                if ((selected % columns) > 0) {
+                                    selected--;
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    } else {
+                        return -1; // plain ESC
+                    }
+                    continue;
+                }
+
+                if (c == 13 || c == 10) { // Enter
+                    return selected;
+                }
+
+                if (c == 'q' || c == 'Q' || c == 3) { // q / Ctrl+C
+                    return -1;
+                }
+            }
+        } catch (IOException e) {
+            return tInlineGridFallback(title, labels, columns, footerText);
+        } finally {
+            term.setAttributes(saved);
+            System.out.print(SHOW_CUR);
+            System.out.flush();
+        }
+    }
+
+    public static void tInlineGridPreview(String title,
+                                          String[] labels,
+                                          int columns,
+                                          String footerText) {
+        renderInlineGridCentered(title, labels, columns, -1, footerText, false);
+    }
+
+    public static boolean tWaitEnterOrEsc() {
+        Terminal term = getJLineTerminal();
+        if (term == null) {
+            String input = FastInput.readLine();
+            return input == null || input.isEmpty();
+        }
+
+        Attributes saved = term.enterRawMode();
+        org.jline.utils.NonBlockingReader reader = term.reader();
+
+        try {
+            System.out.print(HIDE_CUR);
+
+            while (true) {
+                int c = reader.read();
+                if (c == -1) {
+                    continue;
+                }
+
+                if (c == 13 || c == 10) { // Enter
+                    return true;
+                }
+
+                if (c == 27 || c == 'q' || c == 'Q' || c == 3) { // Esc / q / Ctrl+C
+                    return false;
+                }
+            }
+        } catch (IOException e) {
+            return false;
+        } finally {
+            term.setAttributes(saved);
+            System.out.print(SHOW_CUR);
+            System.out.flush();
+        }
+    }
+
+    private static int tInlineGridFallback(String title,
+                                           String[] labels,
+                                           int columns,
+                                           String footerText) {
+        renderInlineGridCentered(title, labels, columns, 0, footerText, true);
+        System.out.print("\n\nEnter number (1-" + labels.length + ", 0 to go back): ");
+        int n = FastInput.readInt();
+        if (n <= 0 || n > labels.length) {
+            return -1;
+        }
+        return n - 1;
+    }
+
+    private static void renderInlineGridCentered(String title,
+                                                 String[] labels,
+                                                 int columns,
+                                                 int selected,
+                                                 String footerText,
+                                                 boolean interactive) {
+        fillBackground(getActiveBgColor());
+
+        String[] lines = buildInlineGridLines(labels, columns, selected);
+        String nav = interactive
+                ? "[←][→][↑][↓] Move   [Enter] Select   [Esc] Back"
+                : "[Enter] Continue   [Esc] Back";
+
+        int maxWidth = stripAnsi(title).length();
+        for (String line : lines) {
+            maxWidth = Math.max(maxWidth, stripAnsi(line).length());
+        }
+        maxWidth = Math.max(maxWidth, stripAnsi(footerText).length());
+        maxWidth = Math.max(maxWidth, stripAnsi(nav).length());
+
+        int totalRows = 1 + 1 + lines.length + 1 + 1;
+        int startRow = Math.max(3, centerRow(totalRows));
+        int startCol = Math.max(3, centerCol(maxWidth));
+
+        at(startRow, startCol);
+        System.out.print(BOLD + getActiveTextColor() + title + RESET);
+
+        int row = startRow + 2;
+        for (String line : lines) {
+            at(row++, startCol);
+            System.out.print(line + RESET);
+        }
+
+        at(row + 1, startCol);
+        System.out.print(MUTED + footerText + RESET);
+
+        at(row + 2, startCol);
+        System.out.print(MUTED + nav + RESET);
+
+        System.out.flush();
+    }
+
+    private static String[] buildInlineGridLines(String[] labels, int columns, int selected) {
+        int labelWidth = 0;
+        for (String label : labels) {
+            if (label != null) {
+                labelWidth = Math.max(labelWidth, stripAnsi(label).length());
+            }
+        }
+
+        int rows = (labels.length + columns - 1) / columns;
+        String[] lines = new String[rows];
+
+        int idx = 0;
+        for (int r = 0; r < rows; r++) {
+            StringBuilder sb = new StringBuilder();
+            for (int c = 0; c < columns && idx < labels.length; c++, idx++) {
+                sb.append(renderInlineGridCell(labels[idx], idx == selected, labelWidth));
+                if (c < columns - 1 && idx < labels.length - 1) {
+                    sb.append("  ");
+                }
+            }
+            lines[r] = sb.toString();
+        }
+
+        return lines;
+    }
+
+    private static String renderInlineGridCell(String label, boolean selected, int labelWidth) {
+        String safe = label == null ? "" : label;
+        String cellText = "[ " + padRightPlainInline(safe, labelWidth) + " ]";
+
+        String bg = selected ? HL_BG : getActivePanelBgColor();
+        String fg = selected ? HL_FG : getActiveTextColor();
+
+        return bg + fg + cellText + RESET;
+    }
+
+    private static String padRightPlainInline(String s, int width) {
+        if (s == null) {
+            s = "";
+        }
+        int len = stripAnsi(s).length();
+        if (len >= width) {
+            return s;
+        }
+        return s + " ".repeat(width - len);
+    }
 }
