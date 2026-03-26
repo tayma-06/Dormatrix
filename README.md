@@ -586,21 +586,6 @@ All three are XOR-combined and masked to a positive integer. Plain-text password
 </details>
 
 <details>
-<summary><b>UI Highlights</b></summary>
-
-<br>
-
-- **7 distinct ANSI true-color themes** — one per role, applied down to the background fill
-- **Matrix rain animation** on first entry to each role's dashboard
-- **Live animated progress bar** in the Cafeteria Manager dashboard showing current meal slot and remaining time
-- **Arrow key + number navigation** throughout all menus, with a lilac highlight bar on the active item
-- **Dynamic terminal sizing** — panels reflow to the current window width; layout adapts automatically
-
-<br>
-
-</details>
-
-<details>
 <summary><b>Custom-Built Libraries</b> — no Java collections used in core logic</summary>
 
 <br>
@@ -623,6 +608,21 @@ All collection and utility needs are served by internal classes built from scrat
 
 </details>
 
+<details>
+<summary><b>UI Highlights</b></summary>
+
+<br>
+
+- **7 distinct ANSI true-color themes** — one per role, applied down to the background fill
+- **Matrix rain animation** on first entry to each role's dashboard
+- **Live animated progress bar** in the Cafeteria Manager dashboard showing current meal slot and remaining time
+- **Arrow key + number navigation** throughout all menus, with a lilac highlight bar on the active item
+- **Dynamic terminal sizing** — panels reflow to the current window width; layout adapts automatically
+
+<br>
+
+</details>
+
 ---
 
 <a name="libraries"></a>
@@ -638,6 +638,8 @@ These are the only third-party libraries the project depends on:
 |---------|------|---------|---------|
 | **JLine3** | External JAR | Latest stable | Masked password input during login — hides each character behind a `•` bullet so credentials never appear on screen. This is the **only** runtime dependency beyond the JDK. |
 | **JUnit 5** | Testing framework | 5.x | Unit testing during development and verification. Used exclusively in the `tests/` package and not bundled in the production build. |
+
+---
 
 ### Custom-Built Libraries (`libraries/` package)
 
@@ -677,6 +679,37 @@ Rather than pulling in utility libraries, the team built and used a set of inter
 | Class | What it does |
 |-------|-------------|
 | `Logger` | Writes timestamped audit-trail entries for significant system events (laundry slot auto-release, booking confirmations, etc.). Keeps operational history separate from the user-facing data files. |
+
+---
+
+### Custom Utils (`utils/` package)
+
+Shared rendering, input, time, and role-mapping helpers consumed across multiple modules. Unlike the `libraries/` package — which provides reusable data structures and algorithms — `utils` classes focus on terminal presentation and cross-cutting runtime services. All classes here are actively referenced by more than one module.
+
+<details>
+<summary><b>View all utils classes</b></summary>
+
+<br>
+
+| Class | What it does |
+|-------|-------------|
+| `ConsoleUtil` | Low-level ANSI terminal primitives — screen clearing, cursor movement, cursor hide/show, color reset, and text wrapping for long messages. Used by virtually every screen in the system. |
+| `ConsoleColors` | ANSI true-color escape code constants used by the theming system across all seven role dashboards. Centralizing these here means color changes propagate everywhere without touching individual screens. |
+| `TerminalUI` | Builds the bordered boxes, aligned headers, and structured column layouts that form the visible skeleton of every dashboard screen. |
+| `TerminalUIExtras` | Adds layered visual effects on top of `TerminalUI`, including the matrix-rain animation shown once on first entry to each role's dashboard. |
+| `BackgroundFiller` | Fills the entire terminal background with the active role's theme color so each dashboard feels visually distinct at a glance — the background switches on login and clears on logout. |
+| `InputHelper` | Handles password reading and wraps keyboard input for secure, consistent form entry across all login and profile-change flows. |
+| `FastInput` | Simplifies and standardizes the general input flow throughout the application; also powers arrow-key navigation in the menu system. |
+| `RoleMapper` | Normalizes role name variants (e.g. `"Hall Office"`, `"hall_office"`, `"HallOffice"`) into one canonical form so file lookups and dashboard routing stay reliable regardless of how the role string arrives. |
+| `CafeteriaAsciiUI` | Renders the live animated progress bar in the Cafeteria Manager dashboard, reflecting the current meal window and time remaining based on `TimeManager`. |
+| `TimeManager` | Shared clock service used by the cafeteria, scheduling, and routine modules. Supports three modes: **real** (delegates to `LocalTime.now()`), **demo** (45× time compression — 20 real minutes covers the full 07:00–22:00 simulated day), and **Ramadan** (replaces all standard meal windows with Suhoor, Iftar, and Ramadan Dinner). The Ramadan toggle is persisted to `data/foods/config.txt` and survives application restarts. |
+| `FeaturePaths` | Supplementary path constants for feature-specific file lookups, keeping path strings out of individual controller classes and complementing `FilePaths` in the `libraries/file` package. |
+
+<br>
+
+</details>
+
+---
 
 ### Standard Java APIs Used
 
