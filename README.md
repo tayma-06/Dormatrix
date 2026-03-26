@@ -33,6 +33,7 @@
 <a href="#demo">🎥 Demo</a> ·
 <a href="#walkthrough">🎬 Walkthrough</a> ·
 <a href="#features">✨ Features</a> ·
+<a href="#libraries">📚 Libraries Used</a> ·
 <a href="#installation">⚙️ Installation</a> ·
 <a href="#architecture">🏗️ Architecture</a> ·
 <a href="#data-storage">💾 Data Storage</a> ·
@@ -624,6 +625,72 @@ All collection and utility needs are served by internal classes built from scrat
 
 ---
 
+<a name="libraries"></a>
+## 📚 Libraries Used
+
+Dormatrix was deliberately built with minimal external dependencies. Almost everything — data structures, hashing, file I/O helpers, slot allocation, and terminal rendering — was implemented from scratch as part of the project.
+
+### External Libraries
+
+These are the only third-party libraries the project depends on:
+
+| Library | Type | Version | Purpose |
+|---------|------|---------|---------|
+| **JLine3** | External JAR | Latest stable | Masked password input during login — hides each character behind a `•` bullet so credentials never appear on screen. This is the **only** runtime dependency beyond the JDK. |
+| **JUnit 5** | Testing framework | 5.x | Unit testing during development and verification. Used exclusively in the `tests/` package and not bundled in the production build. |
+
+### Custom-Built Libraries (`libraries/` package)
+
+Rather than pulling in utility libraries, the team built and used a set of internal classes throughout the codebase. These are not placeholder stubs — every class listed below is actively used in production code.
+
+#### Collections (`libraries/collections`)
+
+| Class | What it does |
+|-------|-------------|
+| `MyArrayList<T>` | A full dynamic-resizing list built from a raw array. Supports `add`, `get`, `set`, `remove`, `contains`, `indexOf`, `clear`, `forEach`, and automatic capacity doubling. Used in place of `java.util.ArrayList` across the project. |
+| `MyString` | A character-array string wrapper with its own `split`, `trim`, `toLowerCase`, `toUpperCase`, `containsAny`, `replace`, `substring`, `concat`, and `intToHex` methods. Powers the complaint keyword detection engine and the hash output formatter. |
+| `MyOptional<T>` | A minimal optional wrapper that eliminates direct null checks. Provides `of`, `ofNullable`, `isPresent`, `get`, and `orElse`. |
+
+#### Hashing (`libraries/hashing`)
+
+| Class | What it does |
+|-------|-------------|
+| `HashFunction` | Implements a three-channel password hashing scheme combining DJB2 polynomial mixing (Channel 1), XOR-then-multiply (Channel 2), and position-sensitive bit-shifting (Channel 3). Outputs a fixed 8-character hexadecimal digest via `MyString.intToHex()`. Plain-text passwords are never persisted anywhere in the system. |
+
+#### Slot Allocation (`libraries/slots`)
+
+| Class | What it does |
+|-------|-------------|
+| `SlotAllocator` | Abstract base class that defines the slot allocation contract. Also contains the stopwatch-style **cycle clock** used by the study room: a 12-minute repeating cycle mapped to 6 two-minute booking windows, computed live from the real system clock. |
+| `FirstFitAllocator` | Scans the slot array linearly and returns the index of the first `null` (free) entry. Used for fridge compartment assignment — the lowest-numbered available slot always wins, keeping distribution sequential and fair. |
+| `LastFitAllocator` | Returns the last available slot in the array. Built as a complementary allocation strategy alongside first-fit. |
+
+#### File Utilities (`libraries/file`)
+
+| Class | What it does |
+|-------|-------------|
+| `FilePaths` | Centralizes all file path constants so no path string is hard-coded across the codebase. One change here updates every module that reads or writes that file. |
+| `TextFile` | Wraps common file operations — read all lines, write all lines, append a line — so repository classes stay concise and the raw `java.io` boilerplate stays in one place. |
+
+#### Logging (`libraries/logs`)
+
+| Class | What it does |
+|-------|-------------|
+| `Logger` | Writes timestamped audit-trail entries for significant system events (laundry slot auto-release, booking confirmations, etc.). Keeps operational history separate from the user-facing data files. |
+
+### Standard Java APIs Used
+
+No external libraries are needed for the following — only the JDK:
+
+| API | Where it is used |
+|-----|-----------------|
+| `java.io` | All file reading and writing through `TextFile` and the repository layer |
+| `java.time` (`LocalTime`, `Duration`) | Cafeteria meal-window checks, study room cycle clock, demo clock scaling |
+| `java.util.Scanner` | Terminal input across all menu forms |
+| `java.util.Timer` + `TimerTask` | Background daemon timer for laundry slot auto-release after 120 seconds |
+
+---
+
 <a name="installation"></a>
 ## ⚙️ Installation
 
@@ -960,17 +1027,17 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE) fo
 **Dormatrix** — SWE4304 SPL-1 Project
 CSE Department, Islamic University of Technology, Gazipur, Bangladesh
 
-| Name | GitHub |
-|------|--------|
-| Procheta Silvie | [@prochetaSilvie](https://github.com/prochetaSilvie) |
-| Khadiza Sultana | [@tayma-06](https://github.com/tayma-06) |
-| Sayma Tasnim | [@SayTas](https://github.com/SayTas) |
-| Ayman Binte Altaf Nondiny | [@aymannondiny](https://github.com/aymannondiny) |
+| Name | Student ID | GitHub |
+|------|-----------|--------|
+| Procheta Silvie | 230042114 | [@prochetaSilvie](https://github.com/prochetaSilvie) |
+| Khadiza Sultana | 230042135 | [@tayma-06](https://github.com/tayma-06) |
+| Sayma Tasnim | 230042139 | [@SayTas](https://github.com/SayTas) |
+| Ayman Binte Altaf Nondiny | 230042141 | [@aymannondiny](https://github.com/aymannondiny) |
 
 ---
 
 <div align="center">
 
-<b><a href="https://github.com/tayma-06/Dormatrix">GitHub Repository</a></b>
+<b><a href="https://github.com/tayma-06/Dormatrix">⭐ GitHub Repository — github.com/tayma-06/Dormatrix</a></b>
 
 </div>
