@@ -6,6 +6,8 @@ import utils.ConsoleUtil;
 import utils.FastInput;
 import utils.TerminalUI;
 
+import static utils.TerminalUIExtras.tArrowSelect;
+
 public class InventoryManagementView {
 
     private final InventoryController inventoryController;
@@ -26,65 +28,51 @@ public class InventoryManagementView {
             TerminalUI.tBoxTop();
             TerminalUI.tBoxTitle("INVENTORY MANAGEMENT");
             TerminalUI.tBoxSep();
-            String summary = "Total Items: " + totalItems;
-            if (lowStock.length > 0) {
-                summary += " | Low Stock: " + lowStock.length + " items";
-            }
-            TerminalUI.tBoxLine(summary);
-            TerminalUI.tBoxSep();
-            TerminalUI.tBoxLine("[1] View All Inventory");
-            TerminalUI.tBoxLine("[2] Add New Item");
-            TerminalUI.tBoxLine("[3] Update Item");
-            TerminalUI.tBoxLine("[4] Delete Item");
-            TerminalUI.tBoxLine("[5] Add Stock");
-            TerminalUI.tBoxLine("[6] Search Items");
-            TerminalUI.tBoxLine("[7] View Low Stock Items");
-            TerminalUI.tBoxLine("[8] View Items by Price Range");
-            TerminalUI.tBoxLine("[0] Back", utils.ConsoleColors.Accent.EXIT);
-            TerminalUI.tBoxSep();
-            TerminalUI.tInputRow();
+            TerminalUI.tBoxLine("Total Items: " + totalItems + " | Low Stock: " + lowStock.length);
+            TerminalUI.tBoxLine("Prices are shown in BDT.");
+            TerminalUI.tBoxBottom();
 
-            String choice = FastInput.readLine();
+            int choice;
+            try {
+                choice = tArrowSelect("INVENTORY ACTIONS", new String[]{
+                        "View All Inventory",
+                        "Add New Item",
+                        "Update Item",
+                        "Delete Item",
+                        "Add Stock",
+                        "Search Items",
+                        "View Low Stock Items",
+                        "View Items by Price Range",
+                        "Back"
+                }, false);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
 
             switch (choice) {
-                case "1":
-                    viewInventory();
-                    break;
-                case "2":
-                    addNewItem();
-                    break;
-                case "3":
-                    updateItem();
-                    break;
-                case "4":
-                    deleteItem();
-                    break;
-                case "5":
-                    addStock();
-                    break;
-                case "6":
-                    searchItems();
-                    break;
-                case "7":
-                    viewLowStock();
-                    break;
-                case "8":
-                    viewByPriceRange();
-                    break;
-                case "0":
+                case 0 -> viewInventory();
+                case 1 -> addNewItem();
+                case 2 -> updateItem();
+                case 3 -> deleteItem();
+                case 4 -> addStock();
+                case 5 -> searchItems();
+                case 6 -> viewLowStock();
+                case 7 -> viewByPriceRange();
+                default -> {
                     return;
-                default:
-                    TerminalUI.tError("Invalid choice!");
+                }
             }
 
-            if (!choice.equals("0")) {
-                TerminalUI.tPause();
-            }
+            TerminalUI.tPause();
         }
     }
 
     private void viewInventory() {
-        TerminalUI.tEmpty();
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+
         TerminalUI.tBoxTop();
         TerminalUI.tBoxTitle("COMPLETE INVENTORY");
         TerminalUI.tBoxSep();
@@ -93,11 +81,11 @@ public class InventoryManagementView {
         if (items.length == 0) {
             TerminalUI.tBoxLine("No items in inventory.");
         } else {
-            TerminalUI.tBoxLine(String.format("%-10s %-20s %10s %8s %6s", "ID", "Name", "Price", "Stock", "Status"));
+            TerminalUI.tBoxLine(String.format("%-10s %-20s %14s %8s %6s", "ID", "Name", "Price", "Stock", "Status"));
             TerminalUI.tBoxSep();
             for (Item item : items) {
                 String status = item.getQuantity() == 0 ? "OUT" : item.getQuantity() <= 5 ? "LOW" : "OK";
-                TerminalUI.tBoxLine(String.format("%-10s %-20s $%8.2f %8d %6s",
+                TerminalUI.tBoxLine(String.format("%-10s %-20s BDT %8.2f %8d %6s",
                         item.getItemId(), item.getName(), item.getPrice(), item.getQuantity(), status));
             }
             TerminalUI.tBoxSep();
@@ -107,7 +95,10 @@ public class InventoryManagementView {
     }
 
     private void addNewItem() {
-        TerminalUI.tEmpty();
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+
         TerminalUI.tBoxTop();
         TerminalUI.tBoxTitle("ADD NEW ITEM");
         TerminalUI.tBoxBottom();
@@ -118,23 +109,28 @@ public class InventoryManagementView {
             TerminalUI.tError("Item with this ID already exists!");
             return;
         }
+
         TerminalUI.tPrompt("Enter Item Name: ");
         String name = FastInput.readLine();
         TerminalUI.tPrompt("Enter Initial Quantity: ");
         int quantity = FastInput.readInt();
-        TerminalUI.tPrompt("Enter Price: $");
+        TerminalUI.tPrompt("Enter Price (BDT): ");
         double price = FastInput.readDouble();
 
         if (inventoryController.addItem(itemId, name, quantity, price)) {
             TerminalUI.tSuccess("Item added successfully!");
-            TerminalUI.tBoxLine(String.format("ID: %s | Name: %s | Qty: %d | Price: $%.2f", itemId, name, quantity, price));
+            TerminalUI.tBoxLine(String.format("ID: %s | Name: %s | Qty: %d | Price: BDT %.2f",
+                    itemId, name, quantity, price));
         } else {
             TerminalUI.tError("Failed to add item!");
         }
     }
 
     private void updateItem() {
-        TerminalUI.tEmpty();
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+
         TerminalUI.tBoxTop();
         TerminalUI.tBoxTitle("UPDATE ITEM");
         TerminalUI.tBoxBottom();
@@ -150,7 +146,7 @@ public class InventoryManagementView {
         TerminalUI.tBoxTop();
         TerminalUI.tBoxLine("Name:     " + item.getName());
         TerminalUI.tBoxLine("Quantity: " + item.getQuantity());
-        TerminalUI.tBoxLine(String.format("Price:    $%.2f", item.getPrice()));
+        TerminalUI.tBoxLine(String.format("Price:    BDT %.2f", item.getPrice()));
         TerminalUI.tBoxBottom();
 
         TerminalUI.tPrint("Enter new values (Enter to keep current):");
@@ -159,10 +155,12 @@ public class InventoryManagementView {
         if (newName.isEmpty()) {
             newName = item.getName();
         }
+
         TerminalUI.tPrompt("New Quantity [" + item.getQuantity() + "]: ");
         String qtyInput = FastInput.readLine();
         int newQuantity = qtyInput.isEmpty() ? item.getQuantity() : Integer.parseInt(qtyInput);
-        TerminalUI.tPrompt("New Price [" + item.getPrice() + "]: $");
+
+        TerminalUI.tPrompt(String.format("New Price [BDT %.2f]: ", item.getPrice()));
         String priceInput = FastInput.readLine();
         double newPrice = priceInput.isEmpty() ? item.getPrice() : Double.parseDouble(priceInput);
 
@@ -174,7 +172,10 @@ public class InventoryManagementView {
     }
 
     private void deleteItem() {
-        TerminalUI.tEmpty();
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+
         TerminalUI.tPrompt("Enter Item ID to delete: ");
         String itemId = FastInput.readLine();
         Item item = InventoryController.getItem(itemId);
@@ -187,7 +188,7 @@ public class InventoryManagementView {
         TerminalUI.tBoxLine("ID:       " + item.getItemId());
         TerminalUI.tBoxLine("Name:     " + item.getName());
         TerminalUI.tBoxLine("Quantity: " + item.getQuantity());
-        TerminalUI.tBoxLine(String.format("Price:    $%.2f", item.getPrice()));
+        TerminalUI.tBoxLine(String.format("Price:    BDT %.2f", item.getPrice()));
         TerminalUI.tBoxBottom();
 
         TerminalUI.tPrompt("Are you sure you want to delete? (y/n): ");
@@ -204,7 +205,10 @@ public class InventoryManagementView {
     }
 
     private void addStock() {
-        TerminalUI.tEmpty();
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+
         TerminalUI.tPrompt("Enter Item ID: ");
         String itemId = FastInput.readLine();
         Item item = InventoryController.getItem(itemId);
@@ -212,6 +216,7 @@ public class InventoryManagementView {
             TerminalUI.tError("Item not found!");
             return;
         }
+
         TerminalUI.tBoxLine("Current Stock: " + item.getQuantity());
         TerminalUI.tPrompt("Enter quantity to add: ");
         int addQty = FastInput.readInt();
@@ -227,7 +232,10 @@ public class InventoryManagementView {
     }
 
     private void searchItems() {
-        TerminalUI.tEmpty();
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+
         TerminalUI.tPrompt("Enter search term (name): ");
         String searchTerm = FastInput.readLine();
 
@@ -235,64 +243,77 @@ public class InventoryManagementView {
         TerminalUI.tBoxTop();
         TerminalUI.tBoxTitle("SEARCH RESULTS");
         TerminalUI.tBoxSep();
+
         if (results.length == 0) {
             TerminalUI.tBoxLine("No items found matching '" + searchTerm + "'");
         } else {
             for (Item item : results) {
-                TerminalUI.tBoxLine(String.format("%-10s %-20s $%8.2f  Qty: %d",
+                TerminalUI.tBoxLine(String.format("%-10s %-20s BDT %8.2f  Qty: %d",
                         item.getItemId(), item.getName(), item.getPrice(), item.getQuantity()));
             }
             TerminalUI.tBoxSep();
             TerminalUI.tBoxLine("Found " + results.length + " item(s)");
         }
+
         TerminalUI.tBoxBottom();
     }
 
     private void viewLowStock() {
-        TerminalUI.tEmpty();
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+
         TerminalUI.tPrompt("Enter threshold (default 5): ");
         String input = FastInput.readLine();
         int threshold = input.isEmpty() ? 5 : Integer.parseInt(input);
 
         Item[] lowStock = inventoryController.getLowStockItems(threshold);
         TerminalUI.tBoxTop();
-        TerminalUI.tBoxTitle("LOW STOCK ALERT (Stock <= " + threshold + ")");
+        TerminalUI.tBoxTitle("LOW STOCK ITEMS");
         TerminalUI.tBoxSep();
+
         if (lowStock.length == 0) {
-            TerminalUI.tBoxLine("No low stock items found!");
+            TerminalUI.tBoxLine("No low stock items found.");
         } else {
             for (Item item : lowStock) {
-                String alert = item.getQuantity() == 0 ? "[OUT]" : "[LOW]";
-                TerminalUI.tBoxLine(String.format("%s %-10s %-20s  Stock: %d  $%.2f",
-                        alert, item.getItemId(), item.getName(), item.getQuantity(), item.getPrice()));
+                TerminalUI.tBoxLine(String.format("%-10s %-20s BDT %8.2f  Qty: %d",
+                        item.getItemId(), item.getName(), item.getPrice(), item.getQuantity()));
             }
             TerminalUI.tBoxSep();
-            TerminalUI.tBoxLine("Total Low Stock Items: " + lowStock.length);
+            TerminalUI.tBoxLine("Found " + lowStock.length + " low stock item(s)");
         }
+
         TerminalUI.tBoxBottom();
     }
 
     private void viewByPriceRange() {
-        TerminalUI.tEmpty();
-        TerminalUI.tPrompt("Enter minimum price: $");
-        double minPrice = FastInput.readDouble();
-        TerminalUI.tPrompt("Enter maximum price: $");
-        double maxPrice = FastInput.readDouble();
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
 
-        Item[] results = inventoryController.filterByPriceRange(minPrice, maxPrice);
+        TerminalUI.tPrompt("Enter minimum price (BDT): ");
+        double min = FastInput.readDouble();
+        TerminalUI.tPrompt("Enter maximum price (BDT): ");
+        double max = FastInput.readDouble();
+
+        Item[] results = inventoryController.filterByPriceRange(min, max);
         TerminalUI.tBoxTop();
-        TerminalUI.tBoxTitle(String.format("ITEMS: $%.2f - $%.2f", minPrice, maxPrice));
+        TerminalUI.tBoxTitle("ITEMS BY PRICE RANGE");
         TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine(String.format("Range: BDT %.2f - BDT %.2f", min, max));
+        TerminalUI.tBoxSep();
+
         if (results.length == 0) {
             TerminalUI.tBoxLine("No items found in this price range.");
         } else {
             for (Item item : results) {
-                TerminalUI.tBoxLine(String.format("%-10s %-20s $%8.2f  Qty: %d",
+                TerminalUI.tBoxLine(String.format("%-10s %-20s BDT %8.2f  Qty: %d",
                         item.getItemId(), item.getName(), item.getPrice(), item.getQuantity()));
             }
             TerminalUI.tBoxSep();
             TerminalUI.tBoxLine("Found " + results.length + " item(s)");
         }
+
         TerminalUI.tBoxBottom();
     }
 }

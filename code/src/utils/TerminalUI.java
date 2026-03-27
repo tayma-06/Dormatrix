@@ -2395,14 +2395,120 @@ public final class TerminalUI {
         writeRowAt(col, activeBoxColor + activePanelBgColor + "╚" + "═".repeat(innerW()) + "╝");
     }
 
+    private static java.util.List<String> wrapBoxText(String text, int width) {
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        if (width <= 0) {
+            lines.add("");
+            return lines;
+        }
+
+        if (text == null) {
+            lines.add("");
+            return lines;
+        }
+
+        String normalized = text.replace("\r", "");
+        String[] paragraphs = normalized.split("\n", -1);
+
+        for (String paragraph : paragraphs) {
+            String trimmed = paragraph == null ? "" : paragraph.strip();
+            if (trimmed.isEmpty()) {
+                lines.add("");
+                continue;
+            }
+
+            String[] words = trimmed.split("\\s+");
+            StringBuilder current = new StringBuilder();
+
+            for (String word : words) {
+                if (word.length() > width) {
+                    if (current.length() > 0) {
+                        lines.add(current.toString());
+                        current.setLength(0);
+                    }
+                    int startIdx = 0;
+                    while (startIdx < word.length()) {
+                        int endIdx = Math.min(startIdx + width, word.length());
+                        lines.add(word.substring(startIdx, endIdx));
+                        startIdx = endIdx;
+                    }
+                    continue;
+                }
+
+                if (current.length() == 0) {
+                    current.append(word);
+                } else if (current.length() + 1 + word.length() <= width) {
+                    current.append(' ').append(word);
+                } else {
+                    lines.add(current.toString());
+                    current.setLength(0);
+                    current.append(word);
+                }
+            }
+
+            if (current.length() > 0) {
+                lines.add(current.toString());
+            }
+        }
+
+        if (lines.isEmpty()) {
+            lines.add("");
+        }
+        return lines;
+    }
+
+    public static void tInfoBox(String title, String... lines) {
+        tBoxTop();
+        boolean hasTitle = title != null && !title.isBlank();
+        boolean hasLines = lines != null && lines.length > 0;
+
+        if (hasTitle) {
+            tBoxTitle(title);
+        }
+        if (hasTitle && hasLines) {
+            tBoxSep();
+        }
+
+        if (hasLines) {
+            for (String line : lines) {
+                for (String wrapped : wrapBoxText(line, Math.max(1, innerW() - 2))) {
+                    tBoxLine(wrapped);
+                }
+            }
+        } else if (!hasTitle) {
+            tBoxLine("");
+        }
+
+        tBoxBottom();
+    }
+
     public static void tEmpty() {
         writeRow(activeBgColor);
     }
 
     public static void tPrompt(String prompt) {
-        int col = centerCol(prompt.length());
-        System.out.print("\u001B[" + col + "G" + activeBgColor + activeTextColor + prompt + RESET);
+        int col = boxCol();
+        int iw = innerW();
+
+        String normalized = prompt == null ? "" : prompt.replace("\r", " ").replace("\n", " ").trim();
+        if (normalized.isEmpty()) {
+            normalized = "Input:";
+        }
+
+        String display = trimToWidth(normalized, Math.max(1, iw - 2));
+
+        writeRowAt(col, activeBoxColor + activePanelBgColor + "╔" + "═".repeat(iw) + "╗");
+        writeRowAt(col, activeBoxColor + activePanelBgColor + "║ "
+                + activeTextColor + activeInputBgColor + padL(display, iw - 2)
+                + activeBoxColor + activePanelBgColor + " ║");
+        writeRowAt(col, activeBoxColor + activePanelBgColor + "╚" + "═".repeat(iw) + "╝");
+
+        int cursorCol = Math.min(col + 2 + plain(display).length(), col + iw - 1);
+
+        System.out.print(RESET + SHOW_CUR + "\u001B[2A\u001B[" + cursorCol + "G" + activeTextColor + activeInputBgColor);
+        System.out.flush();
     }
+
 
     public static void tSuccess(String msg) {
         tBoxTop();
@@ -2425,7 +2531,9 @@ public final class TerminalUI {
 
     public static void tPause() {
         tEmpty();
-        tPrompt("Press Enter to continue...");
+        tPanelCenter("Press Enter to continue...");
+        System.out.print(RESET + SHOW_CUR);
+        System.out.flush();
         FastInput.readLine();
     }
 

@@ -1,16 +1,17 @@
 package cli.views.store;
 
 import controllers.store.SalesSummaryController;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import utils.ConsoleUtil;
 import utils.FastInput;
 import utils.TerminalUI;
 
-public class SalesSummaryView {
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
-    private final String SALES_FILE = "data/store/sales.txt";
+import static utils.TerminalUIExtras.tArrowSelect;
+
+public class SalesSummaryView {
 
     private final SalesSummaryController salesController;
 
@@ -23,54 +24,62 @@ public class SalesSummaryView {
             ConsoleUtil.clearScreen();
             TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
             TerminalUI.at(2, 1);
-            displayHeader();
-            displayMenu();
 
-            String choice = FastInput.readLine();
+            TerminalUI.tBoxTop();
+            TerminalUI.tBoxTitle("SALES REPORTS");
+            TerminalUI.tBoxSep();
+            TerminalUI.tBoxLine("All report amounts are shown in BDT.");
+            TerminalUI.tBoxBottom();
 
-            switch (choice) {
-                case "1":
-                    salesController.showDailySummary();
-                    break;
-                case "2":
-                    salesController.showWeeklySummary();
-                    break;
-                case "3":
-                    salesController.showMonthlySummary();
-                    break;
-                case "4":
-                    showCustomDateRange();
-                    break;
-                case "0":
-                    return;
-                default:
-                    TerminalUI.tError("Invalid choice!");
+            int choice;
+            try {
+                choice = tArrowSelect("SALES REPORT OPTIONS", new String[]{
+                        "Daily Summary (Today)",
+                        "Weekly Summary (Last 7 Days)",
+                        "Monthly Summary (Last 30 Days)",
+                        "Custom Date Range",
+                        "Back"
+                }, false);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
             }
 
-            if (!choice.equals("0")) {
-                TerminalUI.tPause();
+            switch (choice) {
+                case 0 -> {
+                    ConsoleUtil.clearScreen();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+                    salesController.showDailySummary();
+                    TerminalUI.tPause();
+                }
+                case 1 -> {
+                    ConsoleUtil.clearScreen();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+                    salesController.showWeeklySummary();
+                    TerminalUI.tPause();
+                }
+                case 2 -> {
+                    ConsoleUtil.clearScreen();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+                    salesController.showMonthlySummary();
+                    TerminalUI.tPause();
+                }
+                case 3 -> showCustomDateRange();
+                default -> {
+                    return;
+                }
             }
         }
     }
 
-    private void displayHeader() {
-        TerminalUI.tBoxTop();
-        TerminalUI.tBoxTitle("SALES REPORTS");
-        TerminalUI.tBoxSep();
-    }
-
-    private void displayMenu() {
-        TerminalUI.tBoxLine("[1] Daily Summary (Today)");
-        TerminalUI.tBoxLine("[2] Weekly Summary (Last 7 Days)");
-        TerminalUI.tBoxLine("[3] Monthly Summary (Last 30 Days)");
-        TerminalUI.tBoxLine("[4] Custom Date Range");
-        TerminalUI.tBoxLine("[0] Back", utils.ConsoleColors.Accent.EXIT);
-        TerminalUI.tBoxSep();
-        TerminalUI.tInputRow();
-    }
-
     private void showCustomDateRange() {
-        TerminalUI.tEmpty();
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+
         TerminalUI.tBoxTop();
         TerminalUI.tBoxTitle("CUSTOM DATE RANGE REPORT");
         TerminalUI.tBoxSep();
@@ -78,30 +87,34 @@ public class SalesSummaryView {
         TerminalUI.tBoxBottom();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        LocalDate startDate = null;
-        LocalDate endDate = null;
 
         try {
             TerminalUI.tPrompt("Enter start date: ");
             String startInput = FastInput.readLine();
-            startDate = LocalDate.parse(startInput, formatter);
+            LocalDate startDate = LocalDate.parse(startInput, formatter);
 
             TerminalUI.tPrompt("Enter end date: ");
             String endInput = FastInput.readLine();
-            endDate = LocalDate.parse(endInput, formatter);
+            LocalDate endDate = LocalDate.parse(endInput, formatter);
 
             if (startDate.isAfter(endDate)) {
                 TerminalUI.tError("Start date cannot be after end date!");
+                TerminalUI.tPause();
                 return;
             }
 
+            ConsoleUtil.clearScreen();
+            TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+            TerminalUI.at(2, 1);
             salesController.showCustomSummary(startDate, endDate);
+            TerminalUI.tPause();
 
         } catch (DateTimeParseException e) {
             TerminalUI.tError("Invalid date format! Please use dd-MM-yyyy");
-
+            TerminalUI.tPause();
         } catch (Exception e) {
             TerminalUI.tError("Error processing date range: " + e.getMessage());
+            TerminalUI.tPause();
         }
     }
 }

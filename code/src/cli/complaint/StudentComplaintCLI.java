@@ -87,6 +87,7 @@ public class StudentComplaintCLI {
                 TerminalUI.at(2, 1);
 
             // ── [1] File a new complaint ──────────────────────────────────
+                // ── [1] File a new complaint ──────────────────────────────────
                 if (ch == 1) {
                     MyOptional<StudentPublicInfo> infoOpt = resolveStudentPublicInfo(studentIdentifier);
                     if (infoOpt.isEmpty()) {
@@ -96,7 +97,17 @@ public class StudentComplaintCLI {
                     }
 
                     ComplaintCategory cat = form.readCategory();
-                    if (cat == null) return;
+                    if (cat == null) {
+                        continue;
+                    }
+
+                    ConsoleUtil.clearScreen();
+                    BackgroundFiller.applyStudentTheme();
+                    TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                    TerminalUI.at(2, 1);
+                    TerminalUI.tInfoBox("FILE A COMPLAINT",
+                            "Selected Category: " + cat,
+                            "Write a short description of the problem below.");
 
                     String desc = form.readNonEmpty("Enter complaint description: ");
 

@@ -266,12 +266,11 @@ public class CalendarView {
                 TerminalUI.tSuccess(result);
                 TerminalUI.tPause();
             } else if (choice == 4) {
-                for (MealType mt : getAvailableMeals()) {
-                    String res = controller.processTokenPurchaseForDay(username, day, mt);
-                    TerminalUI.tPrint(mt + ": " + res);
-                }
-                TerminalUI.tEmpty();
-                TerminalUI.tSuccess("All tokens purchased!");
+                String[] results = autoBuyAllMeals(day, username);
+                ConsoleUtil.clearScreen();
+                TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+                TerminalUI.at(2, 1);
+                TerminalUI.tInfoBox("ALL TOKENS PURCHASED", results);
                 TerminalUI.tPause();
             } else {
                 TerminalUI.tError("Invalid selection.");
@@ -313,29 +312,44 @@ public class CalendarView {
     }
 
     private void handleBulkPurchase(String username, LocalDate today, LocalDate startOfWeek) {
-        TerminalUI.tEmpty();
-        TerminalUI.tBoxTop();
-        TerminalUI.tBoxTitle("BULK PURCHASE MODE");
-        TerminalUI.tBoxBottom();
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+        TerminalUI.tInfoBox("BULK PURCHASE MODE",
+                "This will try to buy every meal token for all remaining days of this week.",
+                "Type y to confirm or n to cancel.");
         TerminalUI.tPrompt("Confirm buying all meals for all remaining days? (y/n): ");
-        if (FastInput.readLine().trim().toLowerCase().equals("y")) {
-            for (int i = 0; i < 7; i++) {
-                LocalDate day = startOfWeek.plusDays(i);
-                if (!day.isBefore(today)) {
-                    TerminalUI.tPrint(day.getDayOfWeek() + " (" + day + "):");
-                    autoBuyAllMeals(username, day);
+        if (!FastInput.readLine().trim().equalsIgnoreCase("y")) {
+            return;
+        }
+
+        java.util.List<String> results = new java.util.ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            LocalDate day = startOfWeek.plusDays(i);
+            if (!day.isBefore(today)) {
+                results.add(day.getDayOfWeek() + " (" + day + ")");
+                for (String line : autoBuyAllMeals(day, username)) {
+                    results.add("  " + line);
                 }
             }
-            TerminalUI.tSuccess("Bulk purchase complete!");
-            TerminalUI.tPause();
         }
+
+        ConsoleUtil.clearScreen();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
+        TerminalUI.tInfoBox("BULK PURCHASE COMPLETE", results.toArray(new String[0]));
+        TerminalUI.tPause();
     }
 
-    private void autoBuyAllMeals(String username, LocalDate day) {
-        for (MealType mt : getAvailableMeals()) {
+    private String[] autoBuyAllMeals(LocalDate day, String username) {
+        MealType[] meals = getAvailableMeals();
+        String[] results = new String[meals.length];
+        for (int i = 0; i < meals.length; i++) {
+            MealType mt = meals[i];
             String res = controller.processTokenPurchaseForDay(username, day, mt);
-            TerminalUI.tPrint(mt + ": " + res);
+            results[i] = mt + ": " + res;
         }
+        return results;
     }
 
     private MealType[] getAvailableMeals() {

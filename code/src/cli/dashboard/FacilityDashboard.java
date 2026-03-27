@@ -17,7 +17,8 @@ public class FacilityDashboard {
             new MenuItem(2, "Check-in to Study Room"),
             new MenuItem(3, "Book Fridge Slot"),
             new MenuItem(4, "Book Laundry Machine"),
-            new MenuItem(0, "Back"),};
+            new MenuItem(0, "Back"),
+    };
 
     public void showMenu(String username, StudyRoomController study, FridgeController fridge, LaundryController laundry) {
         while (true) {
@@ -53,6 +54,7 @@ public class FacilityDashboard {
 
     private void handleFacilityChoice(int choice, String user, StudyRoomController s, FridgeController f, LaundryController l) {
         ConsoleUtil.clearScreen();
+
         switch (choice) {
             case 1:
                 int currentSlot = SlotAllocator.getCurrentSlotIndex();
@@ -69,17 +71,19 @@ public class FacilityDashboard {
                     }
                 }
 
-                tPrompt("\n\nEnter seat number you want to book (1-10): ");
+                System.out.print(TEXT + "\n\nEnter seat number you want to book (1-10): " + RESET);
                 int seatToBook = FastInput.readInt() - 1;
 
                 if (s.bookSeat(user, seatToBook)) {
                     tSuccess("Booking successful! You have 30 seconds to choose Option 2 and Check-in.");
+                } else {
+                    tError("Booking failed.");
                 }
                 ConsoleUtil.pause();
                 break;
 
             case 2:
-                tPrompt("Enter your reserved seat number (1-10) to confirm arrival: ");
+                System.out.print(TEXT + "\nEnter your reserved seat number (1-10) to confirm arrival: " + RESET);
                 int seatToCheckIn = FastInput.readInt() - 1;
 
                 s.checkIn(user, seatToCheckIn);
@@ -94,11 +98,11 @@ public class FacilityDashboard {
             case 4:
                 l.displayLaundryStatus();
 
-                tPrompt("\nEnter Laundry slot index (1-6) to book: ");
+                System.out.print(TEXT + "\nEnter Laundry slot index (1-6) to book: " + RESET);
                 int slot = FastInput.readInt() - 1;
 
                 String result = l.bookLaundry(slot, user);
-                System.out.println(result);
+                System.out.println(TEXT + result + RESET);
                 ConsoleUtil.pause();
                 break;
 
@@ -106,5 +110,10 @@ public class FacilityDashboard {
                 tError("Invalid option.");
                 ConsoleUtil.pause();
         }
+    }
+
+    private void cleanup() {
+        System.out.print(RESET);
+        ConsoleUtil.showCursor();
     }
 }

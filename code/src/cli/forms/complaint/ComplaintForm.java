@@ -5,6 +5,8 @@ import models.enums.ComplaintCategory;
 import utils.ConsoleUtil;
 import utils.TerminalUI;
 
+import static utils.TerminalUIExtras.tArrowSelect;
+
 public class ComplaintForm {
 
     private final Scanner sc;
@@ -19,7 +21,9 @@ public class ComplaintForm {
             try {
                 return Integer.parseInt(line.trim());
             } catch (Exception e) {
-                TerminalUI.tPrompt("Invalid input. Enter again: ");
+                TerminalUI.tError("Invalid input. Please enter a number.");
+                TerminalUI.tPause();
+                TerminalUI.tPrompt("Enter a number: ");
             }
         }
     }
@@ -37,37 +41,41 @@ public class ComplaintForm {
                 return s;
             }
             TerminalUI.tError("Input cannot be empty.");
+            TerminalUI.tPause();
         }
     }
 
     public ComplaintCategory readCategory() {
         ConsoleUtil.clearScreen();
-        TerminalUI.tEmpty();
-        TerminalUI.tSubDashboard("SELECT COMPLAINT CATEGORY", new String[]{
-            "[1] Electricity",
-            "[2] Plumbing",
-            "[3] Internet",
-            "[4] Cleaning",
-            "[0] Back"
-        });
-        int x = readInt();
+        TerminalUI.fillBackground(TerminalUI.getActiveBgColor());
+        TerminalUI.at(2, 1);
 
-        switch (x) {
-            case 1:
-                return ComplaintCategory.ELECTRICITY;
-            case 2:
-                return ComplaintCategory.PLUMBING;
-            case 3:
-                return ComplaintCategory.INTERNET;
-            case 4:
-                return ComplaintCategory.CLEANING;
-//            case 5: return ComplaintCategory.SECURITY;
-//            case 6: return ComplaintCategory.OTHER;
-            case 0:
-                return null;
-            default:
-                TerminalUI.tError("Invalid category.");
-                return readCategory();
+        TerminalUI.tBoxTop();
+        TerminalUI.tBoxTitle("SELECT COMPLAINT CATEGORY");
+        TerminalUI.tBoxSep();
+        TerminalUI.tBoxLine("Choose a complaint category using the arrow keys.");
+        TerminalUI.tBoxBottom();
+
+        int choice;
+        try {
+            choice = tArrowSelect("COMPLAINT CATEGORY", new String[]{
+                    "Electricity",
+                    "Plumbing",
+                    "Internet",
+                    "Cleaning",
+                    "Back"
+            }, false);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
         }
+
+        return switch (choice) {
+            case 0 -> ComplaintCategory.ELECTRICITY;
+            case 1 -> ComplaintCategory.PLUMBING;
+            case 2 -> ComplaintCategory.INTERNET;
+            case 3 -> ComplaintCategory.CLEANING;
+            default -> null;
+        };
     }
 }

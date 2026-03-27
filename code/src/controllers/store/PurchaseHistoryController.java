@@ -1,11 +1,14 @@
 package controllers.store;
 
-import java.io.*;
-import java.time.LocalDate;
 import utils.TerminalUI;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.time.LocalDate;
+
 public class PurchaseHistoryController {
-    private final String SALES_FILE = "data/store/sales.txt"; // FIXED
+    private final String SALES_FILE = "data/store/sales.txt";
 
     public void showPurchaseHistory(String studentId) {
         TerminalUI.tBoxTop();
@@ -28,7 +31,7 @@ public class PurchaseHistoryController {
                     totalPurchases++;
                     double amount = Double.parseDouble(parts[3]);
                     totalSpent += amount;
-                    TerminalUI.tBoxLine(String.format("%-7s | %8s | $%6.2f | %s",
+                    TerminalUI.tBoxLine(String.format("%-7s | %8s | BDT %6.2f | %s",
                             parts[1], parts[2], amount, parts[4]));
                 }
             }
@@ -44,7 +47,7 @@ public class PurchaseHistoryController {
 
         TerminalUI.tBoxSep();
         TerminalUI.tBoxLine("Total Purchases: " + totalPurchases);
-        TerminalUI.tBoxLine(String.format("Total Spent:     $%.2f", totalSpent));
+        TerminalUI.tBoxLine(String.format("Total Spent:     BDT %.2f", totalSpent));
         TerminalUI.tBoxBottom();
     }
 
@@ -72,7 +75,7 @@ public class PurchaseHistoryController {
                         totalPurchases++;
                         double amount = Double.parseDouble(parts[3]);
                         totalSpent += amount;
-                        TerminalUI.tBoxLine(String.format("%-7s | %8s | $%6.2f | %s",
+                        TerminalUI.tBoxLine(String.format("%-7s | %8s | BDT %6.2f | %s",
                                 parts[1], parts[2], amount, parts[4]));
                     }
                 }
@@ -89,7 +92,7 @@ public class PurchaseHistoryController {
 
         TerminalUI.tBoxSep();
         TerminalUI.tBoxLine("Total Recent Purchases: " + totalPurchases);
-        TerminalUI.tBoxLine(String.format("Total Spent:            $%.2f", totalSpent));
+        TerminalUI.tBoxLine(String.format("Total Spent:            BDT %.2f", totalSpent));
         TerminalUI.tBoxBottom();
     }
 }

@@ -22,7 +22,7 @@ public class CartItem {
 
     @Override
     public String toString() {
-        return String.format("%-10s %-20s %5d x $%6.2f = $%8.2f",
+        return String.format("%-10s %-20s %5d x BDT %6.2f = BDT %8.2f",
                 itemId, itemName, quantity, unitPrice, getSubtotal());
     }
 }

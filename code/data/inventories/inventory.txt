@@ -1,4 +1,4 @@
-I001,Notebook (A4),155,45.0
+I001,Notebook (A4),154,45.0
 I002,Pen (Blue),200,15.0
 I003,Pen (Black),180,15.0
 I004,Pencil (HB),120,8.0

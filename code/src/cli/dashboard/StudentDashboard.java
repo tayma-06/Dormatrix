@@ -18,7 +18,7 @@ public class StudentDashboard implements Dashboard {
             new MenuItem(1, "View Room Info"),
             new MenuItem(2, "Facility Booking"),
             new MenuItem(3, "Meal Token Purchase"),
-            new MenuItem(4, "Store Account & Dues"),
+            new MenuItem(4, "Student Wallet"),
             new MenuItem(5, "Lost & Found"),
             new MenuItem(6, "Complaint Menu"),
             new MenuItem(7, "Weekly Routine"),

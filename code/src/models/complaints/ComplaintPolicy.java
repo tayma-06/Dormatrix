@@ -50,7 +50,7 @@ public class ComplaintPolicy {
         MyString d = ms(desc).toLowerCase();
 
         // general emergency keywords
-        if(d.containsAny(ms("fire"), ms("smoke"), ms("burning"), ms("sparks"),
+        if(d.containsAny(ms("fire"), ms("smoke"), ms("burning"), ms("sparks"), ms("spark"),
                 ms("electric shock"), ms("flood"), ms("burst pipe"), ms("overflow"),
                 ms("danger"), ms("panic")
 //                ms("harassment"), ms("assault"), ms("stalker"),

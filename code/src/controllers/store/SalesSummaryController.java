@@ -1,12 +1,15 @@
 package controllers.store;
 
-import java.io.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import utils.TerminalUI;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 public class SalesSummaryController {
-    private final String SALES_FILE = "data/store/sales.txt"; // FIXED
+    private final String SALES_FILE = "data/store/sales.txt";
 
     public void showDailySummary() {
         LocalDate today = LocalDate.now();
@@ -48,7 +51,7 @@ public class SalesSummaryController {
                         totalTransactions++;
                         double amount = Double.parseDouble(parts[3]);
                         totalRevenue += amount;
-                        TerminalUI.tBoxLine(String.format("%-10s | %-7s | %3s | $%6.2f | %s",
+                        TerminalUI.tBoxLine(String.format("%-10s | %-7s | %3s | BDT %6.2f | %s",
                                 parts[0], parts[1], parts[2], amount, parts[4]));
                     }
                 }
@@ -60,7 +63,7 @@ public class SalesSummaryController {
 
         TerminalUI.tBoxSep();
         TerminalUI.tBoxLine("Total Transactions: " + totalTransactions);
-        TerminalUI.tBoxLine(String.format("Total Revenue:      $%.2f", totalRevenue));
+        TerminalUI.tBoxLine(String.format("Total Revenue:      BDT %.2f", totalRevenue));
         TerminalUI.tBoxBottom();
     }
 
@@ -69,7 +72,7 @@ public class SalesSummaryController {
         TerminalUI.tBoxTitle("SALES SUMMARY REPORT");
         TerminalUI.tBoxSep();
         TerminalUI.tBoxLine("Period: " + startDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
-            + " to " + endDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+                + " to " + endDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
         TerminalUI.tBoxSep();
 
         int totalTransactions = 0;
@@ -88,7 +91,7 @@ public class SalesSummaryController {
                         totalTransactions++;
                         double amount = Double.parseDouble(parts[3]);
                         totalRevenue += amount;
-                        TerminalUI.tBoxLine(String.format("%-10s | %-7s | %3s | $%6.2f | %s",
+                        TerminalUI.tBoxLine(String.format("%-10s | %-7s | %3s | BDT %6.2f | %s",
                                 parts[0], parts[1], parts[2], amount, parts[4]));
                     }
                 }
@@ -100,9 +103,9 @@ public class SalesSummaryController {
 
         TerminalUI.tBoxSep();
         TerminalUI.tBoxLine("Total Transactions: " + totalTransactions);
-        TerminalUI.tBoxLine(String.format("Total Revenue:      $%.2f", totalRevenue));
+        TerminalUI.tBoxLine(String.format("Total Revenue:      BDT %.2f", totalRevenue));
         if (totalTransactions > 0) {
-            TerminalUI.tBoxLine(String.format("Average Sale:       $%.2f", totalRevenue / totalTransactions));
+            TerminalUI.tBoxLine(String.format("Average Sale:       BDT %.2f", totalRevenue / totalTransactions));
         }
         TerminalUI.tBoxBottom();
     }
