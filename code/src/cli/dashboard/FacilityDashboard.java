@@ -71,13 +71,25 @@ public class FacilityDashboard {
                     }
                 }
 
-                System.out.print(TEXT + "\n\nEnter seat number you want to book (1-10): " + RESET);
-                int seatToBook = FastInput.readInt() - 1;
+                System.out.print(TEXT + "\n\nEnter seat number you want to book (1-10, or 0 to go back): " + RESET);
 
-                if (s.bookSeat(user, seatToBook)) {
-                    tSuccess("Booking successful! You have 30 seconds to choose Option 2 and Check-in.");
-                } else {
-                    tError("Booking failed.");
+                // 2. Read the RAW input first
+                int input = FastInput.readInt();
+
+                // 3. Handle the '0' exit condition immediately
+                if (input == 0) {
+                    System.out.println(TEXT + "Canceling booking. Returning to dashboard..." + RESET);
+                    break; // This safely breaks out of case 1 and returns to the menu
+                }
+
+                else {
+                    int seatToBook = input - 1;
+
+                    if (s.bookSeat(user, seatToBook)) {
+                        tSuccess("Booking successful! You have 30 seconds to choose Option 2 and Check-in.");
+                    } else {
+                        tError("Booking failed.");
+                    }
                 }
                 ConsoleUtil.pause();
                 break;
