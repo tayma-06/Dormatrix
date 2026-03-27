@@ -9,7 +9,7 @@ import java.util.TimerTask;
 
 public class LaundryController {
     private static final String FILE_PATH = "data/facility/laundrySlots.txt";
-    // Static array ensures all students share the same 6 slots
+    // Static array ensures all students share the same 6 machine
     private static final String[] laundrySlots = new String[6];
     private static boolean dataLoaded = false;
 
@@ -22,10 +22,10 @@ public class LaundryController {
 
     // --- DISPLAY STATUS LOGIC ---
     public void displayLaundryStatus() {
-        System.out.println("\n--- Laundry Machine Schedule (6 Slots) ---");
+        System.out.println("\n--- Laundry Machine Schedule (6 Machines) ---");
         for (int i = 0; i < laundrySlots.length; i++) {
             String status = (laundrySlots[i] == null) ? "EMPTY" : "TAKEN";
-            System.out.print("[ Slot " + (i + 1) + ":" + status + " ]  ");
+            System.out.print("[ Machine " + (i + 1) + ":" + status + " ]  ");
             if (i == 2) System.out.println();
         }
     }
@@ -50,7 +50,7 @@ public class LaundryController {
         saveData();
         Logger.log("Laundry Slot " + (slotIndex + 1) + " booked by " + student);
 
-        // 5. Start the 2-Minute Wash Cycle Timer
+        // 5. Start the 4-hour Wash Cycle Timer
         startWashCycleTimer(slotIndex, student);
         return "Success: Laundry Slot " + (slotIndex + 1) + " booked.";
     }

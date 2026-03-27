@@ -110,7 +110,7 @@ public class FacilityDashboard {
             case 4:
                 l.displayLaundryStatus();
 
-                System.out.print(TEXT + "\nEnter Laundry slot index (1-6) to book: " + RESET);
+                System.out.print(TEXT + "\nEnter Laundry Machine index (1-6) to book: " + RESET);
                 int slot = FastInput.readInt() - 1;
 
                 String result = l.bookLaundry(slot, user);
