@@ -55,3 +55,7 @@
 [2026/03/28 03:52:25] Sayma Tasnim checked in to Seat 3
 [2026/03/28 03:54:00] Seat 2 reserved by Sayma Tasnim
 [2026/03/28 03:54:13] Sayma Tasnim checked in to Seat 2
+[2026/03/28 04:36:51] LOAD-SKIP: Seat 3 booking by Sayma Tasnim has expired (age: 2673s). Cleared.
+[2026/03/28 04:36:51] LOAD-SKIP: Seat 2 booking by Sayma Tasnim has expired (age: 2571s). Cleared.
+[2026/03/28 04:38:03] Seat 3 reserved by Procheta Silvie
+[2026/03/28 05:15:19] LOAD-SKIP: Seat 3 booking by Procheta Silvie has expired (age: 2236s). Cleared.
