@@ -9,10 +9,17 @@ public class StudyRoomController {
 
     private static final String FILE_PATH = "data/facility/studyRoomSlots.txt";
 
+    // Slot duration in milliseconds: 2 real minutes per slot
+    private static final long SLOT_DURATION_MS = SlotAllocator.REAL_MINS_PER_SLOT * 60 * 1000L;
+
     // STATIC arrays ensure all users share the exact same room data
     // Row = 6 Time Slots, Column = 10 physical seats
     private static final String[][] seatMap = new String[6][10];
     private static final boolean[][] checkInStatus = new boolean[6][10];
+
+    // FIX: Store booking timestamps so we know when a booking has expired
+    private static final long[][] bookingTimestamp = new long[6][10];
+
     private static boolean dataLoaded = false;
 
     public StudyRoomController() {
@@ -41,7 +48,7 @@ public class StudyRoomController {
             return false;
         }
 
-        // Check 3: Does this student already have a seat in this 2-minute slot?
+        // Check 3: Does this student already have a seat in this slot?
         for (int i = 0; i < 10; i++) {
             if (student.equals(seatMap[currentSlot][i])) {
                 System.out.println("You already have a seat booked for this time slot.");
@@ -51,8 +58,9 @@ public class StudyRoomController {
 
         // --- Assign Seat ---
         seatMap[currentSlot][seatNumber] = student;
-        checkInStatus[currentSlot][seatNumber] = false; // Reset check-in status
-        saveData(); // Update the .txt file immediately
+        checkInStatus[currentSlot][seatNumber] = false;
+        bookingTimestamp[currentSlot][seatNumber] = System.currentTimeMillis(); // FIX: Record exact time
+        saveData();
 
         Logger.log("Seat " + (seatNumber + 1) + " reserved by " + student);
 
@@ -68,7 +76,6 @@ public class StudyRoomController {
     public void checkIn(String student, int seatNumber) {
         int currentSlot = SlotAllocator.getCurrentSlotIndex();
 
-        // Verify the student actually owns this seat in the current slot
         if (student.equals(seatMap[currentSlot][seatNumber])) {
             checkInStatus[currentSlot][seatNumber] = true;
             System.out.println("Check-in successful! Seat " + (seatNumber + 1) + " confirmed.");
@@ -85,16 +92,16 @@ public class StudyRoomController {
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
-                // If 30 seconds pass and the check-in status is still false
                 if (!checkInStatus[slot][seat]) {
-                    seatMap[slot][seat] = null; // Kick them out
-                    saveData(); // Save the newly emptied room to the file
+                    seatMap[slot][seat] = null;
+                    bookingTimestamp[slot][seat] = 0; // FIX: Clear timestamp on release
+                    saveData();
 
                     System.out.println("\n[SYSTEM ALERT] Seat " + (seat + 1) + " released due to No-Show.");
                     Logger.log("AUTO-RELEASE: Seat " + (seat + 1) + " vacated (No-show by " + student + ")");
                 }
             }
-        }, 30000); // 30,000 milliseconds = 30 real-world seconds
+        }, 30000); // 30 seconds
     }
 
     // ==========================================
@@ -105,8 +112,8 @@ public class StudyRoomController {
             for (int slot = 0; slot < 6; slot++) {
                 for (int seat = 0; seat < 10; seat++) {
                     if (seatMap[slot][seat] != null) {
-                        // Format: Slot,Seat,StudentName
-                        out.println(slot + "," + seat + "," + seatMap[slot][seat]);
+                        // FIX: Format now includes timestamp → Slot,Seat,StudentName,Timestamp
+                        out.println(slot + "," + seat + "," + seatMap[slot][seat] + "," + bookingTimestamp[slot][seat]);
                     }
                 }
             }
@@ -117,26 +124,46 @@ public class StudyRoomController {
 
     private void loadData() {
         File file = new File(FILE_PATH);
-        if (!file.exists()) return; // If file doesn't exist yet, just start empty
+        if (!file.exists()) return;
+
+        long now = System.currentTimeMillis();
 
         try (Scanner sc = new Scanner(file)) {
             while (sc.hasNextLine()) {
                 String[] parts = sc.nextLine().split(",");
-                if (parts.length == 3) {
-                    int slot = Integer.parseInt(parts[0]);
-                    int seat = Integer.parseInt(parts[1]);
-                    String student = parts[2];
-                    seatMap[slot][seat] = student;
+
+                // FIX: Support both old format (3 parts) and new format (4 parts)
+                if (parts.length < 3) continue;
+
+                int slot = Integer.parseInt(parts[0].trim());
+                int seat = Integer.parseInt(parts[1].trim());
+                String student = parts[2].trim();
+
+                // FIX: If timestamp exists, check if booking has expired
+                if (parts.length == 4) {
+                    long timestamp = Long.parseLong(parts[3].trim());
+                    long age = now - timestamp;
+
+                    // Skip bookings older than one slot duration (2 minutes = 120,000 ms)
+                    if (age > SLOT_DURATION_MS) {
+                        Logger.log("LOAD-SKIP: Seat " + (seat + 1) + " booking by " + student + " has expired (age: " + (age / 1000) + "s). Cleared.");
+                        continue; // Do NOT load this stale booking
+                    }
+
+                    bookingTimestamp[slot][seat] = timestamp;
                 }
+                // Old format without timestamp: skip entirely (treat as expired)
+                // This handles the March 24 leftover data in your current file
+
+                seatMap[slot][seat] = student;
             }
         } catch (FileNotFoundException e) {
             Logger.log("Could not load study room file.");
         } catch (Exception e) {
-            Logger.log("Corrupt data in studyRoomSlots.txt");
+            Logger.log("Corrupt data in studyRoomSlots.txt: " + e.getMessage());
         }
     }
 
-    // Helper for CLI to show available seats
     public String[][] getSeatMap() {
         return seatMap;
     }
