@@ -1,7 +1,9 @@
 package models.food;
 
 import utils.TimeManager;
+
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class MealToken {
     private String tokenId;
@@ -19,11 +21,37 @@ public class MealToken {
     }
 
     public TokenStatus getStatus() {
-        LocalDate today = TimeManager.nowDate();
-        if (status == TokenStatus.ACTIVE && date.isBefore(today)) {
+        if (status == TokenStatus.ACTIVE && shouldBeExpiredNow()) {
             return TokenStatus.EXPIRED;
         }
         return status;
+    }
+
+    public boolean refreshStatus() {
+        if (status == TokenStatus.ACTIVE && shouldBeExpiredNow()) {
+            status = TokenStatus.EXPIRED;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean shouldBeExpiredNow() {
+        LocalDate today = TimeManager.nowDate();
+
+        if (date.isBefore(today)) {
+            return true;
+        }
+
+        if (!date.equals(today)) {
+            return false;
+        }
+
+        if (type == MealType.NONE) {
+            return false;
+        }
+
+        LocalTime cutoff = TimeManager.getMealEndTime(type);
+        return TimeManager.nowTime().isAfter(cutoff);
     }
 
     public void setStatus(TokenStatus status) {

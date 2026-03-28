@@ -186,22 +186,58 @@ public class CafeteriaController {
 
     public List<MealToken> getStudentTokens(String username) {
         ensureFile(TOKEN_FILE);
+        List<MealToken> allTokens = loadAllTokens();
+        boolean changed = refreshExpiredTokens(allTokens);
+        if (changed) {
+            saveAllTokens(allTokens);
+        }
+
         List<MealToken> studentTokens = new ArrayList<>();
+        for (MealToken token : allTokens) {
+            if (token.getStudentId().equals(username)) {
+                studentTokens.add(token);
+            }
+        }
+        return studentTokens;
+    }
+
+    private List<MealToken> loadAllTokens() {
+        ensureFile(TOKEN_FILE);
+        List<MealToken> tokens = new ArrayList<>();
+
         try (BufferedReader br = new BufferedReader(new FileReader(TOKEN_FILE))) {
             String line;
             while ((line = br.readLine()) != null) {
                 if (line.trim().isEmpty()) {
                     continue;
                 }
-                MealToken token = MealToken.fromString(line);
-                if (token.getStudentId().equals(username)) {
-                    studentTokens.add(token);
-                }
+                tokens.add(MealToken.fromString(line));
             }
         } catch (IOException e) {
             System.err.println("Token read error: " + e.getMessage());
         }
-        return studentTokens;
+        return tokens;
+    }
+
+    private boolean refreshExpiredTokens(List<MealToken> tokens) {
+        boolean changed = false;
+        for (MealToken token : tokens) {
+            if (token.refreshStatus()) {
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private void saveAllTokens(List<MealToken> tokens) {
+        ensureFile(TOKEN_FILE);
+        try (PrintWriter pw = new PrintWriter(new FileWriter(TOKEN_FILE))) {
+            for (MealToken token : tokens) {
+                pw.println(token.toString());
+            }
+        } catch (IOException e) {
+            System.err.println("Error writing tokens: " + e.getMessage());
+        }
     }
 
     public StudentBalance loadStudentBalance(String username) {
@@ -211,15 +247,15 @@ public class CafeteriaController {
     private double getPriceForMeal(MealType type) {
         return switch (type) {
             case BREAKFAST ->
-                30.0;
+                    30.0;
             case LUNCH, DINNER ->
-                60.0;
+                    60.0;
             case SUHOOR ->
-                40.0;
+                    40.0;
             case IFTAR ->
-                50.0;
+                    50.0;
             default ->
-                0.0;
+                    0.0;
         };
     }
 

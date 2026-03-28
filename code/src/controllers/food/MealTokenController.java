@@ -46,6 +46,9 @@ public class MealTokenController {
 
             for (MealToken t : tokens) {
                 if (t.getTokenId().equalsIgnoreCase(tokenId)) {
+                    if (t.refreshStatus()) {
+                        saveAllTokens(tokens);
+                    }
 
                     if (t.getStatus() == TokenStatus.USED) {
                         return "Error: This token has already been used!";
@@ -86,7 +89,21 @@ public class MealTokenController {
         } catch (IOException e) {
             System.err.println("Error reading tokens: " + e.getMessage());
         }
+
+        if (refreshExpiredTokens(list)) {
+            saveAllTokens(list);
+        }
         return list;
+    }
+
+    private boolean refreshExpiredTokens(List<MealToken> tokens) {
+        boolean changed = false;
+        for (MealToken token : tokens) {
+            if (token.refreshStatus()) {
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     private void saveAllTokens(List<MealToken> tokens) {
@@ -148,22 +165,13 @@ public class MealTokenController {
 
     public List<MealToken> getStudentTokens(String username) {
         ensureFile();
+        List<MealToken> allTokens = loadAllTokens();
 
         List<MealToken> studentTokens = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(TOKEN_FILE))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (line.trim().isEmpty()) {
-                    continue;
-                }
-
-                MealToken token = MealToken.fromString(line);
-                if (token.getStudentId().equals(username)) {
-                    studentTokens.add(token);
-                }
+        for (MealToken token : allTokens) {
+            if (token.getStudentId().equals(username)) {
+                studentTokens.add(token);
             }
-        } catch (IOException e) {
-            System.err.println("Token read error: " + e.getMessage());
         }
         return studentTokens;
     }
@@ -171,15 +179,15 @@ public class MealTokenController {
     private double getPriceForMeal(MealType type) {
         return switch (type) {
             case BREAKFAST ->
-                30.0;
+                    30.0;
             case LUNCH, DINNER ->
-                60.0;
+                    60.0;
             case SUHOOR ->
-                40.0;
+                    40.0;
             case IFTAR ->
-                50.0;
+                    50.0;
             default ->
-                0.0;
+                    0.0;
         };
     }
 }
