@@ -26,7 +26,7 @@ if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
 REM ========== COMPILE ==========
 echo.
 echo Compiling...
-dir /s /b "%SRC_DIR%\*.java" > "%OUT_DIR%\sources.txt"
+(for /r "%SRC_DIR%" %%f in (*.java) do echo "%%f") > "%OUT_DIR%\sources.txt"
 
 REM -- Updated javac to include the lib folder in the classpath --
 javac -encoding UTF-8 -d "%OUT_DIR%" -sourcepath "%SRC_DIR%" -cp "%LIB_DIR%\*" @"%OUT_DIR%\sources.txt"

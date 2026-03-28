@@ -215,7 +215,7 @@ Displays the student's current room — number, floor, section, capacity, and a 
 Reserve three types of shared facilities:
 - **Laundry** — 6 machines. One active booking per student. The machine auto-releases after the wash cycle completes via a background timer.
 - **Study Room** — a **6-slot × 10-seat** grid. Each seat within a slot is held by one student only; a student cannot hold more than one seat per slot.
-- **Fridge** — **10 personal slots** allocated using the **First-Fit algorithm**. Booking is rejected when all 10 are occupied.
+- **Fridge** — **10 personal slots** allocated using the **First-Free Memory algorithm**. Booking is rejected when all 10 are occupied.
 
 #### `[3]` Meal Token Purchase
 Purchase meal tokens for the cafeteria. Tokens cannot be bought outside a meal's service window. Tokens carry a status: `ACTIVE`, `USED`, or `EXPIRED`. Meal times automatically switch when Ramadan mode is enabled by the Cafeteria Manager.
@@ -320,6 +320,7 @@ View the worker's confirmed visit schedule for the week, each entry linked to it
 
 </details>
 
+(for /r "%SRC_DIR%" %%f in (*.java) do echo "%%f") > "%OUT_DIR%\sources.txt"
 <details>
 <summary><b>Store-in-Charge Dashboard</b> — 4 features</summary>
 
