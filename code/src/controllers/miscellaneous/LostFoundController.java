@@ -12,14 +12,18 @@ public class LostFoundController {
     private static final String LOST_FILE = "data/lostItems.txt";
     private static final String FOUND_FILE = "data/foundItems.txt";
 
-    // --- REPORT A LOST ITEM (Accessible to Students/Admins) ---
+    // --- REPORT A LOST ITEM (UPDATED TO USE UUID) ---
     public void reportLostItem(String name, String desc, String userId) {
-        String id = "LID-" + System.currentTimeMillis();
+        // Generates a bulletproof unique ID and takes just the first 8 characters
+        String uniqueHash = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String id = "LID-" + uniqueHash;
+
         String date = new java.util.Date().toString();
         LostItem item = new LostItem(id, name, desc, userId, date);
 
         saveToFile(LOST_FILE, item.toString());
-        Logger.log("User " + userId + " reported lost item: " + name);
+        // Updated the logger to also record the new ID for your audit trail
+        Logger.log("User " + userId + " reported lost item: " + name + " (ID: " + id + ")");
     }
 
     // --- ADD A FOUND ITEM ---
