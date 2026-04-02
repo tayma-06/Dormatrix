@@ -319,8 +319,6 @@ View the worker's confirmed visit schedule for the week, each entry linked to it
 <br>
 
 </details>
-
-(for /r "%SRC_DIR%" %%f in (*.java) do echo "%%f") > "%OUT_DIR%\sources.txt"
 <details>
 <summary><b>Store-in-Charge Dashboard</b> — 4 features</summary>
 
